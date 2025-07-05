@@ -1,3 +1,5 @@
+Always use the official MCP Python implmententation "mcp" located at https://github.com/modelcontextprotocol/python-sdk?utm_source=chatgpt.com
+
 Write a Python program that wraps an interactive bash shell using subprocess.Popen, allowing controlled execution of shell commands via stdin/stdout. The wrapper should support the following:
 
 Only run commands from an allowlist of approved tools (e.g., ls, echo, curl). Reject disallowed commands.
