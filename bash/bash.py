@@ -38,6 +38,38 @@ ALLOWED_COMMANDS = [
     "podman"
 ]
 
+def mcp_success(result: str) -> Dict[str, Any]:
+    """
+    Create a standardized success response.
+    
+    Args:
+        result: The result output
+        
+    Returns:
+        Dictionary with success status, result output, and empty error
+    """
+    return {
+        "success": True,
+        "result": result,
+        "error": ""
+    }
+
+def mcp_failure(error_message: str) -> Dict[str, Any]:
+    """
+    Create a standardized failure response.
+    
+    Args:
+        error_message: The error message
+        
+    Returns:
+        Dictionary with failure status, empty result, and error message
+    """
+    return {
+        "success": False,
+        "result": "",
+        "error": error_message
+    }
+
 class ActiveShell:
     """Class to manage a running bash process."""
     
@@ -66,6 +98,23 @@ class ActiveShell:
             except Exception as e:
                 logger.error(f"Failed to initialize bash process: {str(e)}")
                 raise
+    
+    def terminate(self):
+        """Terminate the current bash process if it exists."""
+        if self.process is not None:
+            try:
+                self.process.terminate()
+                self.process = None
+                logger.info("Bash process terminated")
+            except Exception as e:
+                logger.error(f"Failed to terminate bash process: {str(e)}")
+                raise
+    
+    def restart(self):
+        """Restart the bash process by terminating and reinitializing it."""
+        self.terminate()
+        self.initialize()
+        return "Bash shell has been restarted successfully."
     
     @staticmethod
     def contains_shell_operators(command: str) -> bool:
@@ -114,7 +163,7 @@ class ActiveShell:
 bash = ActiveShell()
 
 @mcp.prompt()
-def get_intro_prompt() -> str:
+def intro() -> str:
     """Return an introductory prompt that describes the Bash wrapper tool."""
     tools_list = ", ".join(ALLOWED_COMMANDS)
     
@@ -127,6 +176,8 @@ To use these tools, call them directly with optional arguments.
 For example, to list files in the current directory: ls(arguments="-la")
 
 Shell operators (&&, ;, |, etc.) are not allowed and will be rejected.
+
+You can also use the 'restart' tool to restart the bash shell if needed.
 """
 
 async def _execute_bash_command(command: str, arguments: str = "") -> Dict[str, Any]:
@@ -142,11 +193,7 @@ async def _execute_bash_command(command: str, arguments: str = "") -> Dict[str, 
     """
     # Check for shell operators
     if ActiveShell.contains_shell_operators(arguments):
-        return {
-            "success": False,
-            "result": "",
-            "error": "Error: Shell operators (&&, ;, |, etc.) are not allowed."
-        }
+        return mcp_failure("Error: Shell operators (&&, ;, |, etc.) are not allowed.")
     
     try:
         # Construct the full command
@@ -156,19 +203,11 @@ async def _execute_bash_command(command: str, arguments: str = "") -> Dict[str, 
         # Execute the command
         output = await bash.execute_command(full_command)
         
-        return {
-            "success": True,
-            "result": output,
-            "error": ""
-        }
+        return mcp_success(output)
     
     except Exception as e:
         logger.error(f"Error running command '{command}': {str(e)}")
-        return {
-            "success": False,
-            "result": "",
-            "error": f"Error running command: {str(e)}"
-        }
+        return mcp_failure(f"Error running command: {str(e)}")
 
 # Dynamically create tool functions for each allowed command
 def create_command_tool(command_name):
@@ -186,6 +225,21 @@ for cmd in ALLOWED_COMMANDS:
     create_command_tool(cmd)
 
 @mcp.tool()
+async def restart() -> Dict[str, Any]:
+    """
+    Restart the bash shell by creating a new ActiveShell instance.
+    
+    Returns:
+        Dictionary with success status and result message
+    """
+    try:
+        result = bash.restart()
+        return mcp_success(result)
+    except Exception as e:
+        logger.error(f"Error restarting bash shell: {str(e)}")
+        return mcp_failure(f"Error restarting bash shell: {str(e)}")
+
+@mcp.tool()
 async def list_bash_shell_tools() -> Dict[str, Any]:
     """
     List all available tools.
@@ -194,17 +248,11 @@ async def list_bash_shell_tools() -> Dict[str, Any]:
         Dictionary with the list of allowed commands
     """
     try:
-        return {
-            "success": True,
-            "result": ALLOWED_COMMANDS,
-            "error": ""
-        }
+        # Include the restart tool in the list
+        all_tools = ALLOWED_COMMANDS + ["restart"]
+        return mcp_success(all_tools)
     except Exception as e:
-        return {
-            "success": False,
-            "result": [],
-            "error": f"Error listing tools: {str(e)}"
-        }
+        return mcp_failure(f"Error listing tools: {str(e)}")
 
 def main():
     """Entry point for the application."""
