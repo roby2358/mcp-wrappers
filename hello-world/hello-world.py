@@ -12,8 +12,24 @@ from mcp.server.fastmcp import FastMCP
 # Create the MCP server instance
 mcp = FastMCP("hello-world")
 
+def mcp_success(result: Any) -> Dict[str, Any]:
+    """Return a successful MCP response with the given result."""
+    return {
+        "success": True,
+        "result": result,
+        "error": ""
+    }
+
+def mcp_failure(error_message: str) -> Dict[str, Any]:
+    """Return a failed MCP response with the given error message."""
+    return {
+        "success": False,
+        "result": "",
+        "error": error_message
+    }
+
 @mcp.prompt()
-def get_intro_prompt() -> str:
+def intro() -> str:
     """
     Return an introductory prompt that describes the Echo tool.
     """
@@ -33,26 +49,14 @@ async def echo(message: str) -> Dict[str, Any]:
     This tool simply returns the message that was sent to it.
     """
     if not message:
-        return {
-            "success": False,
-            "result": "",
-            "error": "Error: No message provided."
-        }
+        return mcp_failure("Error: No message provided.")
     
     try:
         # Simply return the message
-        return {
-            "success": True,
-            "result": message,
-            "error": ""
-        }
+        return mcp_success(message)
             
     except Exception as e:
-        return {
-            "success": False,
-            "result": "",
-            "error": f"Error processing message: {str(e)}"
-        }
+        return mcp_failure(f"Error processing message: {str(e)}")
 
 def main():
     """Entry point for the application."""
