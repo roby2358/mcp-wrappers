@@ -18,4 +18,6 @@ Reject or sanitize any attempts to inject disallowed commands or shell operators
 
 The wrapper should expose a function (e.g., run_command(tool: str, args: str) -> str) that handles validation and command execution.
 
+Provide a "restart" tool that terminates the current bash process and creates a new ActiveShell instance, allowing for a clean shell environment when needed.
+
 Optional: Include basic logging for executed commands and errors.
