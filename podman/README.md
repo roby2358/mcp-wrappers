@@ -39,8 +39,8 @@ C:\Users\roby2\AppData\Roaming\Claude\logs\mcp-servers\podman-wrapper.log
 {
   "mcpServers": {
     "podman-wrapper": {
-      "command": "C:/work/podman-mcp-wrapper/venv/Scripts/python.exe",
-      "args": ["C:/work/podman-mcp-wrapper/podman.py"]
+      "command": "C:/work/mcp-wrappers/podman/venv/Scripts/python.exe",
+      "args": ["C:/work/mcp-wrappers/podman/podman.py"]
     }
   }
 }
