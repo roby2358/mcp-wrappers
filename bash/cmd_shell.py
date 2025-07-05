@@ -12,6 +12,7 @@ import logging
 import re
 import time
 from typing import Dict, Any
+import uuid
 
 from mcp.server.fastmcp import FastMCP
 
@@ -169,17 +170,10 @@ class PersistentCmdShell:
         
         return False
     
-    def _clean_output(self, output):
-        """Clean command prompt and other unwanted text from output."""
-        if not output:
-            return ""
-        
-        # Remove directory prompts
-        output = re.sub(r'[A-Z]:\\.*?>', '', output)
-        
-        # Remove command markers
-        output = re.sub(r'MARKER_\d+', '', output)
-        
+    def _clean_output(self, output, preserve_paths=False):
+        if not preserve_paths:
+            # Only clean when we know it's safe
+            output = re.sub(r'^[A-Z]:\\[^>]*>', '', output, flags=re.MULTILINE)
         return output.strip()
     
     async def execute_command(self, command, timeout=30):
@@ -190,7 +184,7 @@ class PersistentCmdShell:
         
         try:
             # Create a unique marker for this command
-            marker = f"MARKER_{int(time.time() * 1000)}"
+            marker = f"MARKER_{uuid.uuid4().hex}"
             
             # Clear any existing output
             self.stdout_reader.get_output()
