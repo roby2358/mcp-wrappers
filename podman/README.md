@@ -10,16 +10,20 @@ A FastMCP wrapper that shells out to podman commands, allowing you to execute po
 - Simple integration with Claude Desktop
 - Built-in prompt that instructs the model how to use the podman tool
 
-## Claude Desktop Configuration
+**Note**: Update the paths to match your actual installation directory. The paths should point to:
+- Your virtual environment's Python executable
+- The `podman.py` file location
+
+### Claude Desktop Configuration
 
 To use this wrapper with Claude Desktop, add the following to your Claude Desktop configuration:
 
-**Config File Location:**
+### Config File Location
 - **Windows**: `C:\Users\[YourUsername]\AppData\Roaming\Claude\claude_desktop_config.json`
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-**Log File Locations:**
+### Log File Locations
 - **Claude Desktop MCP Log**: `C:\Users\[YourUsername]\AppData\Roaming\Claude\logs\mcp.log`
 - **Individual MCP App Log**: `C:\Users\[YourUsername]\AppData\Roaming\Claude\logs\mcp-servers\podman-wrapper.log`
 
@@ -30,7 +34,7 @@ C:\Users\roby2\AppData\Roaming\Claude\logs\mcp.log
 C:\Users\roby2\AppData\Roaming\Claude\logs\mcp-servers\podman-wrapper.log
 ```
 
-**Configuration:**
+### Configuration
 ```json
 {
   "mcpServers": {
@@ -41,10 +45,6 @@ C:\Users\roby2\AppData\Roaming\Claude\logs\mcp-servers\podman-wrapper.log
   }
 }
 ```
-
-**Note**: Update the paths to match your actual installation directory. The paths should point to:
-- Your virtual environment's Python executable
-- The `podman.py` file location 
 
 ## Setup
 
@@ -60,12 +60,12 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-2. Install the required dependencies:
+1. Install the required dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Make sure podman is installed and available in your PATH.
+2. Make sure podman is installed and available in your PATH.
 
 ## Usage
 
@@ -83,28 +83,9 @@ The wrapper communicates via stdin/stdout, making it suitable for integration wi
 
 The wrapper provides a single tool `execute_podman_command` that takes a string parameter containing the podman command line arguments.
 
-#### Example Commands
-
-- List containers: `"ps -a"`
-- Run a container: `"run ubuntu:latest echo hello"`
-- Build an image: `"build -t myimage ."`
-- Pull an image: `"pull ubuntu:latest"`
-- Remove a container: `"rm container_name"`
-
-#### Response Format
-
-The wrapper returns a response object with:
-
-- `success`: Boolean indicating if the command succeeded (return code 0)
-- `stdout`: Standard output from the command
-- `stderr`: Standard error from the command
-- `return_code`: The actual return code from podman
-- `full_command`: The complete command that was executed
-
 ## Implementation Details
 
 Create a Python script that implements a FastMCP wrapper for podman commands. The script should:
-
 1. Import the necessary modules: asyncio, sys, typing.Dict, typing.Any, and mcp.server.fastmcp.FastMCP
 2. Create a FastMCP instance named "podman-wrapper"
 3. Define a prompt function that returns instructions for using the podman tool
@@ -119,58 +100,12 @@ Create a Python script that implements a FastMCP wrapper for podman commands. Th
 
 The implementation should shell out to podman CLI commands and return structured results suitable for MCP protocol communication.
 
-## MCP Protocol Examples
-
-### Initialization Request
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "initialize",
-  "params": {
-    "protocolVersion": "2024-11-05",
-    "capabilities": {
-      "tools": {}
-    },
-    "clientInfo": {
-      "name": "test-client",
-      "version": "1.0.0"
-    }
-  }
-}
-```
-
-### Tools List Request
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "method": "tools/list"
-}
-```
-
-### Execute Podman Command Request
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "method": "tools/execute",
-  "params": {
-    "name": "execute_podman_command",
-    "parameters": {
-      "command": "ps -a"
-    }
-  }
-}
-```
-
 ### Example MCP Messages
 
 ```
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"clientInfo":{"name":"test-client","version":"1.0.0"}}}
+
+{"jsonrpc":"2.0","method":"notifications/initialized"}
 
 {"jsonrpc":"2.0","id":2,"method":"tools/list"}
 ```
