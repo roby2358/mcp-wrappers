@@ -23,11 +23,12 @@ To use this app with Claude Desktop, add the following to your Claude Desktop co
 {
   "mcpServers": {
     "hello-world": {
-      "command": "C:/work/mcp-wrappers/hello-world/venv/Scripts/python.exe",
+      "command": "C:/work/mcp-wrappers/hello-world/.venv/Scripts/python.exe",
       "args": ["C:/work/mcp-wrappers/hello-world/hello-world.py"]
     }
   }
 }
+```
 
 Update the paths to match your actual installation directory. The paths should point to:
 - Your virtual environment's Python executable
@@ -41,7 +42,7 @@ First use the setup below.
 {
   "mcpServers": {
     "hello-world": {
-      "command": "C:/path/to/venv/Scripts/python.exe",
+      "command": "C:/path/to/.venv/Scripts/python.exe",
       "args": ["C:/path/to/hello-world.py"]
     }
   }
@@ -50,21 +51,23 @@ First use the setup below.
 
 ## Setup
 
-1. Create and activate a virtual environment (recommended):
-```bash
-# Create virtual environment
-python -m venv venv
+### Using uv (Recommended)
 
-# Activate virtual environment
+This project uses [uv](https://github.com/astral-sh/uv) for dependency management.
+
+1. Install uv (if not already installed):
+```bash
 # On Windows:
-venv\Scripts\activate
+pip install uv
+
 # On macOS/Linux:
-source venv/bin/activate
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-2. Install the required dependencies:
+2. Create virtual environment and install dependencies:
 ```bash
-pip install -r requirements.txt
+# This creates .venv and installs all dependencies
+uv sync
 ```
 
 ## Usage
@@ -78,17 +81,6 @@ python hello-world.py
 ```
 
 The app communicates via stdin/stdout, making it suitable for integration with MCP clients like Claude Desktop.
-
-## Implementation Details
-
-The hello-world.py script:
-1. Creates a FastMCP instance named "hello-world"
-2. Defines an intro prompt function that returns instructions for using the Echo tool
-3. Defines a tool function called echo that:
-   - Takes a string parameter for the message
-   - Returns the message back to the caller
-   - Handles errors gracefully
-4. Uses mcp.run() in stdio mode for communication
 
 ## Example Usage
 
