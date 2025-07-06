@@ -3,6 +3,7 @@
 This project provides a minimal TypeScript MCP (Model Context Protocol) server using the official `@modelcontextprotocol/sdk` that:
 
 - Exposes a tool called `sayHello` that returns the string `Hello!` when invoked.
+- Exposes a prompt called `intro` that returns "MCP wrapper for dreams".
 - Uses the standard MCP protocol for communication.
 
 ## Prerequisites
@@ -40,6 +41,7 @@ This project provides a minimal TypeScript MCP (Model Context Protocol) server u
 ## Features
 
 - **Tool**: `sayHello` - Returns "Hello!" when called
+- **Prompt**: `intro` - Returns "MCP wrapper for dreams"
 - **Transport**: Uses stdio for communication
 - **Protocol**: Implements the official MCP specification
 
@@ -49,7 +51,9 @@ The server implements the standard MCP protocol:
 
 1. **Tool Listing**: Responds to `tools/list` requests with available tools
 2. **Tool Execution**: Handles `tools/call` requests for the `sayHello` tool
-3. **Error Handling**: Proper error responses for unknown tools
+3. **Prompt Listing**: Responds to `prompts/list` requests with available prompts
+4. **Prompt Execution**: Handles `prompts/get` requests for the `intro` prompt
+5. **Error Handling**: Proper error responses for unknown tools and prompts
 
 ## Claude Desktop Configuration
 
@@ -79,8 +83,9 @@ To use this MCP server with Claude Desktop:
 4. **Restart Claude Desktop** for the changes to take effect
 
 5. **Verify the connection:**
-   - The `sayHello` tool should now be available in your Claude Desktop conversations
-   - You can test it by asking Claude to use the sayHello tool
+   - The `sayHello` tool and `intro` prompt should now be available in your Claude Desktop conversations
+   - You can test the tool by asking Claude to use the sayHello tool
+   - You can test the prompt by asking Claude to use the intro prompt
 
 **Note**: Make sure you have built the server (`npm run build`) before configuring Claude Desktop, as it needs the compiled JavaScript file in the `dist/` directory.
 
