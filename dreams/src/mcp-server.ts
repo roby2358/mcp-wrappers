@@ -11,6 +11,7 @@ import {
   GetPromptRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
+import { INTRO_TEXT } from './intro-text.js';
 
 // Dreamscape state interface
 interface DreamscapeState {
@@ -276,7 +277,7 @@ server.setRequestHandler(GetPromptRequestSchema, async (request: GetPromptReques
           role: 'assistant',
           content: {
             type: 'text',
-            text: 'MCP wrapper for dreams - A dreamscape simulation system with dynamic properties and narrative evolution.',
+            text: INTRO_TEXT,
           },
         },
       ],
