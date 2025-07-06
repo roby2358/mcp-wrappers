@@ -1,0 +1,12 @@
+[project]
+name = "cmd-shell-mcp"
+version = "0.1.0"
+description = "MCP server for controlled CMD shell execution"
+requires-python = ">=3.8"
+dependencies = [
+    "mcp>=1.9.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build" 

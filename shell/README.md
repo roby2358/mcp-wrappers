@@ -26,34 +26,32 @@ To use this app with Claude Desktop, add the following to your Claude Desktop co
 {
   "mcpServers": {
     "cmd-shell": {
-      "command": "C:/work/mcp-wrappers/bash/venv/Scripts/python.exe",
-      "args": ["C:/work/mcp-wrappers/bash/cmd_shell.py"]
+      "command": "C:/work/mcp-wrappers/shell/.venv/Scripts/python.exe",
+      "args": ["C:/work/mcp-wrappers/shell/cmd_shell.py"]
     }
   }
 }
 ```
 
 Update the paths to match your actual installation directory. The paths should point to:
-- Your virtual environment's Python executable
+- Your virtual environment's Python executable (`.venv/Scripts/python.exe` on Windows)
 - The `cmd_shell.py` file location
 
 ## Setup
 
-1. Create and activate a virtual environment (recommended):
+1. Install uv (if not already installed):
 ```bash
-# Create virtual environment
-python -m venv venv
+# Windows (PowerShell)
+irm https://astral.sh/uv/install.ps1 | iex
 
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-2. Install the required dependencies:
+2. Create a virtual environment and install dependencies:
 ```bash
-pip install -r requirements.txt
+# Create virtual environment and install dependencies
+uv sync
 ```
 
 ## Usage
@@ -63,7 +61,7 @@ pip install -r requirements.txt
 Start the FastMCP app in stdio mode:
 
 ```bash
-python cmd_shell.py
+uv run python cmd_shell.py
 ```
 
 The app communicates via stdin/stdout, making it suitable for integration with MCP clients like Claude Desktop.
