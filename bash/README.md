@@ -1,13 +1,13 @@
-# Bash Shell FastMCP App
+# CMD Shell FastMCP App
 
-A FastMCP application that provides a controlled bash shell environment, allowing you to execute a limited set of approved shell commands through the MCP protocol.
+A FastMCP application that provides a controlled Windows CMD shell environment, allowing you to execute a limited set of approved CMD commands through the MCP protocol.
 
 ## Features
 
-- Secure execution of allowlisted bash commands
+- Secure execution of allowlisted CMD commands
 - Protection against command injection and shell operators
-- Persistent bash process reused across requests
-- Built-in intro prompt that instructs the model how to use the Bash shell
+- Persistent CMD process reused across requests
+- Built-in intro prompt that instructs the model how to use the CMD shell
 - Error handling for common issues
 - Command output clearly separated using sentinel markers
 - Simple integration with Claude Desktop
@@ -25,9 +25,9 @@ To use this app with Claude Desktop, add the following to your Claude Desktop co
 ```json
 {
   "mcpServers": {
-    "bash-shell": {
+    "cmd-shell": {
       "command": "C:/work/mcp-wrappers/bash/venv/Scripts/python.exe",
-      "args": ["C:/work/mcp-wrappers/bash/bash.py"]
+      "args": ["C:/work/mcp-wrappers/bash/cmd_shell.py"]
     }
   }
 }
@@ -35,7 +35,7 @@ To use this app with Claude Desktop, add the following to your Claude Desktop co
 
 Update the paths to match your actual installation directory. The paths should point to:
 - Your virtual environment's Python executable
-- The `bash.py` file location
+- The `cmd_shell.py` file location
 
 ## Setup
 
@@ -63,7 +63,7 @@ pip install -r requirements.txt
 Start the FastMCP app in stdio mode:
 
 ```bash
-python bash.py
+python cmd_shell.py
 ```
 
 The app communicates via stdin/stdout, making it suitable for integration with MCP clients like Claude Desktop.
@@ -80,45 +80,57 @@ The app communicates via stdin/stdout, making it suitable for integration with M
 
 ## Implementation Details
 
-The bash.py script:
-1. Creates a FastMCP instance named "bash-shell"
-2. Initializes a persistent bash process using subprocess.Popen
-3. Defines an allowlist of approved commands (ls, echo, curl, etc.)
-4. Provides a run_command tool that:
-   - Takes a tool name and optional arguments
+The cmd_shell.py script:
+1. Creates a FastMCP instance named "cmd-shell"
+2. Initializes a persistent CMD process using subprocess.Popen
+3. Defines an allowlist of approved commands (dir, echo, curl, etc.)
+4. Provides a tool for each allowed command that:
+   - Takes optional arguments
    - Validates the command against the allowlist
    - Checks for shell operators that could be used for command injection
-   - Executes the command in the bash process
+   - Executes the command in the CMD process
    - Returns the command output
-5. Provides a list_tools function to see all available commands
-6. Uses a sentinel marker to clearly separate command output
+5. Provides a list_cmd_shell_tools function to see all available commands
+6. Uses a unique marker to clearly separate command output
 7. Includes basic logging for executed commands and errors
 
 ## Available Commands
 
 The following commands are allowed:
-- ls
+- dir
 - echo
 - curl
-- cat
-- grep
-- pwd
+- type
 - find
-- wc
+- findstr
+- cd
+- where
+- set
+- podman
 
 ## Example Usage
 
 When using this tool with Claude, you can run commands like:
 
 "Please list the files in the current directory"
-The tool will execute: run_command(tool="ls", args="-la")
+The tool will execute: dir(arguments="/w")
 
 "Show me the content of the README.md file"
-The tool will execute: run_command(tool="cat", args="README.md")
+The tool will execute: type(arguments="README.md")
 
 ## Security Features
 
 - Only commands in the allowlist can be executed
 - Shell operators (&&, ;, |, etc.) are rejected
 - Command arguments are validated before execution
-- Persistent bash process prevents command history manipulation
+- Persistent CMD process prevents command history manipulation
+
+---
+
+## Bash Shell (Work in Progress)
+
+A bash shell wrapper (`bash_shell.py`) is included in this repository as a work in progress. It is not yet the primary entry point and is not fully supported. Future updates will provide a similar controlled environment for bash commands on Unix-like systems.
+
+---
+
+For future updates and bash support, watch this repository.
