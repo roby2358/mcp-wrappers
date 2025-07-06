@@ -1,10 +1,48 @@
 # Dreams MCP Server
 
-This project provides a minimal TypeScript MCP (Model Context Protocol) server using the official `@modelcontextprotocol/sdk` that:
+This project provides a TypeScript MCP (Model Context Protocol) server using the official `@modelcontextprotocol/sdk` that implements a dreamscape simulation system with dynamic properties and narrative evolution.
 
-- Exposes a tool called `sayHello` that returns the string `Hello!` when invoked.
-- Exposes a prompt called `intro` that returns "MCP wrapper for dreams".
-- Uses the standard MCP protocol for communication.
+## Features
+
+The server exposes four main tools that simulate dream-like interactions:
+
+- **`dreamscape()`** - Returns the complete current dreamscape state
+- **`attempt_narrative(narrative_entry: string)`** - Adds entries to the ongoing narrative (may be altered by dream logic)
+- **`attempt_scene_change(new_scene: string)`** - Attempts to change the dreamscape description
+- **`attempt_property_shift(property: string, direction: "increase"|"decrease", reason: string)`** - Adjusts core dreamscape properties
+
+### Dreamscape State Structure
+
+The dreamscape maintains the following state:
+
+```typescript
+{
+  // Core dream properties (0-100 range)
+  emotional_tone: number,
+  familiarity_ratio: number, 
+  symbolic_density: number,
+  sensory_cross_bleeding: number,
+  coherence_level: number,
+  boundary_stability: number,
+  causality_strength: number,
+  memory_persistence: number,
+  agency_level: number,
+  
+  // Scene description
+  dreamscape: string,
+  
+  // Ongoing narrative
+  narrative: string[]
+}
+```
+
+### Dream Logic
+
+The system implements dream-like behavior where:
+- Lower `coherence_level` and `causality_strength` increase the chance of input alterations
+- Narrative entries and scene changes may be modified by dream logic
+- Property shifts occur in random increments (5-25 points) within the 0-100 range
+- All changes respect the dreamscape's internal consistency
 
 ## Prerequisites
 
@@ -38,22 +76,42 @@ This project provides a minimal TypeScript MCP (Model Context Protocol) server u
    npm run dev
    ```
 
-## Features
+## API Reference
 
-- **Tool**: `sayHello` - Returns "Hello!" when called
-- **Prompt**: `intro` - Returns "MCP wrapper for dreams"
-- **Transport**: Uses stdio for communication
-- **Protocol**: Implements the official MCP specification
+### Tools
 
-## Usage
+#### `dreamscape()`
+Returns the complete current dreamscape state including all properties, scene description, and narrative history.
 
-The server implements the standard MCP protocol:
+**Parameters:** None
 
-1. **Tool Listing**: Responds to `tools/list` requests with available tools
-2. **Tool Execution**: Handles `tools/call` requests for the `sayHello` tool
-3. **Prompt Listing**: Responds to `prompts/list` requests with available prompts
-4. **Prompt Execution**: Handles `prompts/get` requests for the `intro` prompt
-5. **Error Handling**: Proper error responses for unknown tools and prompts
+**Returns:** JSON object with the full dreamscape state
+
+#### `attempt_narrative(narrative_entry: string)`
+Adds a new entry to the dream narrative. The entry may be altered by dream logic based on current coherence and causality levels.
+
+**Parameters:**
+- `narrative_entry` (string): The narrative entry to add to the dream story
+
+**Returns:** The narrative entry as it was actually added (potentially altered)
+
+#### `attempt_scene_change(new_scene: string)`
+Attempts to change the dreamscape scene description. The new scene may be altered by dream logic.
+
+**Parameters:**
+- `new_scene` (string): The new scene description for the dreamscape
+
+**Returns:** The scene description as it was actually set (potentially altered)
+
+#### `attempt_property_shift(property: string, direction: "increase"|"decrease", reason: string)`
+Attempts to adjust one of the nine core dreamscape properties.
+
+**Parameters:**
+- `property` (string): Must be one of: `emotional_tone`, `familiarity_ratio`, `symbolic_density`, `sensory_cross_bleeding`, `coherence_level`, `boundary_stability`, `causality_strength`, `memory_persistence`, `agency_level`
+- `direction` (string): Either `"increase"` or `"decrease"`
+- `reason` (string): The reason for the property change
+
+**Returns:** Description of the property change that occurred
 
 ## Claude Desktop Configuration
 
@@ -83,11 +141,22 @@ To use this MCP server with Claude Desktop:
 4. **Restart Claude Desktop** for the changes to take effect
 
 5. **Verify the connection:**
-   - The `sayHello` tool and `intro` prompt should now be available in your Claude Desktop conversations
-   - You can test the tool by asking Claude to use the sayHello tool
-   - You can test the prompt by asking Claude to use the intro prompt
+   - The dreamscape tools should now be available in your Claude Desktop conversations
+   - You can test by asking Claude to check the current dreamscape state
+   - Try adding narrative entries or changing scene descriptions
+   - Experiment with property shifts to see how they affect dream logic
 
 **Note**: Make sure you have built the server (`npm run build`) before configuring Claude Desktop, as it needs the compiled JavaScript file in the `dist/` directory.
+
+## Usage Examples
+
+Once connected to Claude Desktop, you can interact with the dreamscape:
+
+- "What's the current dreamscape state?"
+- "Add this to the narrative: 'I found myself walking through a forest of crystal trees'"
+- "Change the scene to a vast library with floating books"
+- "Increase the symbolic_density because the dream is becoming more metaphorical"
+- "Decrease the coherence_level to make things more surreal"
 
 ## Development
 
@@ -96,6 +165,8 @@ To modify the server:
 1. Edit `src/mcp-server.ts`
 2. Run `npm run build` to compile
 3. Test with `npm start`
+
+The dreamscape system is designed to be extensible. You can modify the dream logic alterations, add new properties, or implement additional tools as needed.
 
 ## License
 
