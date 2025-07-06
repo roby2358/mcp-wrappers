@@ -170,11 +170,33 @@ class PersistentCmdShell:
         
         return False
     
-    def _clean_output(self, output, preserve_paths=False):
-        if not preserve_paths:
-            # Only clean when we know it's safe
-            output = re.sub(r'^[A-Z]:\\[^>]*>', '', output, flags=re.MULTILINE)
-        return output.strip()
+    def _clean_output(self, output, command_sent=None):
+        # Remove command prompt patterns
+        output = re.sub(r'^[A-Z]:\\[^>]*>', '', output, flags=re.MULTILINE)
+        
+        # If we know what command was sent, try to remove its echo
+        if command_sent:
+            # Remove the command echo from the beginning
+            lines = output.split('\n')
+            cleaned_lines = []
+            command_found = False
+            
+            for line in lines:
+                line_stripped = line.strip()
+                if not command_found and line_stripped == command_sent.strip():
+                    command_found = True
+                    continue
+                if line_stripped:  # Only add non-empty lines
+                    cleaned_lines.append(line.rstrip())
+            
+            output = '\n'.join(cleaned_lines)
+        
+        # Final cleanup - remove trailing "echo" if it appears alone
+        lines = output.split('\n')
+        if lines and lines[-1].strip() == 'echo':
+            lines = lines[:-1]
+        
+        return '\n'.join(lines).strip()
     
     async def execute_command(self, command, timeout=30):
         """Execute a command in the CMD process with timeout."""
@@ -219,7 +241,7 @@ class PersistentCmdShell:
                         else:
                             result = combined
                         
-                        return self._clean_output(result)
+                        return self._clean_output(result, command_sent=command)
                     
                     # Small sleep to prevent CPU spinning
                     await asyncio.sleep(0.1)
