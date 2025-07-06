@@ -82,10 +82,12 @@ python hello-world.py
 
 The app communicates via stdin/stdout, making it suitable for integration with MCP clients like Claude Desktop.
 
-## Example Usage
+### Example MCP Messages
 
-When using this tool with Claude, you can simply ask it to echo a message:
+```
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"clientInfo":{"name":"test-client","version":"1.0.0"}}}
 
-"Please echo 'Hello, world!'"
+{"jsonrpc":"2.0","method":"notifications/initialized"}
 
-The Echo tool will return: "Hello, world!"
+{"jsonrpc":"2.0","id":2,"method":"tools/list"}
+```
