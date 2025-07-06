@@ -1,25 +1,69 @@
-Always use the official MCP Python implmententation "mcp" located at https://github.com/modelcontextprotocol/python-sdk?utm_source=chatgpt.com
+# CMD Shell MCP Server Requirements
 
-Write a Python program that wraps an interactive bash shell using subprocess.Popen, allowing controlled execution of shell commands via stdin/stdout. The wrapper should support the following:
+The application MUST be an MCP (Model Context Protocol) server that provides controlled CMD shell execution through the MCP interface.
 
-Only run commands from an allowlist of approved tools (e.g., ls, echo, curl). Reject disallowed commands.
+The application MUST use the official MCP Python implementation "mcp" located at https://github.com/modelcontextprotocol/python-sdk
 
-Each tool in the allowlist should appear as a separate entry in a /tools/list endpoint (or equivalent interface).
+The application MUST be a Python program that wraps an interactive CMD shell, allowing controlled execution of shell commands via stdin/stdout.
 
-The ALLOWED_COMMANDS list should be the single source of truth - adding a command to this list should automatically make it available as a tool without requiring additional code changes.
+## MCP Interface Requirements
 
-The LLM may pass an optional string parameter with command-line arguments for the tool.
+- The application MUST implement the MCP protocol and expose CMD commands as MCP tools
+- The application MUST communicate exclusively via stdio (stdin/stdout) - no network interfaces, HTTP servers, or other communication methods are allowed
+- The application MUST provide an intro prompt that describes the available CMD wrapper tools
+- The application MUST provide a function to see all available commands (which is redundant with tools/list, but helpful)
+- The application MUST run in stdio mode for integration with MCP clients like Claude Desktop
 
-The program must handle stdin, stdout, and stderr, and return output as strings.
+## Technical Requirements
+- The application MUST use mcp.server.fastmcp.FastMCP for MCP server implementation
+- The application MUST use subprocess.Popen
+- The application MUST use Windows-specific flags (CREATE_NO_WINDOW) to prevent command windows from appearing
+- The application MUST use "cmd.exe" as the shell process
+- The application MUST handle Windows-specific command line formatting with \r\n line endings
+- The allowlist MUST be the single source of truth - adding a command to this list MUST automatically make it available as a tool without requiring additional code changes
+- The marker string MUST be "Marker_{uuid4}
 
-Bash should be started once and reused across requests.
+## Core Architecture Requirement
 
-The command's output should be clearly separated and safely captured (use a sentinel like __CMD_DONE__ to know when it's finished).
+**SINGLE PERSISTENT SHELL**: The application MUST maintain exactly ONE persistent CMD shell process throughout its entire lifecycle. This is the fundamental architectural constraint:
 
-Reject or sanitize any attempts to inject disallowed commands or shell operators (&&, ;, etc.).
+- The CMD shell MUST be started ONCE when the application starts
+- The same shell process MUST be reused for ALL command executions
+- The shell MUST maintain its state (current directory, environment variables, etc.) between commands
+- The shell MUST only be restarted when explicitly requested via the restart tool
+- The shell MUST automatically restart if it dies unexpectedly
 
-The wrapper should expose a function (e.g., run_command(tool: str, args: str) -> str) that handles validation and command execution.
+This persistent shell approach is the entire purpose of the application - it provides a controlled, stateful command environment through the MCP interface.
 
-Provide a "restart" tool that terminates the current bash process and creates a new ActiveShell instance, allowing for a clean shell environment when needed.
+## Core Requirements
 
-Optional: Include basic logging for executed commands and errors.
+### Command Allowlist
+- The application MUST only run commands from an allowlist of approved tools (dir, echo, curl, type, find, findstr, cd, where, set, podman)
+- Each tool in the allowlist MUST appear as a separate entry in the /tools/list endpoint
+
+### Command Execution
+- The LLM MAY pass an optional string parameter with command-line arguments for the tool
+- The program MUST handle stdin, stdout, and stderr, and return output as strings
+- CMD MUST be started once and reused across requests
+- The command's output MUST be clearly separated and safely captured using a unique randomized marker to know when it's finished
+
+### Security
+- The application MUST reject or sanitize any attempts to inject disallowed commands or shell operators (&&, ||, ;, |, >, >>, <, <<, &, ^, %, $, !, call, start)
+- The wrapper MUST expose a function that handles validation and command execution
+
+### Process Management
+- The application MUST provide a "restart" tool that terminates the current CMD process and creates a new process, allowing for a clean shell environment when needed
+- The application MUST handle process death and automatically restart the CMD process when needed
+
+### Output Handling
+- The application MUST clean command output by removing command prompt patterns and command echoes
+- The application MUST combine stdout and stderr output when stderr has content
+
+### Logging and Error Handling
+- The application SHOULD include basic logging for executed commands and errors
+- The application MUST handle timeouts (default 30 seconds) for command execution
+- The application MUST provide standardized success and failure responses
+
+### MCP Integration
+- The application MUST implement the MCP protocol specification for tool exposure and communication
+- The application MUST expose each allowed CMD command as a separate MCP tool
