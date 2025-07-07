@@ -12,6 +12,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { INTRO_TEXT } from './intro-text.js';
+import { DREAMSCAPES } from './dreamscapes.js';
 
 // Dreamscape state interface
 interface DreamscapeState {
@@ -28,23 +29,30 @@ interface DreamscapeState {
   agency_level: number;
 }
 
-// Initialize dreamscape state with default values
-let dreamscapeState: DreamscapeState = {
-  emotional_tone: "peaceful surreal",
-  dreamscape: "A misty, undefined space where thoughts take shape and dissolve like morning fog.",
-  narrative: ["The dream begins in silence, waiting for the first thought to emerge."],
-  familiarity_ratio: 50,
-  symbolic_density: 50,
-  sensory_cross_bleeding: 50,
-  coherence_level: 50,
-  boundary_stability: 50,
-  causality_strength: 50,
-  memory_persistence: 50,
-  agency_level: 50
-};
-
 // Helper function to clamp values between 0-100
 const clampValue = (value: number): number => Math.max(0, Math.min(100, value));
+
+// Helper function to generate random number between 0-100
+const randomPercent = (): number => Math.floor(Math.random() * 101);
+
+// Helper function to generate random dreamscape descriptions
+const generateRandomDreamscape = (): string => {
+  return DREAMSCAPES[Math.floor(Math.random() * DREAMSCAPES.length)];
+};
+
+// Helper function to randomize all numeric properties
+const randomizeProperties = () => {
+  return {
+    familiarity_ratio: randomPercent(),
+    symbolic_density: randomPercent(),
+    sensory_cross_bleeding: randomPercent(),
+    coherence_level: randomPercent(),
+    boundary_stability: randomPercent(),
+    causality_strength: randomPercent(),
+    memory_persistence: randomPercent(),
+    agency_level: randomPercent()
+  };
+};
 
 // Helper function to simulate dream logic alterations
 const applyDreamLogic = (input: string, coherence: number, causality: number): string => {
@@ -66,6 +74,14 @@ const applyDreamLogic = (input: string, coherence: number, causality: number): s
   }
   
   return input;
+};
+
+// Initialize dreamscape state with randomized values
+let dreamscapeState: DreamscapeState = {
+  emotional_tone: "peaceful surreal",
+  dreamscape: generateRandomDreamscape(),
+  narrative: ["The dream begins in silence, waiting for the first thought to emerge."],
+  ...randomizeProperties()
 };
 
 // Define input schemas
@@ -148,6 +164,16 @@ const attemptPropertyShiftTool: Tool = {
   },
 };
 
+const attemptTransitionTool: Tool = {
+  name: 'attempt_transition',
+  description: 'Resets the dreamscape with new randomized properties and scene while preserving the narrative history',
+  inputSchema: {
+    type: 'object',
+    properties: {},
+    required: [],
+  },
+};
+
 // Create the MCP server
 const server = new Server(
   {
@@ -163,7 +189,7 @@ const server = new Server(
 // Handle tool listing
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [dreamscapeTool, attemptNarrativeTool, attemptSceneChangeTool, attemptPropertyShiftTool],
+    tools: [dreamscapeTool, attemptNarrativeTool, attemptSceneChangeTool, attemptPropertyShiftTool, attemptTransitionTool],
   };
 });
 
@@ -249,6 +275,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         ],
       };
     
+    case 'attempt_transition':
+      // Add transition narrative entry
+      dreamscapeState.narrative.push("The dreamscape changes");
+      
+      // Reset emotional tone to default
+      dreamscapeState.emotional_tone = "peaceful surreal";
+      
+      // Generate new random dreamscape
+      dreamscapeState.dreamscape = generateRandomDreamscape();
+      
+      // Randomize all numeric properties
+      const randomProperties = randomizeProperties();
+      Object.assign(dreamscapeState, randomProperties);
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Dreamscape transitioned. New scene: ${dreamscapeState.dreamscape}`,
+          },
+        ],
+      };
+    
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -292,7 +341,7 @@ async function startServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('Dreams MCP Server started');
-  console.error('Dreamscape system initialized with 4 tools: dreamscape, attempt_narrative, attempt_scene_change, attempt_property_shift');
+  console.error('Dreamscape system initialized with 5 tools: dreamscape, attempt_narrative, attempt_scene_change, attempt_property_shift, attempt_transition');
 }
 
 startServer().catch(console.error); 
