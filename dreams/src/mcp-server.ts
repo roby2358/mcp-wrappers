@@ -15,7 +15,9 @@ import { INTRO_TEXT } from './intro-text.js';
 
 // Dreamscape state interface
 interface DreamscapeState {
-  emotional_tone: number;
+  emotional_tone: string;
+  dreamscape: string;
+  narrative: string[];
   familiarity_ratio: number;
   symbolic_density: number;
   sensory_cross_bleeding: number;
@@ -24,13 +26,13 @@ interface DreamscapeState {
   causality_strength: number;
   memory_persistence: number;
   agency_level: number;
-  dreamscape: string;
-  narrative: string[];
 }
 
 // Initialize dreamscape state with default values
 let dreamscapeState: DreamscapeState = {
-  emotional_tone: 50,
+  emotional_tone: "peaceful surreal",
+  dreamscape: "A misty, undefined space where thoughts take shape and dissolve like morning fog.",
+  narrative: ["The dream begins in silence, waiting for the first thought to emerge."],
   familiarity_ratio: 50,
   symbolic_density: 50,
   sensory_cross_bleeding: 50,
@@ -38,9 +40,7 @@ let dreamscapeState: DreamscapeState = {
   boundary_stability: 50,
   causality_strength: 50,
   memory_persistence: 50,
-  agency_level: 50,
-  dreamscape: "A misty, undefined space where thoughts take shape and dissolve like morning fog.",
-  narrative: ["The dream begins in silence, waiting for the first thought to emerge."]
+  agency_level: 50
 };
 
 // Helper function to clamp values between 0-100
