@@ -7,21 +7,20 @@ export interface DreamscapeState {
   emotional_tone: string;
   dreamscape: string;
   narrative: string[];
+  agency_level: number;
+  causality_strength: number;
+  coherence_level: number;
   familiarity_ratio: number;
   symbolic_density: number;
   sensory_cross_bleeding: number;
-  coherence_level: number;
   boundary_stability: number;
-  causality_strength: number;
   memory_persistence: number;
-  agency_level: number;
 }
 
-// Helper function to clamp values between 0-100
-export const clampValue = (value: number): number => Math.max(0, Math.min(100, value));
+// Helper function to generate random number between 0.1-0.9
+export const randomPercent = (): number => Math.random() * 0.6 + 0.2;
 
-// Helper function to generate random number between 0-100
-export const randomPercent = (): number => Math.floor(Math.random() * 100);
+export const clampPercent = (value: number): number => Math.max(0.2, Math.min(0.6, value));
 
 export class Dreamscape {
   private state: DreamscapeState;
@@ -38,15 +37,7 @@ export class Dreamscape {
       ...Dreamscape.randomizeProperties()
     };
     
-    logger.info('Dreamscape initialized', {
-      initial_dreamscape: initialDreamscape,
-      emotional_tone: this.state.emotional_tone,
-      properties: {
-        familiarity_ratio: this.state.familiarity_ratio,
-        agency_level: this.state.agency_level,
-        coherence_level: this.state.coherence_level
-      }
-    });
+    logger.info('Dreamscape initialized', this.state);
   }
 
   // Static helper methods
@@ -61,20 +52,28 @@ export class Dreamscape {
   }
 
   static randomizeProperties() {
+    const al = randomPercent();
+    const ca = randomPercent();
+    const co = randomPercent();
+    const s = Math.cbrt(0.5 / (al * ca * co));
+
+    logger.info("al * ca * co " + (al * ca * co))
+    logger.info("Final product: " + (s * al * s * ca * s * co))
+
     return {
+      agency_level: Math.min(s * al, 0.99999),
+      causality_strength: Math.min(s * ca, 0.99999),
+      coherence_level: Math.min(s * co, 0.99999),
       familiarity_ratio: randomPercent(),
       symbolic_density: randomPercent(),
       sensory_cross_bleeding: randomPercent(),
-      coherence_level: randomPercent(),
       boundary_stability: randomPercent(),
-      causality_strength: randomPercent(),
-      memory_persistence: randomPercent(),
-      agency_level: randomPercent()
+      memory_persistence: randomPercent()
     };
   }
 
   static actionCheck(property: number): number {
-    const threshold = 100 - property;
+    const threshold = 1.0 - property;
     const randomValue = randomPercent();
     
     logger.info('Action check calculation', {
@@ -112,32 +111,7 @@ export class Dreamscape {
       return "Instruction: Describe the opposite occurring and then add that as a narrative.";
     }
     logger.info('Dreamscape resisting change');
-    return "The dreamscape resists your attempt to change it.";
-  }
-
-  static applyDreamLogic(input: string, coherence: number, causality: number): string {
-    // Lower coherence and causality may alter the input
-    const alterationChance = (100 - coherence) * (100 - causality) / 10000;
-    
-    if (Math.random() < alterationChance) {
-      // Apply subtle dream-like alterations
-      const alterations = [
-        (text: string) => text.replace(/\b(I|me|my)\b/g, 'we'),
-        (text: string) => text.replace(/\b(was|were)\b/g, 'might have been'),
-        (text: string) => text.replace(/\b(suddenly|then)\b/g, 'as if in a dream'),
-        (text: string) => text + ' ...or perhaps that was something else entirely',
-        (text: string) => text.replace(/\b(door|window|path)\b/g, 'portal'),
-      ];
-      
-      const randomAlteration = alterations[Math.floor(Math.random() * alterations.length)];
-      return randomAlteration(input);
-    }
-    
-    return input;
-  }
-
-  private applyDreamLogic(input: string): string {
-    return Dreamscape.applyDreamLogic(input, this.state.coherence_level, this.state.causality_strength);
+    return "The dreamscape resists your will to change it.";
   }
 
   // Public methods
@@ -150,22 +124,13 @@ export class Dreamscape {
     
     const agencyCheck = this.agencyCheck();
     if (agencyCheck) {
-      logger.warn('Narrative addition blocked by agency check', { reason: agencyCheck });
+      logger.info('Narrative addition blocked by agency check', { reason: agencyCheck });
       return agencyCheck;
     }
 
-    const alteredNarrative = this.applyDreamLogic(entry);
-    this.state.narrative.push(alteredNarrative);
+    this.state.narrative.push(entry);
     
-    const wasAltered = alteredNarrative !== entry;
-    logger.info('Narrative added to dreamscape', {
-      original: entry,
-      altered: alteredNarrative,
-      was_altered: wasAltered,
-      narrative_count: this.state.narrative.length
-    });
-    
-    return alteredNarrative;
+    return entry;
   }
 
   transitionDreamscape(): string {
