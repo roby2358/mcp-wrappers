@@ -107,28 +107,6 @@ export const changeScene = (newScene: string): string => {
   return alteredScene;
 };
 
-export const shiftProperty = (property: string, direction: 'increase' | 'decrease', reason: string): string => {
-  const validProperties = [
-    'emotional_tone', 'familiarity_ratio', 'symbolic_density', 
-    'sensory_cross_bleeding', 'coherence_level', 'boundary_stability', 
-    'causality_strength', 'memory_persistence', 'agency_level'
-  ];
-  
-  if (!validProperties.includes(property)) {
-    throw new Error(`Invalid property: ${property}. Must be one of: ${validProperties.join(', ')}`);
-  }
-  
-  const currentValue = dreamscapeState[property as keyof DreamscapeState] as number;
-  const shift = Math.floor(Math.random() * 20) + 5; // Random shift between 5-25
-  const newValue = direction === 'increase' 
-    ? clampValue(currentValue + shift)
-    : clampValue(currentValue - shift);
-  
-  (dreamscapeState as any)[property] = newValue;
-  
-  return `Property ${property} ${direction}d from ${currentValue} to ${newValue}. Reason: ${reason}`;
-};
-
 export const transitionDreamscape = (): string => {
   // Add transition narrative entry
   dreamscapeState.narrative.push("The dreamscape shifts and transforms...");

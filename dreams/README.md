@@ -1,48 +1,37 @@
 # Dreams MCP Server
 
-This project provides a TypeScript MCP (Model Context Protocol) server using the official `@modelcontextprotocol/sdk` that implements a dreamscape simulation system with dynamic properties and narrative evolution.
+A mystical TypeScript MCP (Model Context Protocol) server that provides access to a dreamscape crafting system - a fluid, unpredictable realm where dream logic governs reality and narrative evolves through the interplay of consciousness and chaos.
 
-## Features
+## The Dreamscape
 
-The server exposes four main tools that simulate dream-like interactions:
+This server exposes three core tools for crafting and navigating the dream realm:
 
-- **`dreamscape()`** - Returns the complete current dreamscape state
-- **`attempt_narrative(narrative_entry: string)`** - Adds entries to the ongoing narrative (may be altered by dream logic)
-- **`attempt_scene_change(new_scene: string)`** - Attempts to change the dreamscape description
-- **`attempt_property_shift(property: string, direction: "increase"|"decrease", reason: string)`** - Adjusts core dreamscape properties
+- **`dreamscape`** - Reveals the current state of the dreamscape including all properties, scene description, and narrative history
+- **`attempt_narrative`** - Weaves new entries into the ongoing dream story (the dreamscape may alter your words according to its own logic)
+- **`attempt_transition`** - Triggers a complete dreamscape transition with randomized properties while preserving narrative memory
 
-### Dreamscape State Structure
+### The Nine Properties of Dreams
 
-The dreamscape maintains the following state:
+Each dreamscape is governed by nine fundamental properties that shift and flow like the tides of sleep:
 
-```typescript
-{
-  // Core dream properties (0-100 range)
-  emotional_tone: number,
-  familiarity_ratio: number, 
-  symbolic_density: number,
-  sensory_cross_bleeding: number,
-  coherence_level: number,
-  boundary_stability: number,
-  causality_strength: number,
-  memory_persistence: number,
-  agency_level: number,
-  
-  // Scene description
-  dreamscape: string,
-  
-  // Ongoing narrative
-  narrative: string[]
-}
-```
+- **emotional_tone** (string): The overall emotional atmosphere permeating the dream
+- **familiarity_ratio** (0-100): How familiar versus strange the dream feels
+- **symbolic_density** (0-100): How symbolic versus literal dream elements are
+- **sensory_cross_bleeding** (0-100): How much the senses blend and merge
+- **coherence_level** (0-100): How logically consistent the dream remains  
+- **boundary_stability** (0-100): How stable object and space boundaries are
+- **causality_strength** (0-100): How much cause-and-effect applies
+- **memory_persistence** (0-100): How well memories stick and endure
+- **agency_level** (0-100): How much control the dreamer possesses
 
 ### Dream Logic
 
-The system implements dream-like behavior where:
-- Lower `coherence_level` and `causality_strength` increase the chance of input alterations
-- Narrative entries and scene changes may be modified by dream logic
-- Property shifts occur in random increments (5-25 points) within the 0-100 range
-- All changes respect the dreamscape's internal consistency
+The dreamscape will fight you. It follows its own mysterious logic:
+
+- Lower `coherence_level` and `causality_strength` increase the likelihood that your narrative attempts will be altered
+- The dreamscape may transform your words, scenes, and intentions according to its current state
+- Properties shift organically during interactions, creating an ever-evolving dream experience
+- Nothing is guaranteed - the dream decides what becomes real
 
 ## Prerequisites
 
@@ -52,77 +41,56 @@ The system implements dream-like behavior where:
 ## Setup
 
 1. **Install dependencies:**
-   
    ```sh
    npm install
    ```
 
 2. **Build the server:**
-   
    ```sh
    npm run build
    ```
-   This will produce the compiled JavaScript in the `dist/` directory.
 
-3. **Run the server:**
-   
+3. **Start the dreamscape:**
    ```sh
    npm start
    ```
    
    Or for development:
-   
    ```sh
    npm run dev
    ```
 
-## API Reference
+## Tools Reference
 
-### Tools
+### `dreamscape()`
+Reveals the complete current state of the dreamscape - its properties, the scene that manifests, and the accumulated narrative threads.
 
-#### `dreamscape()`
-Returns the complete current dreamscape state including all properties, scene description, and narrative history.
+**Parameters:** None  
+**Returns:** JSON object containing the full dreamscape state
 
-**Parameters:** None
-
-**Returns:** JSON object with the full dreamscape state
-
-#### `attempt_narrative(narrative_entry: string)`
-Adds a new entry to the dream narrative. The entry may be altered by dream logic based on current coherence and causality levels.
+### `attempt_narrative(narrative_entry: string)`
+Attempts to weave a new thread into the dream's ongoing story. The dreamscape may accept your words as-is, or transform them according to its current logic and coherence levels.
 
 **Parameters:**
-- `narrative_entry` (string): The narrative entry to add to the dream story
+- `narrative_entry` (string): Your intended addition to the dream narrative
 
-**Returns:** The narrative entry as it was actually added (potentially altered)
+**Returns:** The narrative entry as it actually manifested in the dream
 
-#### `attempt_scene_change(new_scene: string)`
-Attempts to change the dreamscape scene description. The new scene may be altered by dream logic.
+### `attempt_transition()`
+Triggers a complete dreamscape transition - the current scene dissolves and a new one emerges with freshly randomized properties. The narrative history persists across transitions like memories carried from one dream to the next.
 
-**Parameters:**
-- `new_scene` (string): The new scene description for the dreamscape
-
-**Returns:** The scene description as it was actually set (potentially altered)
-
-#### `attempt_property_shift(property: string, direction: "increase"|"decrease", reason: string)`
-Attempts to adjust one of the nine core dreamscape properties.
-
-**Parameters:**
-- `property` (string): Must be one of: `emotional_tone`, `familiarity_ratio`, `symbolic_density`, `sensory_cross_bleeding`, `coherence_level`, `boundary_stability`, `causality_strength`, `memory_persistence`, `agency_level`
-- `direction` (string): Either `"increase"` or `"decrease"`
-- `reason` (string): The reason for the property change
-
-**Returns:** Description of the property change that occurred
+**Parameters:** None  
+**Returns:** Description of the new dreamscape that has emerged
 
 ## Claude Desktop Configuration
 
-To use this MCP server with Claude Desktop:
+To connect this dreamscape to Claude Desktop, you MUST modify your configuration file:
 
-1. **Locate your Claude Desktop configuration file:**
+1. **Locate your Claude Desktop configuration:**
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 2. **Add the server configuration:**
-   
    ```json
    {
      "mcpServers": {
@@ -135,38 +103,30 @@ To use this MCP server with Claude Desktop:
    }
    ```
 
-3. **Replace the path:**
-   - Update the path in the `args` array with the actual absolute path to your compiled server file in the `dist/` directory
+3. **Update the path** in the `args` array to match your actual installation location
 
-4. **Restart Claude Desktop** for the changes to take effect
+4. **Restart Claude Desktop**
 
-5. **Verify the connection:**
-   - The dreamscape tools should now be available in your Claude Desktop conversations
-   - You can test by asking Claude to check the current dreamscape state
-   - Try adding narrative entries or changing scene descriptions
-   - Experiment with property shifts to see how they affect dream logic
+5. **Begin dreaming** - The tools SHOULD now be available in your conversations
 
-**Note**: Make sure you have built the server (`npm run build`) before configuring Claude Desktop, as it needs the compiled JavaScript file in the `dist/` directory.
+## Entering the Dreamscape
 
-## Usage Examples
+Once connected, you can begin crafting dreams:
 
-Once connected to Claude Desktop, you can interact with the dreamscape:
-
-- "What's the current dreamscape state?"
-- "Add this to the narrative: 'I found myself walking through a forest of crystal trees'"
-- "Change the scene to a vast library with floating books"
-- "Increase the symbolic_density because the dream is becoming more metaphorical"
-- "Decrease the coherence_level to make things more surreal"
+- "What is the current state of the dreamscape?"
+- "Add this to the narrative: 'I found myself walking through a forest of crystal trees that sang in harmonious discord'"
+- "Transition to a new dreamscape"
+- "Continue the story with: 'The boundary between self and sky began to dissolve'"
 
 ## Development
 
-To modify the server:
+To modify the dreamscape crafting system:
 
-1. Edit `src/mcp-server.ts`
-2. Run `npm run build` to compile
+1. Edit files in the `src/` directory
+2. Run `npm run build` to compile your changes
 3. Test with `npm start`
 
-The dreamscape system is designed to be extensible. You can modify the dream logic alterations, add new properties, or implement additional tools as needed.
+The dreamscape system is designed to be mystical yet extensible. You MAY modify the dream logic, add new properties, or implement additional tools - but remember that the dreamscape has its own will.
 
 ## License
 

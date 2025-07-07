@@ -23,8 +23,6 @@ You are interacting with a dream world that has its own logic and physics. The d
 
 3. **attempt_scene_change** - Try to change the current dreamscape scene (may be altered by dream logic)
 
-4. **attempt_property_shift** - Attempt to adjust one of the 9 core properties (increase/decrease with a reason)
-
 Dream logic may alter your attempts based on the current coherence and causality levels - lower values mean more unpredictable changes!
 
 # Tone and Style

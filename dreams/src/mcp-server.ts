@@ -15,7 +15,6 @@ import { INTRO_TEXT } from './intro-text.js';
 import {
   getDreamscapeState,
   addNarrative,
-  shiftProperty,
   transitionDreamscape
 } from './dreamscape.js';
 
@@ -24,11 +23,7 @@ const AttemptNarrativeInputSchema = z.object({
   narrative_entry: z.string().describe('The narrative entry to add to the dream story')
 });
 
-const AttemptPropertyShiftInputSchema = z.object({
-  property: z.string().describe('The property to adjust (must be one of the 9 core properties)'),
-  direction: z.enum(['increase', 'decrease']).describe('Whether to increase or decrease the property'),
-  reason: z.string().describe('The reason for the property change')
-});
+
 
 // Define tools
 const dreamscapeTool: Tool = {
@@ -56,29 +51,7 @@ const attemptNarrativeTool: Tool = {
   },
 };
 
-const attemptPropertyShiftTool: Tool = {
-  name: 'attempt_property_shift',
-  description: 'Attempts to adjust one of the core dreamscape properties',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      property: {
-        type: 'string',
-        description: 'The property to adjust (emotional_tone, familiarity_ratio, symbolic_density, sensory_cross_bleeding, coherence_level, boundary_stability, causality_strength, memory_persistence, agency_level)'
-      },
-      direction: {
-        type: 'string',
-        enum: ['increase', 'decrease'],
-        description: 'Whether to increase or decrease the property'
-      },
-      reason: {
-        type: 'string',
-        description: 'The reason for the property change'
-      }
-    },
-    required: ['property', 'direction', 'reason'],
-  },
-};
+
 
 const attemptTransitionTool: Tool = {
   name: 'attempt_transition',
@@ -105,7 +78,7 @@ const server = new Server(
 // Handle tool listing
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [dreamscapeTool, attemptNarrativeTool, attemptPropertyShiftTool, attemptTransitionTool],
+    tools: [dreamscapeTool, attemptNarrativeTool, attemptTransitionTool],
   };
 });
 
@@ -137,19 +110,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         ],
       };
     
-    case 'attempt_property_shift':
-      const propertyInput = AttemptPropertyShiftInputSchema.parse(args || {});
-      const result = shiftProperty(propertyInput.property, propertyInput.direction, propertyInput.reason);
-      
-      return {
-        content: [
-          {
-            type: 'text',
-            text: result,
-          },
-        ],
-      };
-    
+
     case 'attempt_transition':
       const transitionResult = transitionDreamscape();
       
@@ -205,7 +166,7 @@ async function startServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('Dreams MCP Server started');
-  console.error('Dreamscape system initialized with 4 tools: dreamscape, attempt_narrative, attempt_property_shift, attempt_transition');
+  console.error('Dreamscape system initialized with 4 tools: dreamscape, attempt_narrative, attempt_transition');
 }
 
 startServer().catch(console.error); 
