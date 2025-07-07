@@ -1,5 +1,6 @@
 import { DREAMSCAPES } from './dreamscapes.js';
 import { EMOTIONS } from './emotions.js';
+import { logger } from './logger.js';
 
 // Dreamscape state interface
 export interface DreamscapeState {
@@ -20,33 +21,43 @@ export interface DreamscapeState {
 export const clampValue = (value: number): number => Math.max(0, Math.min(100, value));
 
 // Helper function to generate random number between 0-100
-export const randomPercent = (): number => Math.floor(Math.random() * 101);
+export const randomPercent = (): number => Math.floor(Math.random() * 100);
 
 export class Dreamscape {
   private state: DreamscapeState;
 
   constructor() {
-    const initialDreamscape = this.generateRandomDreamscape();
+    const initialDreamscape = Dreamscape.generateRandomDreamscape();
     this.state = {
-      emotional_tone: this.generateRandomEmotionalTone(),
+      emotional_tone: Dreamscape.generateRandomEmotionalTone(),
       dreamscape: initialDreamscape,
       narrative: [
         "The dream begins in silence, waiting for the first thought to emerge.",
         initialDreamscape
       ],
-      ...this.randomizeProperties()
+      ...Dreamscape.randomizeProperties()
     };
+    
+    logger.info('Dreamscape initialized', {
+      initial_dreamscape: initialDreamscape,
+      emotional_tone: this.state.emotional_tone,
+      properties: {
+        familiarity_ratio: this.state.familiarity_ratio,
+        agency_level: this.state.agency_level,
+        coherence_level: this.state.coherence_level
+      }
+    });
   }
 
   // Static helper methods
+  static generateRandomDreamscape(): string {
+    return DREAMSCAPES[Math.floor(Math.random() * DREAMSCAPES.length)];
+  }
+
   static generateRandomEmotionalTone(): string {
     const emotion1 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
     const emotion2 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
     return `${emotion1} ${emotion2}`;
-  }
-
-  static generateRandomDreamscape(): string {
-    return DREAMSCAPES[Math.floor(Math.random() * DREAMSCAPES.length)];
   }
 
   static randomizeProperties() {
@@ -60,6 +71,48 @@ export class Dreamscape {
       memory_persistence: randomPercent(),
       agency_level: randomPercent()
     };
+  }
+
+  static actionCheck(property: number): number {
+    const threshold = 100 - property;
+    const randomValue = randomPercent();
+    
+    logger.info('Action check calculation', {
+      property,
+      threshold,
+      randomValue,
+      threshold_quarter: threshold / 4
+    });
+    
+    if (randomValue >= threshold) {
+      // Action succeeds
+      return 1;
+    }
+    if (randomValue < threshold / 4) {
+      // Action fails
+      return -1;
+    }
+    // No change
+    return 0;
+  }
+
+  private agencyCheck(): string | undefined {
+    const result = Dreamscape.actionCheck(this.state.agency_level);
+    
+    logger.debug('Agency check performed', {
+      agency_level: this.state.agency_level,
+      result: result === 1 ? 'success' : result === -1 ? 'failure' : 'resistance'
+    });
+    
+    if (result === 1) {
+      return undefined;
+    }
+    if (result === -1) {
+      logger.info('Agency check failed - opposite will occur');
+      return "Instruction: Describe the opposite occurring and then add that as a narrative.";
+    }
+    logger.info('Dreamscape resisting change');
+    return "The dreamscape resists your attempt to change it.";
   }
 
   static applyDreamLogic(input: string, coherence: number, causality: number): string {
@@ -83,19 +136,6 @@ export class Dreamscape {
     return input;
   }
 
-  // Instance helper methods
-  private generateRandomEmotionalTone(): string {
-    return Dreamscape.generateRandomEmotionalTone();
-  }
-
-  private generateRandomDreamscape(): string {
-    return Dreamscape.generateRandomDreamscape();
-  }
-
-  private randomizeProperties() {
-    return Dreamscape.randomizeProperties();
-  }
-
   private applyDreamLogic(input: string): string {
     return Dreamscape.applyDreamLogic(input, this.state.coherence_level, this.state.causality_strength);
   }
@@ -106,36 +146,58 @@ export class Dreamscape {
   }
 
   addNarrative(entry: string): string {
+    logger.info('Attempting to add narrative', { original_entry: entry });
+    
+    const agencyCheck = this.agencyCheck();
+    if (agencyCheck) {
+      logger.warn('Narrative addition blocked by agency check', { reason: agencyCheck });
+      return agencyCheck;
+    }
+
     const alteredNarrative = this.applyDreamLogic(entry);
     this.state.narrative.push(alteredNarrative);
+    
+    const wasAltered = alteredNarrative !== entry;
+    logger.info('Narrative added to dreamscape', {
+      original: entry,
+      altered: alteredNarrative,
+      was_altered: wasAltered,
+      narrative_count: this.state.narrative.length
+    });
+    
     return alteredNarrative;
   }
 
-  changeScene(newScene: string): string {
-    const alteredScene = this.applyDreamLogic(newScene);
-    this.state.dreamscape = alteredScene;
-    // Add the new scene description to the narrative
-    this.state.narrative.push(alteredScene);
-    return alteredScene;
-  }
-
   transitionDreamscape(): string {
-    // Add transition narrative entry
+    logger.info('Attempting dreamscape transition');
+    
+    const agencyCheck = this.agencyCheck();
+    if (agencyCheck) {
+      logger.warn('Dreamscape transition blocked by agency check', { reason: agencyCheck });
+      return agencyCheck;
+    }
+    
+    const oldDreamscape = this.state.dreamscape;
+    const oldEmotionalTone = this.state.emotional_tone;
+    
     this.state.narrative.push("The dreamscape shifts and transforms...");
     
-    // Generate new random emotional tone
-    this.state.emotional_tone = this.generateRandomEmotionalTone();
+    this.state.emotional_tone = Dreamscape.generateRandomEmotionalTone();
     
-    // Generate new random dreamscape
-    const newDreamscape = this.generateRandomDreamscape();
-    this.state.dreamscape = newDreamscape;
-    
-    // Add the new dreamscape description to the narrative
+    const newDreamscape = Dreamscape.generateRandomDreamscape();
+    this.state.dreamscape = newDreamscape;    
     this.state.narrative.push(newDreamscape);
     
-    // Randomize all numeric properties
-    const randomProperties = this.randomizeProperties();
+    const randomProperties = Dreamscape.randomizeProperties();
     Object.assign(this.state, randomProperties);
+    
+    logger.info('Dreamscape transitioned successfully', {
+      old_dreamscape: oldDreamscape,
+      new_dreamscape: newDreamscape,
+      old_emotional_tone: oldEmotionalTone,
+      new_emotional_tone: this.state.emotional_tone,
+      new_properties: randomProperties
+    });
     
     return `Dreamscape transitioned. New scene: ${this.state.dreamscape}`;
   }

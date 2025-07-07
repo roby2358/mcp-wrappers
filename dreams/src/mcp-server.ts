@@ -13,6 +13,11 @@ import {
 import { z } from 'zod';
 import { INTRO_TEXT } from './intro-text.js';
 import { Dreamscape } from './dreamscape.js';
+import { logger, LogLevel } from './logger.js';
+
+// Set log level from environment variable or default to INFO
+const logLevel = (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO;
+logger.setLevel(logLevel);
 
 // Create the dreamscape instance
 const dreamscape = new Dreamscape();
@@ -85,50 +90,83 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
   const { name, arguments: args } = request.params;
   
-  switch (name) {
-    case 'dreamscape':
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(dreamscape.getState(), null, 2),
-          },
-        ],
-      };
-    
-    case 'attempt_narrative':
-      const narrativeInput = AttemptNarrativeInputSchema.parse(args || {});
-      const alteredNarrative = dreamscape.addNarrative(narrativeInput.narrative_entry);
+  logger.info('Tool call received', { tool_name: name, arguments: args });
+  
+  try {
+    switch (name) {
+      case 'dreamscape':
+        const state = dreamscape.getState();
+        logger.info('Dreamscape state retrieved', { 
+          current_scene: state.dreamscape,
+          emotional_tone: state.emotional_tone,
+          narrative_length: state.narrative.length
+        });
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(state, null, 2),
+            },
+          ],
+        };
       
-      return {
-        content: [
-          {
-            type: 'text',
-            text: alteredNarrative,
-          },
-        ],
-      };
-    
+      case 'attempt_narrative':
+        const narrativeInput = AttemptNarrativeInputSchema.parse(args || {});
+        logger.debug('Parsing narrative input', { input: narrativeInput });
+        
+        const alteredNarrative = dreamscape.addNarrative(narrativeInput.narrative_entry);
+        
+        logger.info('Tool call completed successfully', { 
+          tool_name: name,
+          result_length: alteredNarrative.length
+        });
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: alteredNarrative,
+            },
+          ],
+        };
+      
 
-    case 'attempt_transition':
-      const transitionResult = dreamscape.transitionDreamscape();
+      case 'attempt_transition':
+        const transitionResult = dreamscape.transitionDreamscape();
+        
+        logger.info('Tool call completed successfully', { 
+          tool_name: name,
+          result: transitionResult
+        });
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: transitionResult,
+            },
+          ],
+        };
       
-      return {
-        content: [
-          {
-            type: 'text',
-            text: transitionResult,
-          },
-        ],
-      };
-    
-    default:
-      throw new Error(`Unknown tool: ${name}`);
+      default:
+        logger.error('Unknown tool requested', { tool_name: name });
+        throw new Error(`Unknown tool: ${name}`);
+    }
+  } catch (error) {
+    logger.error('Tool call failed', { 
+      tool_name: name, 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
   }
 });
 
 // Handle prompt listing
 server.setRequestHandler(ListPromptsRequestSchema, async () => {
+  logger.debug('Prompt list requested');
+  
   return {
     prompts: [
       {
@@ -142,6 +180,8 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
 
 // Handle prompt requests
 server.setRequestHandler(GetPromptRequestSchema, async (request: GetPromptRequest) => {
+  logger.info('Prompt requested', { prompt_name: request.params.name });
+  
   if (request.params.name === 'intro') {
     return {
       description: 'Introduction prompt for the Dreams MCP wrapper',
@@ -157,15 +197,36 @@ server.setRequestHandler(GetPromptRequestSchema, async (request: GetPromptReques
     };
   }
   
+  logger.error('Unknown prompt requested', { prompt_name: request.params.name });
   throw new Error(`Unknown prompt: ${request.params.name}`);
 });
 
 // Start the server with stdio transport
 async function startServer() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('Dreams MCP Server started');
-  console.error('Dreamscape system initialized with 4 tools: dreamscape, attempt_narrative, attempt_transition');
+  try {
+    logger.info('Starting Dreams MCP Server', { log_level: logLevel });
+    
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    
+    logger.info('Dreams MCP Server started successfully');
+    logger.info('Dreamscape system initialized', { 
+      available_tools: ['dreamscape', 'attempt_narrative', 'attempt_transition'],
+      tool_count: 3
+    });
+  } catch (error) {
+    logger.error('Failed to start server', { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
+  }
 }
 
-startServer().catch(console.error); 
+startServer().catch((error) => {
+  logger.error('Server startup failed', { 
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
+  });
+  process.exit(1);
+}); 
