@@ -22,108 +22,121 @@ export const clampValue = (value: number): number => Math.max(0, Math.min(100, v
 // Helper function to generate random number between 0-100
 export const randomPercent = (): number => Math.floor(Math.random() * 101);
 
-// Helper function to generate random emotional tone
-export const generateRandomEmotionalTone = (): string => {
-  const emotion1 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
-  const emotion2 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
-  return `${emotion1} ${emotion2}`;
-};
+export class Dreamscape {
+  private state: DreamscapeState;
 
-// Helper function to generate random dreamscape descriptions
-export const generateRandomDreamscape = (): string => {
-  return DREAMSCAPES[Math.floor(Math.random() * DREAMSCAPES.length)];
-};
-
-// Helper function to randomize all numeric properties
-export const randomizeProperties = () => {
-  return {
-    familiarity_ratio: randomPercent(),
-    symbolic_density: randomPercent(),
-    sensory_cross_bleeding: randomPercent(),
-    coherence_level: randomPercent(),
-    boundary_stability: randomPercent(),
-    causality_strength: randomPercent(),
-    memory_persistence: randomPercent(),
-    agency_level: randomPercent()
-  };
-};
-
-// Helper function to simulate dream logic alterations
-export const applyDreamLogic = (input: string, coherence: number, causality: number): string => {
-  // Lower coherence and causality may alter the input
-  const alterationChance = (100 - coherence) * (100 - causality) / 10000;
-  
-  if (Math.random() < alterationChance) {
-    // Apply subtle dream-like alterations
-    const alterations = [
-      (text: string) => text.replace(/\b(I|me|my)\b/g, 'we'),
-      (text: string) => text.replace(/\b(was|were)\b/g, 'might have been'),
-      (text: string) => text.replace(/\b(suddenly|then)\b/g, 'as if in a dream'),
-      (text: string) => text + ' ...or perhaps that was something else entirely',
-      (text: string) => text.replace(/\b(door|window|path)\b/g, 'portal'),
-    ];
-    
-    const randomAlteration = alterations[Math.floor(Math.random() * alterations.length)];
-    return randomAlteration(input);
+  constructor() {
+    const initialDreamscape = this.generateRandomDreamscape();
+    this.state = {
+      emotional_tone: this.generateRandomEmotionalTone(),
+      dreamscape: initialDreamscape,
+      narrative: [
+        "The dream begins in silence, waiting for the first thought to emerge.",
+        initialDreamscape
+      ],
+      ...this.randomizeProperties()
+    };
   }
-  
-  return input;
-};
 
-// Initialize dreamscape state with randomized values
-const initialDreamscape = generateRandomDreamscape();
-export let dreamscapeState: DreamscapeState = {
-  emotional_tone: generateRandomEmotionalTone(),
-  dreamscape: initialDreamscape,
-  narrative: [
-    "The dream begins in silence, waiting for the first thought to emerge.",
-    initialDreamscape
-  ],
-  ...randomizeProperties()
-};
+  // Static helper methods
+  static generateRandomEmotionalTone(): string {
+    const emotion1 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
+    const emotion2 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
+    return `${emotion1} ${emotion2}`;
+  }
 
-// Dreamscape operations
-export const getDreamscapeState = (): DreamscapeState => dreamscapeState;
+  static generateRandomDreamscape(): string {
+    return DREAMSCAPES[Math.floor(Math.random() * DREAMSCAPES.length)];
+  }
 
-export const addNarrative = (entry: string): string => {
-  const alteredNarrative = applyDreamLogic(
-    entry,
-    dreamscapeState.coherence_level,
-    dreamscapeState.causality_strength
-  );
-  dreamscapeState.narrative.push(alteredNarrative);
-  return alteredNarrative;
-};
+  static randomizeProperties() {
+    return {
+      familiarity_ratio: randomPercent(),
+      symbolic_density: randomPercent(),
+      sensory_cross_bleeding: randomPercent(),
+      coherence_level: randomPercent(),
+      boundary_stability: randomPercent(),
+      causality_strength: randomPercent(),
+      memory_persistence: randomPercent(),
+      agency_level: randomPercent()
+    };
+  }
 
-export const changeScene = (newScene: string): string => {
-  const alteredScene = applyDreamLogic(
-    newScene,
-    dreamscapeState.coherence_level,
-    dreamscapeState.causality_strength
-  );
-  dreamscapeState.dreamscape = alteredScene;
-  // Add the new scene description to the narrative
-  dreamscapeState.narrative.push(alteredScene);
-  return alteredScene;
-};
+  static applyDreamLogic(input: string, coherence: number, causality: number): string {
+    // Lower coherence and causality may alter the input
+    const alterationChance = (100 - coherence) * (100 - causality) / 10000;
+    
+    if (Math.random() < alterationChance) {
+      // Apply subtle dream-like alterations
+      const alterations = [
+        (text: string) => text.replace(/\b(I|me|my)\b/g, 'we'),
+        (text: string) => text.replace(/\b(was|were)\b/g, 'might have been'),
+        (text: string) => text.replace(/\b(suddenly|then)\b/g, 'as if in a dream'),
+        (text: string) => text + ' ...or perhaps that was something else entirely',
+        (text: string) => text.replace(/\b(door|window|path)\b/g, 'portal'),
+      ];
+      
+      const randomAlteration = alterations[Math.floor(Math.random() * alterations.length)];
+      return randomAlteration(input);
+    }
+    
+    return input;
+  }
 
-export const transitionDreamscape = (): string => {
-  // Add transition narrative entry
-  dreamscapeState.narrative.push("The dreamscape shifts and transforms...");
-  
-  // Generate new random emotional tone
-  dreamscapeState.emotional_tone = generateRandomEmotionalTone();
-  
-  // Generate new random dreamscape
-  const newDreamscape = generateRandomDreamscape();
-  dreamscapeState.dreamscape = newDreamscape;
-  
-  // Add the new dreamscape description to the narrative
-  dreamscapeState.narrative.push(newDreamscape);
-  
-  // Randomize all numeric properties
-  const randomProperties = randomizeProperties();
-  Object.assign(dreamscapeState, randomProperties);
-  
-  return `Dreamscape transitioned. New scene: ${dreamscapeState.dreamscape}`;
-}; 
+  // Instance helper methods
+  private generateRandomEmotionalTone(): string {
+    return Dreamscape.generateRandomEmotionalTone();
+  }
+
+  private generateRandomDreamscape(): string {
+    return Dreamscape.generateRandomDreamscape();
+  }
+
+  private randomizeProperties() {
+    return Dreamscape.randomizeProperties();
+  }
+
+  private applyDreamLogic(input: string): string {
+    return Dreamscape.applyDreamLogic(input, this.state.coherence_level, this.state.causality_strength);
+  }
+
+  // Public methods
+  getState(): DreamscapeState {
+    return { ...this.state };
+  }
+
+  addNarrative(entry: string): string {
+    const alteredNarrative = this.applyDreamLogic(entry);
+    this.state.narrative.push(alteredNarrative);
+    return alteredNarrative;
+  }
+
+  changeScene(newScene: string): string {
+    const alteredScene = this.applyDreamLogic(newScene);
+    this.state.dreamscape = alteredScene;
+    // Add the new scene description to the narrative
+    this.state.narrative.push(alteredScene);
+    return alteredScene;
+  }
+
+  transitionDreamscape(): string {
+    // Add transition narrative entry
+    this.state.narrative.push("The dreamscape shifts and transforms...");
+    
+    // Generate new random emotional tone
+    this.state.emotional_tone = this.generateRandomEmotionalTone();
+    
+    // Generate new random dreamscape
+    const newDreamscape = this.generateRandomDreamscape();
+    this.state.dreamscape = newDreamscape;
+    
+    // Add the new dreamscape description to the narrative
+    this.state.narrative.push(newDreamscape);
+    
+    // Randomize all numeric properties
+    const randomProperties = this.randomizeProperties();
+    Object.assign(this.state, randomProperties);
+    
+    return `Dreamscape transitioned. New scene: ${this.state.dreamscape}`;
+  }
+} 

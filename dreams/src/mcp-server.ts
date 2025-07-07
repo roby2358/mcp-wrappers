@@ -12,11 +12,10 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { INTRO_TEXT } from './intro-text.js';
-import {
-  getDreamscapeState,
-  addNarrative,
-  transitionDreamscape
-} from './dreamscape.js';
+import { Dreamscape } from './dreamscape.js';
+
+// Create the dreamscape instance
+const dreamscape = new Dreamscape();
 
 // Define input schemas
 const AttemptNarrativeInputSchema = z.object({
@@ -92,14 +91,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         content: [
           {
             type: 'text',
-            text: JSON.stringify(getDreamscapeState(), null, 2),
+            text: JSON.stringify(dreamscape.getState(), null, 2),
           },
         ],
       };
     
     case 'attempt_narrative':
       const narrativeInput = AttemptNarrativeInputSchema.parse(args || {});
-      const alteredNarrative = addNarrative(narrativeInput.narrative_entry);
+      const alteredNarrative = dreamscape.addNarrative(narrativeInput.narrative_entry);
       
       return {
         content: [
@@ -112,7 +111,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
     
 
     case 'attempt_transition':
-      const transitionResult = transitionDreamscape();
+      const transitionResult = dreamscape.transitionDreamscape();
       
       return {
         content: [

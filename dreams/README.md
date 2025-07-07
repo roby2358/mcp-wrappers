@@ -111,21 +111,6 @@ To connect this dreamscape to Claude Desktop, you MUST modify your configuration
 
 ## Entering the Dreamscape
 
-Once connected, you can begin crafting dreams:
-
-- "What is the current state of the dreamscape?"
-- "Add this to the narrative: 'I found myself walking through a forest of crystal trees that sang in harmonious discord'"
-- "Transition to a new dreamscape"
-- "Continue the story with: 'The boundary between self and sky began to dissolve'"
-
-## Development
-
-To modify the dreamscape crafting system:
-
-1. Edit files in the `src/` directory
-2. Run `npm run build` to compile your changes
-3. Test with `npm start`
-
 The dreamscape system is designed to be mystical yet extensible. You MAY modify the dream logic, add new properties, or implement additional tools - but remember that the dreamscape has its own will.
 
 ## License
