@@ -166,4 +166,27 @@ export class Dreamscape {
     
     return `Dreamscape transitioned. New scene: ${this.state.dreamscape}`;
   }
+
+  submerge(): string {
+    logger.info('Submerging - starting fresh dreamscape');
+    
+    const newDreamscape = Dreamscape.generateRandomDreamscape();
+    this.state = {
+      emotional_tone: Dreamscape.generateRandomEmotionalTone(),
+      dreamscape: newDreamscape,
+      narrative: [
+        "The dream begins anew, all previous dreams fade into the void.",
+        newDreamscape
+      ],
+      ...Dreamscape.randomizeProperties()
+    };
+    
+    logger.info('Submerge completed successfully', {
+      new_dreamscape: this.state.dreamscape,
+      emotional_tone: this.state.emotional_tone,
+      narrative_length: this.state.narrative.length
+    });
+    
+    return `Submerged into a fresh dreamscape: ${this.state.dreamscape}`;
+  }
 } 

@@ -67,6 +67,19 @@ const attemptTransitionTool: Tool = {
   },
 };
 
+const submergeTool: Tool = {
+  name: 'submerge',
+  description: 'Starts a completely new dreamscape with fresh narrative, clearing all previous dream history',
+  inputSchema: {
+    type: 'object',
+    properties: {},
+    required: [],
+  },
+};
+
+// Collect all tools in an array for easier management
+const allTools = [dreamscapeTool, attemptNarrativeTool, attemptTransitionTool, submergeTool];
+
 // Create the MCP server
 const server = new Server(
   {
@@ -82,7 +95,7 @@ const server = new Server(
 // Handle tool listing
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [dreamscapeTool, attemptNarrativeTool, attemptTransitionTool],
+    tools: allTools,
   };
 });
 
@@ -149,6 +162,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
           ],
         };
       
+      case 'submerge':
+        const submergeResult = dreamscape.submerge();
+        
+        logger.info('Tool call completed successfully', { 
+          tool_name: name,
+          result: submergeResult
+        });
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: submergeResult,
+            },
+          ],
+        };
+      
       default:
         logger.error('Unknown tool requested', { tool_name: name });
         throw new Error(`Unknown tool: ${name}`);
@@ -211,8 +241,8 @@ async function startServer() {
     
     logger.info('Dreams MCP Server started successfully');
     logger.info('Dreamscape system initialized', { 
-      available_tools: ['dreamscape', 'attempt_narrative', 'attempt_transition'],
-      tool_count: 3
+      available_tools: allTools.map(tool => tool.name),
+      tool_count: allTools.length
     });
   } catch (error) {
     logger.error('Failed to start server', { 
