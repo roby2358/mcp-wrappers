@@ -26,15 +26,14 @@ export class Dreamscape {
   private state: DreamscapeState;
 
   constructor() {
-    const initialDreamscape = Dreamscape.generateRandomDreamscape();
     this.state = {
-      emotional_tone: Dreamscape.generateRandomEmotionalTone(),
-      dreamscape: initialDreamscape,
+      emotional_tone: "neutral calm",
+      dreamscape: "You are drowsy, ready to submerge into the dreamscape.",
       narrative: [
-        "The dream begins in silence, waiting for the first thought to emerge.",
-        initialDreamscape
+        "You find yourself in the plain, ordinary waking world.",
+        "You are drowsy, ready to submerge into the dreamscape."
       ],
-      ...Dreamscape.randomizeProperties()
+      ...Dreamscape.wakingWorldProperties()
     };
     
     logger.info('Dreamscape initialized', this.state);
@@ -49,6 +48,19 @@ export class Dreamscape {
     const emotion1 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
     const emotion2 = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
     return `${emotion1} ${emotion2}`;
+  }
+
+  static wakingWorldProperties() {
+    return {
+      agency_level: 0.8,
+      causality_strength: 0.8,
+      coherence_level: 0.8,
+      familiarity_ratio: 0.8,
+      symbolic_density: 0.2,
+      sensory_cross_bleeding: 0.2,
+      boundary_stability: 0.8,
+      memory_persistence: 0.8
+    };
   }
 
   static randomizeProperties() {
@@ -72,7 +84,7 @@ export class Dreamscape {
     };
   }
 
-  static actionCheck(property: number): number {
+  static actionCheck(property: number, failure: string, alternate: string): string | undefined {
     const threshold = 1.0 - property;
     const randomValue = randomPercent();
     
@@ -80,38 +92,81 @@ export class Dreamscape {
       property,
       threshold,
       randomValue,
-      threshold_quarter: threshold / 4
+      threshold_quarter: threshold / 4,
+      failure,
+      alternate
     });
     
-    if (randomValue >= threshold) {
-      // Action succeeds
-      return 1;
-    }
     if (randomValue < threshold / 4) {
       // Action fails
-      return -1;
+      return failure;
     }
-    // No change
-    return 0;
+    if (randomValue < threshold) {
+      // Action succeeds
+      return alternate;
+    }
+    // Resistance
+    return undefined;
   }
 
-  private agencyCheck(): string | undefined {
-    const result = Dreamscape.actionCheck(this.state.agency_level);
+  private checkAllProperties(alternate: string, opposite: string, recede: string): string | undefined {
+    const agencyResult = Dreamscape.actionCheck(
+      this.state.agency_level, 
+      "The dreamscape resists your will.", 
+      recede
+    );
+    if (agencyResult) {
+      logger.info('Agency check produced', { used_entry: agencyResult });
+      this.state.narrative.push(agencyResult);
+      return agencyResult;
+    }
     
-    logger.debug('Agency check performed', {
-      agency_level: this.state.agency_level,
-      result: result === 1 ? 'success' : result === -1 ? 'failure' : 'resistance'
+    const causalityResult = Dreamscape.actionCheck(
+      this.state.causality_strength, 
+      "The dreamscape is unaffected.",
+      alternate
+    );
+    if (causalityResult) {
+      logger.info('Causality check produced', { used_entry: causalityResult });
+      this.state.narrative.push(causalityResult);
+      return causalityResult;
+    }
+    
+    const coherenceResult = Dreamscape.actionCheck(
+      this.state.coherence_level, 
+      "The dreamscape does not follow.", 
+      opposite
+    );
+    if (coherenceResult) {
+      logger.info('Coherence check produced', { used_entry: coherenceResult });
+      this.state.narrative.push(coherenceResult);
+      return coherenceResult;
+    }
+
+    return undefined;
+  }
+
+  submerge(): DreamscapeState {
+    logger.info('Submerging - starting fresh dreamscape');
+    
+    const newDreamscape = Dreamscape.generateRandomDreamscape();
+    this.state = {
+      emotional_tone: Dreamscape.generateRandomEmotionalTone(),
+      dreamscape: newDreamscape,
+      narrative: [
+        "The dream begins in silence, waiting for the first thought to emerge.",
+        newDreamscape
+      ],
+      ...Dreamscape.randomizeProperties()
+    };
+    
+    logger.info('Submerge completed successfully', {
+      new_dreamscape: this.state.dreamscape,
+      emotional_tone: this.state.emotional_tone,
+      narrative_length: this.state.narrative.length
     });
     
-    if (result === 1) {
-      return undefined;
-    }
-    if (result === -1) {
-      logger.info('Agency check failed - opposite will occur');
-      return "Instruction: Describe the opposite occurring and then add that as a narrative.";
-    }
-    logger.info('Dreamscape resisting change');
-    return "The dreamscape resists your will to change it.";
+    return { ...this.state };
   }
 
   // Public methods
@@ -119,31 +174,35 @@ export class Dreamscape {
     return { ...this.state };
   }
 
-  addNarrative(entry: string): string {
-    logger.info('Attempting to add narrative', { original_entry: entry });
+  addNarrative(entry: string, alternate: string, opposite: string, recede: string): string {
+    logger.info('Attempting to add narrative', { 
+      original_entry: entry,
+      alternate_entry: alternate,
+      opposite_entry: opposite,
+      recede_entry: recede
+    });
     
-    const agencyCheck = this.agencyCheck();
-    if (agencyCheck) {
-      logger.info('Narrative addition blocked by agency check', { reason: agencyCheck });
-      return agencyCheck;
+    const propertyResult = this.checkAllProperties(alternate, opposite, recede);
+    if (propertyResult) {
+      return propertyResult;
     }
 
     this.state.narrative.push(entry);
-    
     return entry;
   }
 
-  transitionDreamscape(): string {
+  transitionDreamscape(alternate: string, opposite: string, recede: string): string {
     logger.info('Attempting dreamscape transition');
     
-    const agencyCheck = this.agencyCheck();
-    if (agencyCheck) {
-      logger.warn('Dreamscape transition blocked by agency check', { reason: agencyCheck });
-      return agencyCheck;
+    const propertyResult = this.checkAllProperties(alternate, opposite, recede);
+    if (propertyResult) {
+      return propertyResult;
     }
     
-    const oldDreamscape = this.state.dreamscape;
-    const oldEmotionalTone = this.state.emotional_tone;
+    logger.info('Dreamscape transition starting', {
+      current_dreamscape: this.state.dreamscape,
+      current_emotional_tone: this.state.emotional_tone
+    });
     
     this.state.narrative.push("The dreamscape shifts and transforms...");
     
@@ -156,37 +215,12 @@ export class Dreamscape {
     const randomProperties = Dreamscape.randomizeProperties();
     Object.assign(this.state, randomProperties);
     
-    logger.info('Dreamscape transitioned successfully', {
-      old_dreamscape: oldDreamscape,
-      new_dreamscape: newDreamscape,
-      old_emotional_tone: oldEmotionalTone,
+    logger.info('Dreamscape transition completed', {
+      new_dreamscape: this.state.dreamscape,
       new_emotional_tone: this.state.emotional_tone,
       new_properties: randomProperties
     });
     
     return `Dreamscape transitioned. New scene: ${this.state.dreamscape}`;
-  }
-
-  submerge(): string {
-    logger.info('Submerging - starting fresh dreamscape');
-    
-    const newDreamscape = Dreamscape.generateRandomDreamscape();
-    this.state = {
-      emotional_tone: Dreamscape.generateRandomEmotionalTone(),
-      dreamscape: newDreamscape,
-      narrative: [
-        "The dream begins anew, all previous dreams fade into the void.",
-        newDreamscape
-      ],
-      ...Dreamscape.randomizeProperties()
-    };
-    
-    logger.info('Submerge completed successfully', {
-      new_dreamscape: this.state.dreamscape,
-      emotional_tone: this.state.emotional_tone,
-      narrative_length: this.state.narrative.length
-    });
-    
-    return `Submerged into a fresh dreamscape: ${this.state.dreamscape}`;
   }
 } 

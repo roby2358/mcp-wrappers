@@ -24,9 +24,17 @@ const dreamscape = new Dreamscape();
 
 // Define input schemas
 const AttemptNarrativeInputSchema = z.object({
-  narrative_entry: z.string().describe('The narrative entry to add to the dream story')
+  narrative_entry: z.string().describe('The narrative entry to add to the dream story'),
+  alternate_entry: z.string().describe('An alternate narrative guided by the emotions of the dream'),
+  opposite_entry: z.string().describe('The opposite of what was intended to happen'),
+  recede_entry: z.string().describe('The entry receding and becoming harder to achieve')
 });
 
+const AttemptTransitionInputSchema = z.object({
+  alternate_entry: z.string().describe('An alternate transition guided by the emotions of the dream'),
+  opposite_entry: z.string().describe('The opposite of what was intended to happen during transition'),
+  recede_entry: z.string().describe('The transition receding and becoming harder to achieve')
+});
 
 
 // Define tools
@@ -49,21 +57,44 @@ const attemptNarrativeTool: Tool = {
       narrative_entry: {
         type: 'string',
         description: 'The narrative entry to add to the dream story'
+      },
+      alternate_entry: {
+        type: 'string',
+        description: 'An alternate narrative guided by the emotions of the dream'
+      },
+      opposite_entry: {
+        type: 'string',
+        description: 'The opposite of what was intended to happen'
+      },
+      recede_entry: {
+        type: 'string',
+        description: 'The entry receding and becoming harder to achieve'
       }
     },
-    required: ['narrative_entry'],
+    required: ['narrative_entry', 'alternate_entry', 'opposite_entry', 'recede_entry'],
   },
 };
-
-
 
 const attemptTransitionTool: Tool = {
   name: 'attempt_transition',
   description: 'Resets the dreamscape with new randomized properties and scene while preserving the narrative history',
   inputSchema: {
     type: 'object',
-    properties: {},
-    required: [],
+    properties: {
+      alternate_entry: {
+        type: 'string',
+        description: 'An alternate transition guided by the emotions of the dream'
+      },
+      opposite_entry: {
+        type: 'string',
+        description: 'The opposite of what was intended to happen during transition'
+      },
+      recede_entry: {
+        type: 'string',
+        description: 'The transition receding and becoming harder to achieve'
+      }
+    },
+    required: ['alternate_entry', 'opposite_entry', 'recede_entry'],
   },
 };
 
@@ -107,6 +138,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
   
   try {
     switch (name) {
+      case 'submerge':
+        const submergeResult = dreamscape.submerge();
+        
+        logger.info('Tool call completed successfully', { 
+          tool_name: name,
+          new_dreamscape: submergeResult.dreamscape,
+          emotional_tone: submergeResult.emotional_tone
+        });
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(submergeResult, null, 2),
+            },
+          ],
+        };
+
       case 'dreamscape':
         const state = dreamscape.getState();
         logger.info('Dreamscape state retrieved', { 
@@ -128,7 +177,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         const narrativeInput = AttemptNarrativeInputSchema.parse(args || {});
         logger.debug('Parsing narrative input', { input: narrativeInput });
         
-        const alteredNarrative = dreamscape.addNarrative(narrativeInput.narrative_entry);
+        const alteredNarrative = dreamscape.addNarrative(
+          narrativeInput.narrative_entry,
+          narrativeInput.alternate_entry,
+          narrativeInput.opposite_entry,
+          narrativeInput.recede_entry
+        );
         
         logger.info('Tool call completed successfully', { 
           tool_name: name,
@@ -146,7 +200,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       
 
       case 'attempt_transition':
-        const transitionResult = dreamscape.transitionDreamscape();
+        const transitionInput = AttemptTransitionInputSchema.parse(args || {});
+        logger.debug('Parsing transition input', { input: transitionInput });
+        const transitionResult = dreamscape.transitionDreamscape(
+          transitionInput.alternate_entry,
+          transitionInput.opposite_entry,
+          transitionInput.recede_entry
+        );
         
         logger.info('Tool call completed successfully', { 
           tool_name: name,
@@ -158,23 +218,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
             {
               type: 'text',
               text: transitionResult,
-            },
-          ],
-        };
-      
-      case 'submerge':
-        const submergeResult = dreamscape.submerge();
-        
-        logger.info('Tool call completed successfully', { 
-          tool_name: name,
-          result: submergeResult
-        });
-        
-        return {
-          content: [
-            {
-              type: 'text',
-              text: submergeResult,
             },
           ],
         };
