@@ -39,7 +39,6 @@ ALLOWED_COMMANDS = [
     "dir",
     "echo",
     "curl",
-    "type",
     "find",
     "findstr",
     "cd",
@@ -325,10 +324,31 @@ async def restart() -> Dict[str, Any]:
         return mcp_failure(f"Error restarting CMD shell: {str(e)}")
 
 @mcp.tool()
+async def read_into_context(filename: str) -> Dict[str, Any]:
+    """Read and display a file's contents without character limits."""
+    try:
+        # Validate filename to prevent directory traversal
+        if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
+            return mcp_failure("Error: Invalid filename")
+        
+        # Read file directly in Python to bypass CMD character limits
+        with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        
+        return mcp_success(content)
+    except FileNotFoundError:
+        return mcp_failure(f"Error: File '{filename}' not found")
+    except PermissionError:
+        return mcp_failure(f"Error: Permission denied accessing '{filename}'")
+    except Exception as e:
+        logger.error(f"Error reading file '{filename}': {str(e)}")
+        return mcp_failure(f"Error reading file: {str(e)}")
+
+@mcp.tool()
 async def list_cmd_shell_tools() -> Dict[str, Any]:
     """List all available tools."""
     try:
-        all_tools = ALLOWED_COMMANDS + ["restart"]
+        all_tools = ALLOWED_COMMANDS + ["restart", "read_into_context"]
         return mcp_success(all_tools)
     except Exception as e:
         return mcp_failure(f"Error listing tools: {str(e)}")
