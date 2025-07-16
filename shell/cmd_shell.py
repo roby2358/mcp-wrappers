@@ -128,11 +128,6 @@ async def restart() -> Dict[str, Any]:
 async def read_into_context(filename: str) -> Dict[str, Any]:
     """Read and display a file's contents without character limits."""
     try:
-        # Validate filename to prevent directory traversal
-        if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
-            return mcp_failure("Error: Invalid filename")
-        
-        # Read file directly in Python to bypass CMD character limits
         with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
