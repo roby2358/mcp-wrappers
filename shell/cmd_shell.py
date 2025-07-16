@@ -77,6 +77,8 @@ For example, to list files in the current directory: dir(arguments="/w")
 Shell operators (&&, ;, |, etc.) are not allowed and will be rejected.
 
 You can also use the 'restart' tool to restart the CMD shell if needed.
+
+Remember it's a cmd shell, so use Windows syntax.
 """
 
 async def _execute_cmd_command(command: str, arguments: str = "") -> Dict[str, Any]:
@@ -128,7 +130,10 @@ async def restart() -> Dict[str, Any]:
 async def read_into_context(filename: str) -> Dict[str, Any]:
     """Read and display a file's contents without character limits."""
     try:
-        with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+        current_dir = await shell.cwd()
+        full_path = f"{current_dir}\\{filename}"
+        
+        with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
         return mcp_success(content)
