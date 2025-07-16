@@ -149,10 +149,33 @@ async def read_into_context(filename: str) -> Dict[str, Any]:
 async def list_cmd_shell_tools() -> Dict[str, Any]:
     """List all available tools."""
     try:
-        all_tools = ALLOWED_COMMANDS + ["restart", "read_into_context"]
+        all_tools = ALLOWED_COMMANDS + ["restart", "read_into_context", "cmd_shell_transcript"]
         return mcp_success(all_tools)
     except Exception as e:
         return mcp_failure(f"Error listing tools: {str(e)}")
+
+@mcp.tool()
+async def cmd_shell_transcript() -> Dict[str, Any]:
+    """Get the transcript of the last 8000 characters from the CMD shell output."""
+    try:
+        # Get transcript from both stdout and stderr readers
+        stdout_transcript = shell.stdout_reader.get_transcript()
+        stderr_transcript = shell.stderr_reader.get_transcript()
+        
+        # Combine the transcripts
+        combined_transcript = ""
+        if stdout_transcript:
+            combined_transcript += f"STDOUT:\n{stdout_transcript}\n"
+        if stderr_transcript:
+            combined_transcript += f"STDERR:\n{stderr_transcript}\n"
+        
+        if not combined_transcript:
+            combined_transcript = "No transcript available yet."
+        
+        return mcp_success(combined_transcript)
+    except Exception as e:
+        logger.error(f"Error getting transcript: {str(e)}")
+        return mcp_failure(f"Error getting transcript: {str(e)}")
 
 def main():
     """Entry point for the application."""
