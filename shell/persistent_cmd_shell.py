@@ -171,4 +171,8 @@ class PersistentCmdShell:
             
         except Exception as e:
             logger.error(f"Error executing command: {str(e)}")
-            return f"Error: {str(e)}" 
+            return f"Error: {str(e)}"
+    
+    async def cwd(self, timeout=10):
+        """Get the current working directory."""
+        return await self.execute_command("cd", timeout) 
