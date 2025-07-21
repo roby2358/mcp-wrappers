@@ -8,6 +8,29 @@ This specification outlines the design, structure, and operational requirements 
 
 ---
 
+## Project structure
+
+vecbook/
+├── vecbook.py              # Main entry point (rename from veeebook.py)
+├── vecbook.toml            # Configuration file (required by spec)
+├── requirements.txt         # Dependencies
+├── README.md               # Project documentation
+├── SPEC.md                 # Specification (already exists)
+├── data/                   # Data directory (required by spec)
+│   └── .gitkeep           # Ensure directory exists
+├── samples/                # Sample data and tests (required by spec)
+│   ├── sample1.txt        # Example data files
+│   └── sample2.txt
+└── src/
+├── __init__.py
+├── mcp.py   # MCP server implementation
+└── vecx/           # Module for vector handling (vecx)
+│   ├── __init__.py
+│   ├── config.py       # Configuration handling
+│   ├── parser.py       # Record parsing
+│   ├── indexer.py      # Embedding and indexing
+│   ├── search.py       # Search functionality
+
 ## Configuration
 
 * All configuration files **MUST** be in TOML format
@@ -32,6 +55,7 @@ This specification outlines the design, structure, and operational requirements 
   * `query` (string, required): Natural language search query
   * `max_results` (integer, optional): Maximum number of results to return
 * `reindex` - Rebuild the vector index from all data files
+  * `path` (string, optional): path to the new data directory
 * `stats` - Return indexing statistics
 
 ## Startup Behavior
@@ -78,7 +102,7 @@ This specification outlines the design, structure, and operational requirements 
 * The index **MUST** support top-K queries by cosine or L2 similarity
 * Index entries **MUST** maintain a mapping to:
   * Source file path (relative to data directory)
-  * Record position as line number where record starts (1-indexed)
+  * Record position as byte offset where record starts
   * Original record text for retrieval
 
 ---
@@ -92,7 +116,7 @@ This specification outlines the design, structure, and operational requirements 
 * Results **MUST** return:
   * `text`: The matched record's full text (excluding metadata)
   * `file_path`: Source file path relative to data directory
-  * `line_number`: Line number where record starts (1-indexed)
+  * `byte_offset`: Byte offset where record starts in the file
   * `similarity_score`: Float between 0.0 and 1.0, formatted as "0.000000"
   * `metadata`: Parsed metadata as key-value pairs (if present)
 * Results **MUST** be sorted by similarity score (highest first)

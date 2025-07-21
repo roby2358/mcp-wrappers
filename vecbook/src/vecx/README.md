@@ -1,0 +1,1 @@
+This directory holds the file with the vector indexing and search logic
