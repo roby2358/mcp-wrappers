@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import sys
+import yaml
 from pathlib import Path
 from typing import Dict, Any
 
@@ -27,9 +28,13 @@ class AtprotoWrapper:
         self.config_path = None
 
         if os.name == 'nt':
-            self.config_path = Path(os.environ.get('APPDATA', Path.home())) / "atproto" / "credentials.json"
+            self.config_path = Path(os.environ.get('APPDATA', Path.home())) / "atproto" / "credentials.yaml"
         else:
-            self.config_path = Path.home() / ".atproto" / "credentials.json"
+            self.config_path = Path.home() / ".atproto" / "credentials.yaml"
+
+    def clean_to_ascii(self, text: str) -> str:
+        """Keep only visible ASCII characters (32-126)."""
+        return ''.join(char for char in text if 32 <= ord(char) <= 126).strip()
 
 
     @staticmethod
@@ -54,23 +59,45 @@ class AtprotoWrapper:
     def load_credentials(self) -> Dict[str, Any]:
         """Load credentials from config file."""
         if not self.config_path.exists():
-            return self.mcp_failure(f"No credentials file found at {self.config_path}")
+            return self.mcp_failure(f"No credentials file found at {self.config_path} run {SETUP_COMMAND}")
         
         try:
             with open(self.config_path, 'r') as f:
-                creds = json.load(f)
-                return self.mcp_success(creds)
+                data = yaml.safe_load(f)
+                # Extract credentials from the bluesky section
+                if 'bluesky' in data and isinstance(data['bluesky'], dict):
+                    creds = data['bluesky']
+                    return self.mcp_success(creds)
+                else:
+                    return self.mcp_failure("Invalid YAML format: missing 'bluesky' section")
         except Exception as e:
             return self.mcp_failure(f"Error loading credentials: {e}")
 
     def save_credentials(self, username: str, password: str) -> bool:
         """Save credentials to config file."""
         try:
+            # Debug: Print what we received
+            print(f"DEBUG: Raw username received: {repr(username)}", file=sys.stderr)
+            
+            # Clean to visible ASCII only
+            clean_username = self.clean_to_ascii(username)
+            clean_password = self.clean_to_ascii(password)
+            
+            print(f"DEBUG: Cleaned username: {repr(clean_username)}", file=sys.stderr)
+            
             # Create directory if it doesn't exist
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
             
+            # Create YAML structure
+            data = {
+                "bluesky": {
+                    "username": clean_username,
+                    "password": clean_password
+                }
+            }
+            
             with open(self.config_path, 'w') as f:
-                json.dump({"username": username, "password": password}, f, indent=2)
+                yaml.dump(data, f, default_flow_style=False, indent=2)
             
             if os.name != 'nt':
                 self.config_path.chmod(0o600)
@@ -109,7 +136,6 @@ class AtprotoWrapper:
         if not auth["success"]:
             return auth
 
-        # Validate message
         if not message:
             return self.mcp_failure("No message provided")
         
@@ -117,17 +143,14 @@ class AtprotoWrapper:
             return self.mcp_failure(f"Message too long at {len(message)} characters. Max {MAX_MESSAGE_LENGTH} characters.")
         
         try:
-            # Send the post to bluesky
             post_ref = self.client.send_post(text=message)
             return self.mcp_success(f"Posted successfully! URI: {post_ref.uri}")
         except Exception as e:
             return self.mcp_failure(f"Failed to post: {str(e)}")
 
 
-# Create wrapper instance
 wrapper = AtprotoWrapper()
 
-# MCP Server
 mcp = FastMCP("atproto-wrapper")
 
 
@@ -180,12 +203,6 @@ def main():
             sys.exit(1)
     
     print("Starting Atproto MCP Server...", file=sys.stderr)
-    creds_result = wrapper.load_credentials()
-    if not creds_result["success"]:
-        print(f"No saved credentials. Set up using: {SETUP_COMMAND}", file=sys.stderr)
-    else:
-        wrapper.credentials = creds_result["result"]
-    
     mcp.run()
 
 
