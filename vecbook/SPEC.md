@@ -8,28 +8,30 @@ This specification outlines the design, structure, and operational requirements 
 
 ---
 
-## Project structure
+## Project Structure
 
+```
 vecbook/
-├── vecbook.py              # Main entry point (rename from veeebook.py)
-├── vecbook.toml            # Configuration file (required by spec)
+├── vecbook.py              # Main entry point
+├── vecbook.toml            # Configuration file
 ├── requirements.txt         # Dependencies
 ├── README.md               # Project documentation
-├── SPEC.md                 # Specification (already exists)
-├── data/                   # Data directory (required by spec)
+├── SPEC.md                 # Specification
+├── data/                   # Data directory
 │   └── .gitkeep           # Ensure directory exists
-├── samples/                # Sample data and tests (required by spec)
+├── samples/                # Sample data and tests
 │   ├── sample1.txt        # Example data files
 │   └── sample2.txt
 └── src/
-├── __init__.py
-├── mcp.py   # MCP server implementation
-└── vecx/           # Module for vector handling (vecx)
-│   ├── __init__.py
-│   ├── config.py       # Configuration handling
-│   ├── parser.py       # Record parsing
-│   ├── indexer.py      # Embedding and indexing
-│   ├── search.py       # Search functionality
+    ├── __init__.py
+    ├── mcp.py              # MCP server implementation
+    └── vecx/               # Vector handling module
+        ├── __init__.py
+        ├── config.py       # Configuration handling
+        ├── parser.py       # Record parsing
+        ├── indexer.py      # Embedding and indexing
+        └── search.py       # Search functionality
+```
 
 ## Configuration
 
