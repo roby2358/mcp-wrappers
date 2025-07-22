@@ -38,7 +38,7 @@ dev = [
 ]
 
 [project.scripts]
-vecbook = "src.vecbook:main"
+vecbook = "vecbook:main"
 
 [project.urls]
 Homepage = "https://github.com/your-username/vecbook"
@@ -58,3 +58,8 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"] 
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]
