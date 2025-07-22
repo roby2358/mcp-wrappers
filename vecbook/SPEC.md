@@ -14,23 +14,30 @@ This specification outlines the design, structure, and operational requirements 
 vecbook/
 ├── vecbook.py              # Main entry point
 ├── vecbook.toml            # Configuration file
-├── requirements.txt         # Dependencies
+├── pyproject.toml          # Project configuration and dependencies
+├── requirements.txt        # Dependencies
+├── uv.lock                 # Lock file for dependencies
 ├── README.md               # Project documentation
 ├── SPEC.md                 # Specification
+├── LICENSE                 # License file
 ├── data/                   # Data directory
-│   └── .gitkeep           # Ensure directory exists
+│   ├── sample1.txt        # Sample data files
+│   └── sample2.txt
 ├── samples/                # Sample data and tests
 │   ├── sample1.txt        # Example data files
 │   └── sample2.txt
+├── resources/              # Additional resources
+│   └── intro.txt          # Introduction text
 └── src/
     ├── __init__.py
-    ├── mcp.py              # MCP server implementation
+    ├── mcp_wrapper.py      # MCP server implementation
+    ├── textrec/            # Text record handling module
+    │   ├── __init__.py
+    │   └── text_records.py # Text record parsing and management
     └── vecx/               # Vector handling module
         ├── __init__.py
-        ├── config.py       # Configuration handling
-        ├── parser.py       # Record parsing
-        ├── indexer.py      # Embedding and indexing
-        └── search.py       # Search functionality
+        ├── README.md       # Module documentation
+        └── vecbook_index.py # Vector indexing and search functionality
 ```
 
 ## Configuration
