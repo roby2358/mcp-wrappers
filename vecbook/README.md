@@ -37,6 +37,13 @@ A lightweight, local-first vector database built on plain `.txt` files. Provides
    uv run python vecbook.py
    ```
 
+### Testing
+
+```bash
+uv add pytest --dev
+uv run python -m unittest discover tests -v
+```
+
 ## Configuration
 
 The system uses `vecbook.toml` for configuration:
