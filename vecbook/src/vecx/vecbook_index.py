@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class VecBookIndex:
     """Manages the vector index and document storage"""
     
-    def __init__(self, script_dir: Path, data_directory: str = "data", max_results: int = 10, 
+    def __init__(self, path: Path, max_results: int = 10, 
                  embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2", 
                  similarity_metric: str = "cosine"):
         self.max_results = max_results
@@ -26,8 +26,7 @@ class VecBookIndex:
         self.similarity_metric = similarity_metric
         
         # Use TextRecords for file handling
-        data_path = script_dir / data_directory
-        self.text_records = TextRecords(data_path)
+        self.text_records = TextRecords(path)
         
         # Placeholder for vector index (will be implemented later)
         self.index = None

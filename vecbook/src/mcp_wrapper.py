@@ -38,9 +38,9 @@ def load_config() -> Dict[str, Any]:
 
 # Load config and initialize index
 config = load_config()
+data_path = get_script_dir() / config.get("data_directory", "data")
 index = VecBookIndex(
-    script_dir=get_script_dir(),
-    data_directory=config.get("data_directory", "data"),
+    path=data_path,
     max_results=config.get("max_results", 10),
     embedding_model=config.get("embedding_model", "sentence-transformers/all-MiniLM-L6-v2"),
     similarity_metric=config.get("similarity_metric", "cosine")
