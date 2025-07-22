@@ -6,13 +6,11 @@ Provides tools for semantic search over vector-indexed documents
 import json
 import logging
 import sys
+import toml
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from mcp.server.fastmcp import FastMCP
-
-# Create the MCP server instance
-mcp = FastMCP("vecbook")
 
 # Initialize logging to stderr
 logging.basicConfig(level=logging.INFO, stream=sys.stderr)
@@ -21,21 +19,21 @@ logger = logging.getLogger(__name__)
 class VecBookIndex:
     """Manages the vector index and document storage"""
     
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        # Resolve data directory relative to script location
-        data_dir_name = config.get("data_directory", "data")
-        self.data_directory = self._get_script_dir() / data_dir_name
-        self.data_dir = self.data_directory
+    def __init__(self, script_dir: Path, data_directory: str = "data", max_results: int = 10, 
+                 embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2", 
+                 similarity_metric: str = "cosine"):
+        # Resolve data directory relative to script directory
+        self.script_dir = script_dir
+        self.data_path = self.script_dir / data_directory
         
         # Debug logging for path resolution
-        logger.info(f"Script directory: {self._get_script_dir()}")
-        logger.info(f"Data directory: {self.data_directory}")
-        logger.info(f"Data directory exists: {self.data_directory.exists()}")
+        logger.info(f"Script directory: {self.script_dir}")
+        logger.info(f"Data directory: {self.data_path}")
+        logger.info(f"Data directory exists: {self.data_path.exists()}")
         
-        self.max_results = config.get("max_results", 10)
-        self.embedding_model = config.get("embedding_model", "sentence-transformers/all-MiniLM-L6-v2")
-        self.similarity_metric = config.get("similarity_metric", "cosine")
+        self.max_results = max_results
+        self.embedding_model = embedding_model
+        self.similarity_metric = similarity_metric
         
         # Placeholder for vector index (will be implemented later)
         self.index = None
@@ -45,13 +43,38 @@ class VecBookIndex:
             "total_files": 0,
             "indexed_at": None
         }
-    
-    def _get_script_dir(self) -> Path:
-        """Get the script directory (parent of the src directory)"""
-        return Path(__file__).parent.parent
 
-# Global index instance
-index = VecBookIndex({})
+def get_script_dir() -> Path:
+    """Get the script directory (parent of the src directory)"""
+    return Path(__file__).parent.parent
+
+def load_config() -> Dict[str, Any]:
+    """Load configuration from vecbook.toml or return defaults"""
+    config_path = get_script_dir() / "vecbook.toml"
+    config = {}
+    
+    if config_path.exists():
+        try:
+            config = toml.load(config_path)
+        except Exception as e:
+            print(f"Error loading config: {e}, using defaults", file=sys.stderr)
+    else:
+        print("Warning: vecbook.toml not found, using defaults", file=sys.stderr)
+    
+    return config
+
+# Load config and initialize index
+config = load_config()
+index = VecBookIndex(
+    script_dir=get_script_dir(),
+    data_directory=config.get("data_directory", "data"),
+    max_results=config.get("max_results", 10),
+    embedding_model=config.get("embedding_model", "sentence-transformers/all-MiniLM-L6-v2"),
+    similarity_metric=config.get("similarity_metric", "cosine")
+)
+
+# Create the MCP server instance
+mcp = FastMCP("vecbook")
 
 def mcp_success(result: Any) -> Dict[str, Any]:
     """Return a successful MCP response with the given result."""
@@ -73,7 +96,7 @@ def mcp_failure(error_message: str) -> Dict[str, Any]:
 def intro() -> str:
     """Send the VecBook introduction prompt"""
     # Look for resources relative to the script location
-    intro_path = index._get_script_dir() / "resources" / "intro.txt"
+    intro_path = index.script_dir / "resources" / "intro.txt"
     if not intro_path.exists():
         return "VecBook introduction not found. Please check that resources/intro.txt exists."
     
@@ -120,21 +143,20 @@ async def reindex(path: Optional[str] = None) -> Dict[str, Any]:
     """Rebuild the vector index from all data files"""
     # Update data directory if path provided, otherwise use current
     if path:
-        index.data_dir = index._get_script_dir() / path
+        index.data_path = index.script_dir / path
         logger.info(f"Path provided: {path}")
-        logger.info(f"Script dir: {index._get_script_dir()}")
-        logger.info(f"Calculated data_dir: {index.data_dir}")
+        logger.info(f"Script dir: {index.script_dir}")
+        logger.info(f"Calculated data_path: {index.data_path}")
     else:
-        index.data_dir = index.data_directory
-        logger.info(f"No path provided, using default: {index.data_directory}")
+        logger.info(f"No path provided, using default: {index.data_path}")
     
-    logger.info(f"Final data directory: {index.data_dir}")
-    logger.info(f"Data directory type: {type(index.data_dir)}")
-    logger.info(f"Data directory exists: {index.data_dir.exists()}")
+    logger.info(f"Final data directory: {index.data_path}")
+    logger.info(f"Data directory type: {type(index.data_path)}")
+    logger.info(f"Data directory exists: {index.data_path.exists()}")
 
-    if not index.data_dir.exists():
-        logger.error(f"Directory check failed for: {index.data_dir}")
-        return mcp_failure(f"Data directory '{str(index.data_dir)}' does not exist")
+    if not index.data_path.exists():
+        logger.error(f"Directory check failed for: {index.data_path}")
+        return mcp_failure(f"Data directory '{str(index.data_path)}' does not exist")
     
     # Stub implementation - simulate indexing process
     # In the real implementation, this would:
@@ -144,7 +166,7 @@ async def reindex(path: Optional[str] = None) -> Dict[str, Any]:
     # 4. Build FAISS index
     
     # Simulate finding files
-    txt_files = list(index.data_dir.rglob("*.txt"))
+    txt_files = list(index.data_path.rglob("*.txt"))
     
     # Simulate parsing records
     total_records = 0
@@ -177,7 +199,7 @@ async def stats() -> Dict[str, Any]:
         "status": "indexed",
         "stats": index.stats,
         "config": {
-            "data_directory": str(index.data_directory),
+            "data_directory": str(index.data_path),
             "max_results": index.max_results,
             "embedding_model": index.embedding_model,
             "similarity_metric": index.similarity_metric
@@ -189,12 +211,6 @@ async def stats() -> Dict[str, Any]:
 def main():
     """Entry point for the application."""
     print("Starting VecBook MCP Server...", file=sys.stderr)
-    
-    # Perform initial indexing
-    print("Performing initial indexing...", file=sys.stderr)
-    # Note: In a real implementation, you'd want to handle the async call properly
-    # For now, we'll just start the server and let the client trigger reindexing
-    
     mcp.run()
 
 if __name__ == "__main__":
