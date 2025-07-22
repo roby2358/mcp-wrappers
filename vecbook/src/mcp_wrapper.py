@@ -88,8 +88,8 @@ class VecBookMCPServer:
             if max_results is None:
                 max_results = self.index.max_results
             
-            # Use the simple text search for now (vector search will be implemented later)
-            results = self.index.search_simple(query, max_results)
+            # Use the main search method (vector search when available, fallback to simple)
+            results = self.index.search(query, max_results)
             
             if not results:
                 return self._mcp_success([])
