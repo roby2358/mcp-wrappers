@@ -27,7 +27,35 @@ Secure shell execution wrappers that provide controlled access to command-line t
 - **CMD Shell** (`cmd_shell.py`) - Controlled Windows CMD shell with allowlisted commands
 - **Bash Shell** (`bash_shell.py`) - Unix bash wrapper (work in progress)
 
-See the [shell/README.md](shell/README.md) for detailed documentation.
+**Features:**
+- Secure execution of allowlisted commands
+- Protection against command injection
+- Persistent shell processes
+- Clear command output separation
+
+**Use case:** Safe execution of system commands through Claude with security controls.
+
+### 3. Atproto (`atproto/`)
+An MCP server for interacting with the Bluesky social network via the atproto protocol.
+
+**Features:**
+- Post messages to Bluesky accounts
+- Secure credential storage
+- Real-time authentication with Bluesky servers
+- Official atproto Python SDK integration
+
+**Use case:** Social media automation and interaction through Claude.
+
+### 4. VecBook (`vecbook/`)
+A lightweight, local-first vector database for semantic search over plain text documents.
+
+**Features:**
+- Semantic search over multi-line text records
+- Human-readable `.txt` file storage
+- Vector embeddings using sentence-transformers
+- Fast similarity search with configurable results
+
+**Use case:** Local document search and knowledge management through natural language queries.
 
 ## Quick Start
 
@@ -52,6 +80,17 @@ With the CMD shell wrapper, you can safely execute commands:
 - "Show me the content of README.md"
 - "What's the current working directory?"
 
+### Atproto
+Once configured with your Bluesky credentials, you can:
+- "Post 'Hello from Claude!' to my Bluesky account"
+- "Share this update on Bluesky: [your message]"
+
+### VecBook
+Once configured with your document collection, you can:
+- "Search for documents about machine learning"
+- "Find records related to project planning"
+- "What documents mention vector databases?"
+
 ## Development
 
 ### Project Structure
@@ -59,9 +98,9 @@ With the CMD shell wrapper, you can safely execute commands:
 mcp-wrappers/
 ├── hello-world/          # Simple echo tool wrapper
 ├── shell/               # Shell execution wrappers
-│   ├── cmd_shell.py     # Windows CMD wrapper
-│   └── bash_shell.py    # Bash wrapper (WIP)
-└── atproto/             # Future wrapper (empty)
+├── atproto/             # Bluesky/atproto social media wrapper
+├── vecbook/             # Local vector document search
+└── pjpd/                # Future wrapper (placeholder)
 ```
 
 ### Adding New Wrappers
