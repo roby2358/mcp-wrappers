@@ -136,7 +136,7 @@ async def stats() -> Dict[str, Any]:
     
     result = {
         "status": "indexed",
-        "stats": index.stats,
+        **index.stats,
         "config": {
             "data_directory": str(index.text_records.path),
             "max_results": index.max_results,
