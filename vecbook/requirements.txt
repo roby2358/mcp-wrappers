@@ -1,0 +1,4 @@
+fastmcp>=0.1.0
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.0
+toml>=0.10.0

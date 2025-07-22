@@ -1,0 +1,1 @@
+VecBook provides semantic search over your local document collection. Use the search tool with natural language queries to find relevant documents. The reindex tool rebuilds the vector index when you add new files, and may contain a path paramter to index a new set of files. stats shows indexing status.

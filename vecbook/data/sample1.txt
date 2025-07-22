@@ -1,0 +1,13 @@
+This is a sample document about artificial intelligence and machine learning.
+
+---
+
+Machine learning is a subset of artificial intelligence that focuses on algorithms and statistical models that enable computers to perform tasks without explicit instructions.
+
+---
+
+Deep learning is a subset of machine learning that uses neural networks with multiple layers to model and understand complex patterns in data.
+
+---
+
+Natural language processing (NLP) is a field of AI that focuses on the interaction between computers and human language. 

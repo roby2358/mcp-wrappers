@@ -1,0 +1,13 @@
+This document discusses vector databases and semantic search.
+
+---
+
+Vector databases store high-dimensional vector representations of data, enabling efficient similarity search and retrieval.
+
+---
+
+Semantic search goes beyond keyword matching to understand the meaning and context of queries.
+
+---
+
+Embedding models convert text, images, or other data into numerical vectors that capture semantic meaning. 
