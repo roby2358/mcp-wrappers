@@ -69,7 +69,7 @@ def mcp_failure(error_message: str) -> Dict[str, Any]:
 def intro() -> str:
     """Send the VecBook introduction prompt"""
     # Look for resources relative to the script location
-    intro_path = index.script_dir / "resources" / "intro.txt"
+    intro_path = get_script_dir() / "resources" / "intro.txt"
     if not intro_path.exists():
         return "VecBook introduction not found. Please check that resources/intro.txt exists."
     
@@ -89,76 +89,42 @@ async def search(query: str, max_results: Optional[int] = None) -> Dict[str, Any
     if max_results is None:
         max_results = index.max_results
     
-    # Stub implementation - return mock results
-    # In the real implementation, this would query the vector index
-    mock_results = [
-        {
-            "text": f"Sample record matching '{query}' - this is a placeholder result",
-            "file_path": "samples/sample1.txt",
-            "byte_offset": 0,
-            "similarity_score": "0.850000",
-            "metadata": {"title": "Sample Document", "date": "2024-01-01"}
-        },
-        {
-            "text": f"Another record related to '{query}' - placeholder for demonstration",
-            "file_path": "samples/sample2.txt", 
-            "byte_offset": 150,
-            "similarity_score": "0.720000",
-            "metadata": {"category": "example", "tags": ["demo", "placeholder"]}
-        }
-    ]
+    # Use the simple text search for now (vector search will be implemented later)
+    results = index.search_simple(query, max_results)
     
-    # Limit results to requested max
-    return mcp_success(mock_results[:max_results])
+    if not results:
+        return mcp_success([])
+    
+    return mcp_success(results)
 
 @mcp.tool()
 async def reindex(path: Optional[str] = None) -> Dict[str, Any]:
     """Rebuild the vector index from all data files"""
     # Update data directory if path provided, otherwise use current
     if path:
-        index.data_path = index.script_dir / path
+        new_path = get_script_dir() / path
         logger.info(f"Path provided: {path}")
-        logger.info(f"Script dir: {index.script_dir}")
-        logger.info(f"Calculated data_path: {index.data_path}")
-    else:
-        logger.info(f"No path provided, using default: {index.data_path}")
-    
-    logger.info(f"Final data directory: {index.data_path}")
-    logger.info(f"Data directory type: {type(index.data_path)}")
-    logger.info(f"Data directory exists: {index.data_path.exists()}")
-
-    if not index.data_path.exists():
-        logger.error(f"Directory check failed for: {index.data_path}")
-        return mcp_failure(f"Data directory '{str(index.data_path)}' does not exist")
-    
-    # Stub implementation - simulate indexing process
-    # In the real implementation, this would:
-    # 1. Discover all .txt files recursively
-    # 2. Parse records using --- separator
-    # 3. Generate embeddings
-    # 4. Build FAISS index
-    
-    # Simulate finding files
-    txt_files = list(index.data_path.rglob("*.txt"))
-    
-    # Simulate parsing records
-    total_records = 0
-    for file_path in txt_files:
-        # Mock record count per file
-        total_records += 5  # Placeholder
+        logger.info(f"Script dir: {get_script_dir()}")
+        logger.info(f"Calculated data_path: {new_path}")
         
-    # Update stats
-    index.stats = {
-        "total_records": total_records,
-        "total_files": len(txt_files),
-        "indexed_at": "2024-01-01T12:00:00Z"  # Placeholder timestamp
-    }
+        # Create a new TextRecords instance with the new path
+        from .textrec import TextRecords
+        index.text_records = TextRecords(new_path)
+    else:
+        logger.info(f"No path provided, using default: {index.text_records.path}")
     
-    result = {
-        "status": "success",
-        "message": f"Indexed {total_records} records from {len(txt_files)} files",
-        "stats": index.stats
-    }
+    logger.info(f"Final data directory: {index.text_records.path}")
+    logger.info(f"Data directory exists: {index.text_records.path.exists()}")
+
+    if not index.text_records.path.exists():
+        logger.error(f"Directory check failed for: {index.text_records.path}")
+        return mcp_failure(f"Data directory '{str(index.text_records.path)}' does not exist")
+    
+    # Use the actual index building functionality
+    result = index.build_index()
+    
+    if result["status"] == "error":
+        return mcp_failure(result["message"])
     
     return mcp_success(result)
 
@@ -172,7 +138,7 @@ async def stats() -> Dict[str, Any]:
         "status": "indexed",
         "stats": index.stats,
         "config": {
-            "data_directory": str(index.data_path),
+            "data_directory": str(index.text_records.path),
             "max_results": index.max_results,
             "embedding_model": index.embedding_model,
             "similarity_metric": index.similarity_metric
