@@ -69,7 +69,7 @@ vecbook/
 
 ## Startup Behavior
 
-* All files **MUST** be indexed at startup
+* All files **MUST NOT** be indexed at startup (let the user initiate it)
 * Indexing progress **SHOULD** be logged to stderr
 * Startup **MUST** complete successfully even if some files contain malformed records
 
