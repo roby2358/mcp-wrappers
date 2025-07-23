@@ -7,11 +7,14 @@ import json
 import logging
 import sys
 import toml
+import threading
 from pathlib import Path
 from typing import Dict, List, Any, Optional
+import argparse
 
 from mcp.server.fastmcp import FastMCP
 from .vecx import VecBookIndex
+from .http_server import VecBookHTTPServer
 
 # Initialize logging to stderr
 logging.basicConfig(level=logging.INFO, stream=sys.stderr)
@@ -24,12 +27,13 @@ def get_script_dir() -> Path:
 class VecBookMCPServer:
     """VecBook MCP Server that manages configuration, indexing, and MCP tools"""
     
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Optional[Path] = None, enable_http: bool = False):
         """Initialize the server with configuration and index"""
         self.script_dir = get_script_dir()
         self.config = self._load_config(config_path)
         self.index = self._build_index()
         self.mcp = FastMCP("vecbook")
+        self.enable_http = enable_http
         
         self._register_tools_and_prompts()
 
@@ -163,14 +167,31 @@ class VecBookMCPServer:
         }
 
     def run(self):
-        """Start the MCP server"""
-        print("Starting VecBook MCP Server...", file=sys.stderr)
+        """Start the MCP server and optionally the HTTP server"""
+        if self.enable_http:
+            print("Starting VecBook MCP Server with HTTP interface...", file=sys.stderr)
+            # Start HTTP server in a separate thread
+            http_server = VecBookHTTPServer(self.index)
+            http_thread = threading.Thread(
+                target=http_server.run,
+                kwargs={"host": "0.0.0.0", "port": 51539},
+                daemon=True
+            )
+            http_thread.start()
+            print("HTTP server started on port 51539", file=sys.stderr)
+        else:
+            print("Starting VecBook MCP Server...", file=sys.stderr)
+        
         self.mcp.run()
 
 
 def main():
     """Entry point for the application."""
-    server = VecBookMCPServer()
+    parser = argparse.ArgumentParser(description="VecBook MCP Server")
+    parser.add_argument("--http", action="store_true", help="Enable HTTP interface on port 51539")
+    args = parser.parse_args()
+    
+    server = VecBookMCPServer(enable_http=args.http)
     server.run()
 
 if __name__ == "__main__":

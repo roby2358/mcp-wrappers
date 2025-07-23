@@ -73,6 +73,12 @@ vecbook/
 * Indexing progress **SHOULD** be logged to stderr
 * Startup **MUST** complete successfully even if some files contain malformed records
 
+### HTTP Interface
+
+* The system **MUST** present an HTTP interface on port 51539
+* The VecBookIndex API must support a method that accepts a list of strings and returns a list of vectors
+* The client can POST a list of strings, and the service must respond with a matrix of embedding vectors for them
+
 ---
 
 ## Data Format and Storage

@@ -242,4 +242,19 @@ class VecBookIndex:
         if self.faiss_index is not None:
             return self.search_vector(query, max_results)
         else:
-            return self.search_simple(query, max_results) 
+            return self.search_simple(query, max_results)
+    
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        """Generate embeddings for a list of texts and return as list of vectors"""
+        if not texts:
+            return []
+        
+        try:
+            self._initialize_model()
+            embeddings = self.model.encode(texts, convert_to_numpy=True)
+            
+            # Convert numpy array to list of lists
+            return embeddings.tolist()
+        except Exception as e:
+            logger.error(f"Error generating embeddings: {e}")
+            return [] 

@@ -37,6 +37,16 @@ A lightweight, local-first vector database built on plain `.txt` files. Provides
    uv run python vecbook.py
    ```
 
+3. **Run with HTTP interface:**
+   ```bash
+   uv run python vecbook.py --http
+   ```
+
+4. **Run HTTP server only:**
+   ```bash
+   uv run python vecbook_http.py
+   ```
+
 ### Testing
 
 ```bash
@@ -104,6 +114,62 @@ Send the VecBook introduction prompt to provide context about the available tool
 
 **Parameters:**
 - None
+
+## HTTP Interface
+
+The system provides an HTTP interface on port 51539 for embedding text strings.
+
+### Endpoints
+
+#### `POST /embed`
+Embed a list of text strings and return their vectors.
+
+**Request:**
+```json
+{
+  "texts": ["This is a test sentence.", "Another sentence to embed."]
+}
+```
+
+**Response:**
+```json
+{
+  "embeddings": [
+    [0.123, -0.456, 0.789, ...],
+    [0.234, -0.567, 0.890, ...]
+  ]
+}
+```
+
+#### `GET /health`
+Health check endpoint.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "service": "vecbook"
+}
+```
+
+#### `GET /stats`
+Get indexing statistics.
+
+**Response:**
+```json
+{
+  "total_records": 100,
+  "total_files": 5,
+  "indexed_at": "2024-01-01T12:00:00"
+}
+```
+
+### Testing the HTTP Interface
+
+```bash
+# Test the HTTP interface
+uv run python test_http.py
+```
 
 ## Intro Prompt
 
