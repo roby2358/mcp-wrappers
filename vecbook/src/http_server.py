@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
@@ -60,10 +61,15 @@ class VecBookHTTPServer:
         """Initialize the HTTP server with a VecBookIndex instance"""
         self.index = index
         self.app = FastAPI(title="VecBook HTTP Server", version="1.0.0")
+        self.static_dir = Path(__file__).parent.parent / "resources" / "public"
         self._register_routes()
     
     def _register_routes(self):
         """Register all HTTP routes"""
+        
+        # Mount static files directory
+        if self.static_dir.exists():
+            self.app.mount("/static", StaticFiles(directory=str(self.static_dir)), name="static")
         
         @self.app.post("/embed", response_model=EmbedResponse)
         async def embed_texts(request: EmbedRequest):
@@ -223,6 +229,28 @@ class VecBookHTTPServer:
         async def get_stats():
             """Get indexing statistics"""
             return self.index.stats
+        
+        # Catch-all route for static files
+        @self.app.get("/{path:path}")
+        async def serve_static_files(path: str):
+            """Serve static files from resources/public directory"""
+            # Skip if this is an API endpoint
+            if path.startswith(("embed", "targets", "cosine-similarity", "compare", "health", "stats", "static")):
+                raise HTTPException(status_code=404, detail="Not found")
+            
+            # Look for file in resources/public
+            file_path = self.static_dir / path
+            
+            # Security check: ensure the resolved path is within the static directory
+            try:
+                file_path.resolve().relative_to(self.static_dir.resolve())
+            except ValueError:
+                raise HTTPException(status_code=404, detail="Not found")
+            
+            if file_path.exists() and file_path.is_file():
+                return FileResponse(str(file_path))
+            else:
+                raise HTTPException(status_code=404, detail="Not found")
     
     def run(self, host: str = "0.0.0.0", port: int = 51539):
         """Run the HTTP server"""

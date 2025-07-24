@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VecBook - Cosine Barycenter Similarity</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VecBook</h1>
+            <p>Cosine Barycenter Similarity Calculator</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <div class="target-strings">
+                    <h2>Target Strings</h2>
+                    <div class="string-inputs" id="target-inputs">
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter target string 1" data-index="0">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter target string 2" data-index="1">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter target string 3" data-index="2">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="add-btn">Add Target String</button>
+                </div>
+
+                <div class="test-strings">
+                    <h2>Test Strings</h2>
+                    <div class="string-inputs" id="test-inputs">
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter test string 1" data-index="0">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter test string 2" data-index="1">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter test string 3" data-index="2">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter test string 4" data-index="3">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="string-input" placeholder="Enter test string 5" data-index="4">
+                            <button type="button" class="remove-btn">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="add-btn">Add Test String</button>
+                </div>
+            </div>
+
+            <div class="action-section">
+                <button type="button" class="calculate-btn">Calculate Similarity</button>
+            </div>
+
+            <div class="results-section" id="results-section" style="display: none;">
+                <h2>Results</h2>
+                <div class="results-container" id="results-container">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
