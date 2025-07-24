@@ -107,7 +107,7 @@ mcp-wrappers/
 
 To add a new wrapper:
 
-1. Create a new directory for your wrapper
+1. Create a new directory for your wrapper. Each directory has its own build process.
 2. Use the FastMCP framework: `from mcp.server.fastmcp import FastMCP`
 3. Follow the stdio pattern for MCP communication
 4. Include proper error handling and security measures

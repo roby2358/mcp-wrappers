@@ -38,6 +38,11 @@ class VecBookIndex:
         self.records = []
         self.embeddings = None
         
+        # Target management for barycenter calculations
+        self.target_strings = []
+        self.target_embeddings = None
+        self.target_barycenter = None
+        
         self.stats = {
             "total_records": 0,
             "total_files": 0,
@@ -257,4 +262,180 @@ class VecBookIndex:
             return embeddings.tolist()
         except Exception as e:
             logger.error(f"Error generating embeddings: {e}")
+            return []
+    
+    def cosine_barycenter_similarity(self, target_strings: List[str], test_strings: List[str]) -> List[Dict[str, Any]]:
+        """
+        Calculate the cosine barycenter of target strings and return similarities with test strings.
+        
+        Args:
+            target_strings: List of strings to calculate barycenter from
+            test_strings: List of strings to compare against the barycenter
+        
+        Returns:
+            List of dicts with 'text', 'embedding', and 'cosine_similarity' for each test string
+        """
+        if not target_strings or not test_strings:
+            return []
+        
+        try:
+            self._initialize_model()
+            
+            # Generate embeddings for all strings at once
+            all_strings = target_strings + test_strings
+            embeddings = self.model.encode(all_strings, convert_to_numpy=True)
+            
+            # Split embeddings into target and test
+            target_embeddings = embeddings[:len(target_strings)]
+            test_embeddings = embeddings[len(target_strings):]
+            
+            # Normalize all embeddings for cosine similarity
+            faiss.normalize_L2(target_embeddings)
+            faiss.normalize_L2(test_embeddings)
+            
+            # Calculate barycenter (mean of normalized target embeddings)
+            barycenter = np.mean(target_embeddings, axis=0)
+            
+            # Normalize the barycenter
+            barycenter_norm = np.linalg.norm(barycenter)
+            if barycenter_norm > 0:
+                barycenter = barycenter / barycenter_norm
+            
+            # Calculate cosine similarities between test embeddings and barycenter
+            similarities = np.dot(test_embeddings, barycenter)
+            
+            # Build results
+            results = []
+            for i, (text, embedding, similarity) in enumerate(zip(test_strings, test_embeddings, similarities)):
+                # Ensure similarity is between 0 and 1
+                similarity_score = max(0.0, min(1.0, float(similarity)))
+                
+                results.append({
+                    "text": text,
+                    "embedding": embedding.tolist(),
+                    "cosine_similarity": f"{similarity_score:.6f}",
+                    "index": i
+                })
+            
+            logger.info(f"Cosine barycenter similarity calculated for {len(test_strings)} test strings against {len(target_strings)} target strings")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error in cosine barycenter similarity calculation: {e}")
+            return []
+    
+    def set_target_strings(self, target_strings: List[str]) -> Dict[str, Any]:
+        """
+        Set target strings and calculate their barycenter.
+        
+        Args:
+            target_strings: List of strings to use as targets
+        
+        Returns:
+            Dict with status and barycenter info
+        """
+        if not target_strings:
+            return {
+                "status": "error",
+                "message": "Target strings list cannot be empty"
+            }
+        
+        try:
+            self._initialize_model()
+            
+            # Store target strings
+            self.target_strings = target_strings.copy()
+            
+            # Generate embeddings for target strings
+            self.target_embeddings = self.model.encode(target_strings, convert_to_numpy=True)
+            
+            # Normalize target embeddings
+            faiss.normalize_L2(self.target_embeddings)
+            
+            # Calculate barycenter (mean of normalized target embeddings)
+            self.target_barycenter = np.mean(self.target_embeddings, axis=0)
+            
+            # Normalize the barycenter
+            barycenter_norm = np.linalg.norm(self.target_barycenter)
+            if barycenter_norm > 0:
+                self.target_barycenter = self.target_barycenter / barycenter_norm
+            
+            logger.info(f"Target strings set: {len(target_strings)} strings, barycenter calculated")
+            
+            return {
+                "status": "success",
+                "message": f"Target strings set successfully",
+                "target_count": len(target_strings),
+                "barycenter_dimension": len(self.target_barycenter)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error setting target strings: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to set target strings: {str(e)}"
+            }
+    
+    def get_target_info(self) -> Dict[str, Any]:
+        """Get information about currently stored targets"""
+        if not self.target_strings:
+            return {
+                "status": "error",
+                "message": "No target strings set"
+            }
+        
+        return {
+            "status": "success",
+            "target_count": len(self.target_strings),
+            "target_strings": self.target_strings,
+            "barycenter_dimension": len(self.target_barycenter) if self.target_barycenter is not None else None
+        }
+    
+    def compare_against_barycenter(self, test_strings: List[str]) -> List[Dict[str, Any]]:
+        """
+        Compare test strings against the stored barycenter.
+        
+        Args:
+            test_strings: List of strings to compare against the barycenter
+        
+        Returns:
+            List of dicts with 'text', 'embedding', and 'cosine_similarity' for each test string
+        """
+        if not test_strings:
+            return []
+        
+        if self.target_barycenter is None:
+            logger.error("No target barycenter available. Set target strings first.")
+            return []
+        
+        try:
+            self._initialize_model()
+            
+            # Generate embeddings for test strings
+            test_embeddings = self.model.encode(test_strings, convert_to_numpy=True)
+            
+            # Normalize test embeddings
+            faiss.normalize_L2(test_embeddings)
+            
+            # Calculate cosine similarities between test embeddings and barycenter
+            similarities = np.dot(test_embeddings, self.target_barycenter)
+            
+            # Build results
+            results = []
+            for i, (text, embedding, similarity) in enumerate(zip(test_strings, test_embeddings, similarities)):
+                # Ensure similarity is between 0 and 1
+                similarity_score = max(0.0, min(1.0, float(similarity)))
+                
+                results.append({
+                    "text": text,
+                    "embedding": embedding.tolist(),
+                    "cosine_similarity": f"{similarity_score:.6f}",
+                    "index": i
+                })
+            
+            logger.info(f"Compared {len(test_strings)} test strings against stored barycenter")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error comparing against barycenter: {e}")
             return [] 
