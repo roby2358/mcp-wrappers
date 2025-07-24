@@ -14,7 +14,7 @@ def test_cosine_barycenter():
     ## Simple
     target_strings = ["spoon","fork","knife"]
 
-    test_strings = ["soup spoon","salad fork","plate","napkin","hippotomus"]
+    test_strings = ["soup spoon","salad fork","plate","napkin","racecar","hippotomus"]
 
     ## ML Stuff
     # target_strings = [
