@@ -24,9 +24,9 @@ Available Tools:
 • mark_done - Mark a task as completed
 • get_overview - Return summary of all projects and tasks
 • next_steps - Determine high-priority tasks to work on next
-• list_projects - Return list of all projects with task counts
+• list_projects - Return list of all projects with task counts (optional path parameter)
 • sort_project - Re-sort tasks within a project by priority
 
-Projects are stored as .txt files in the projects directory, with each project having its own file. The system automatically creates project files when you add your first task to a new project.
+Projects are stored as .txt files in the projects directory (~/projects by default), with each project having its own file. You can specify a custom path when using list_projects. The system automatically creates project files when you add your first task to a new project.
 
 Get started by adding a task to a project or listing existing projects! 

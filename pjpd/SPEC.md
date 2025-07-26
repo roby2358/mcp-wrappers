@@ -13,7 +13,7 @@ This specification outlines the design, structure, and operational requirements 
 * All configuration files **MUST** be in TOML format
 * Configuration file **MUST** be named `projectmcp.toml` and located in the project root
 * Default configuration values:
-    * `projects_directory` = "projects"
+    * `projects_directory` = "~/projects"
     * `max_results` = 50
 
 ## API
@@ -46,7 +46,8 @@ This specification outlines the design, structure, and operational requirements 
     * `include_done` (boolean, optional): Include completed tasks in overview (default: false)
 * `next_steps` - Determine high-priority tasks to work on next:
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
-* `list_projects` - Return list of all projects with task counts
+* `list_projects` - Return list of all projects with task counts:
+    * `path` (string, optional): Path to projects directory (default: ~/projects)
 * `sort_project` - Re-sort tasks within a project:
     * `project` (string, required): Project name to sort
     * `sort_by` (string, optional): Sort criteria (default: "priority_text")
