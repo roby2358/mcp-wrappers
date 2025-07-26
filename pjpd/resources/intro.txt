@@ -1,0 +1,32 @@
+Welcome to ProjectMCP - Local Project Management Server
+
+ProjectMCP is a lightweight, local-first project management system built on plain .txt files. It provides task tracking, prioritization, and project overview capabilities through an MCP interface.
+
+Key Features:
+• Task management with priority levels (High, Medium, Note)
+• Project organization with separate .txt files
+• Simple, human-readable task format
+• MCP tools for adding, listing, updating, and completing tasks
+• Project overviews and next steps recommendations
+
+Task Format:
+Each task is stored with a unique 12-character ID, priority level, status (ToDo/Done), and description, separated by "---" lines.
+
+Priority Levels:
+• Priority 1 (High): Tasks that act as dependencies for other work
+• Priority 2 (Medium): Standard tasks  
+• Priority 3 (Note): Nice-to-have items, reminders, refactoring notes
+
+Available Tools:
+• add_task - Create new tasks with project, description, and priority
+• list_tasks - List tasks with optional filtering by project, priority, or status
+• update_task - Update existing task description, priority, or status
+• mark_done - Mark a task as completed
+• get_overview - Return summary of all projects and tasks
+• next_steps - Determine high-priority tasks to work on next
+• list_projects - Return list of all projects with task counts
+• sort_project - Re-sort tasks within a project by priority
+
+Projects are stored as .txt files in the projects directory, with each project having its own file. The system automatically creates project files when you add your first task to a new project.
+
+Get started by adding a task to a project or listing existing projects! 
