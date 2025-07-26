@@ -4,12 +4,9 @@ Handles discovery and parsing of text files broken into records with --- separat
 """
 
 import logging
-import sys
 from pathlib import Path
 from typing import Dict, List, Any
 
-# Initialize logging to stderr
-logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 logger = logging.getLogger(__name__)
 
 class TextRecords:

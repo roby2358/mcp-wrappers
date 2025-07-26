@@ -4,12 +4,25 @@ Hello World MCP Server using the official MCP SDK
 """
 
 import asyncio
+import logging
 import sys
 from pathlib import Path
 from typing import Dict, Any, List
 
 from mcp.server.fastmcp import FastMCP
 from projects import Projects
+
+# Centralized logging configuration
+def setup_logging():
+    """Configure logging for the entire application."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        stream=sys.stderr
+    )
+
+# Initialize logging
+setup_logging()
 
 # Create the MCP server instance
 mcp = FastMCP("hello-world")
@@ -50,13 +63,13 @@ def intro() -> str:
 @mcp.tool()
 async def list_projects(path: str = None) -> Dict[str, Any]:
     """
-    List all projects with their task counts.
+    List all projects with their task counts and overview.
     
     Args:
         path: Optional path to the projects directory. If not provided, uses the previously set path or defaults to ~/projects.
     
-    Returns a list of all projects found in the projects directory, 
-    including the number of tasks in each project.
+    Returns a comprehensive overview of all projects including task counts, 
+    todo/done status, and project details.
     """
     try:
         # Set the projects directory if a path is provided
@@ -68,26 +81,94 @@ async def list_projects(path: str = None) -> Dict[str, Any]:
             projects_dir = Path.home() / "projects"
             projects_manager.set_projects_dir(projects_dir)
         
-        # Get project list
-        projects_list = projects_manager.list_projects()
+        # Get comprehensive project overview
+        overview = projects_manager.get_overview()
         
-        if not projects_list:
+        if overview["total_projects"] == 0:
             return mcp_success({
                 "projects": [],
+                "total_projects": 0,
+                "total_tasks": 0,
+                "total_todo": 0,
+                "total_done": 0,
                 "message": "No projects found. Create your first project by adding a task!"
             })
         
-        # Calculate totals
-        total_tasks = sum(project["task_count"] for project in projects_list)
-        
-        return mcp_success({
-            "projects": projects_list,
-            "total_projects": len(projects_list),
-            "total_tasks": total_tasks
-        })
+        return mcp_success(overview)
         
     except Exception as e:
         return mcp_failure(f"Error listing projects: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# list_tasks tool
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def list_tasks(
+    project: str | None = None,
+    priority: int | None = None,
+    status: str | None = None,
+    max_results: int | None = None,
+) -> Dict[str, Any]:
+    """List tasks with optional filtering.
+
+    Args:
+        project: Filter tasks by a specific project name.
+        priority: Filter tasks by priority level (1=High, 2=Medium, 3=Note).
+        status: Filter tasks by status ("ToDo" or "Done").
+        max_results: Maximum number of tasks to return.
+
+    Returns:
+        Standard MCP response containing a list of matching tasks or an error.
+    """
+
+    try:
+        # Ensure the projects directory is set (use default if not already defined)
+        if projects_manager.projects_dir is None:
+            default_dir = Path.home() / "projects"
+            projects_manager.set_projects_dir(default_dir)
+
+        # Helper to normalise status input (keep None or exact value)
+        if status is not None:
+            status = status.strip()
+
+        tasks: List[Dict[str, Any]] = []
+
+        # Iterate over projects and gather tasks that match filters
+        for proj in projects_manager.projects.values():
+            if project and proj.name != project:
+                continue
+
+            for t in proj.tasks:
+                if priority is not None and t.priority != priority:
+                    continue
+                if status is not None and t.status != status:
+                    continue
+
+                tasks.append({
+                    "id": t.id,
+                    "project": proj.name,
+                    "priority": t.priority,
+                    "status": t.status,
+                    "description": t.description,
+                })
+
+        # Sort tasks by priority then description for deterministic output
+        tasks.sort(key=lambda item: (item["priority"], item["description"].lower()))
+
+        # Apply max_results limit if provided
+        if max_results is not None and max_results > 0:
+            tasks = tasks[:max_results]
+
+        return mcp_success({
+            "total_tasks": len(tasks),
+            "tasks": tasks,
+        })
+
+    except Exception as e:
+        return mcp_failure(f"Error listing tasks: {str(e)}")
 
 @mcp.tool()
 async def echo(message: str) -> Dict[str, Any]:

@@ -4,78 +4,15 @@ Represents a single project with its tasks stored in a text file
 """
 
 import logging
-import sys
+import os
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass
-from datetime import datetime
 
 from textrec.text_records import TextRecords
+from .task import Task
 
-# Initialize logging to stderr
-logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 logger = logging.getLogger(__name__)
-
-@dataclass
-class Task:
-    """Represents a single task in a project"""
-    id: str
-    priority: int  # 1=High, 2=Medium, 3=Note
-    status: str    # "ToDo" or "Done"
-    description: str
-    created_at: datetime
-    completed_at: Optional[datetime] = None
-    
-    @classmethod
-    def from_text(cls, text: str) -> Optional['Task']:
-        """Parse a task from text format"""
-        try:
-            lines = text.strip().split('\n')
-            if len(lines) < 3:
-                return None
-                
-            # Parse the header line: ID [Priority] Status
-            header = lines[0].strip()
-            if not header:
-                return None
-                
-            # Extract ID, priority, and status
-            parts = header.split()
-            if len(parts) < 3:
-                return None
-                
-            task_id = parts[0]
-            
-            # Find priority and status
-            priority = 2  # Default to Medium
-            status = "ToDo"  # Default to ToDo
-            
-            for part in parts[1:]:
-                if part in ["High", "Medium", "Note"]:
-                    priority = {"High": 1, "Medium": 2, "Note": 3}[part]
-                elif part in ["ToDo", "Done"]:
-                    status = part
-            
-            # Description is everything after the header
-            description = '\n'.join(lines[1:]).strip()
-            
-            return cls(
-                id=task_id,
-                priority=priority,
-                status=status,
-                description=description,
-                created_at=datetime.now()  # We don't store creation time in text format
-            )
-            
-        except Exception as e:
-            logger.error(f"Error parsing task from text: {e}")
-            return None
-    
-    def to_text(self) -> str:
-        """Convert task to text format for storage"""
-        priority_text = {1: "High", 2: "Medium", 3: "Note"}[self.priority]
-        header = f"{self.id} {priority_text} {self.status}"
-        return f"{header}\n{self.description}"
 
 class Project:
     """Represents a single project with its tasks"""
@@ -123,8 +60,7 @@ class Project:
             id=task_id,
             priority=priority,
             status="ToDo",
-            description=description,
-            created_at=datetime.now()
+            description=description
         )
         
         self.tasks.append(task)
@@ -151,10 +87,6 @@ class Project:
             task.priority = priority
         if status is not None:
             task.status = status
-            if status == "Done" and task.completed_at is None:
-                task.completed_at = datetime.now()
-            elif status == "ToDo":
-                task.completed_at = None
         
         self._save_tasks()
         return task
@@ -162,6 +94,22 @@ class Project:
     def mark_done(self, task_id: str) -> Optional[Task]:
         """Mark a task as completed"""
         return self.update_task(task_id, status="Done")
+    
+    def _write_atomic(self, content: str) -> None:
+        """Write content to a temp file with timestamp and atomically replace the project file"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            temp_path = self.file_path.with_name(
+                f"{self.file_path.stem}.{timestamp}{self.file_path.suffix}"
+            )
+            # Write to the temporary file first
+            with open(temp_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            # Atomically move it into place
+            os.replace(temp_path, self.file_path)
+        except Exception as e:
+            logger.error(f"Error writing tasks for project {self.name}: {e}")
+            raise
     
     def _save_tasks(self) -> None:
         """Save tasks to the project file"""
@@ -175,9 +123,8 @@ class Project:
             # Join with --- separators
             content = '\n---\n'.join(task_texts)
             
-            # Write to file
-            with open(self.file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
+            # Write atomically to a timestamped temp file and move into place
+            self._write_atomic(content)
                 
         except Exception as e:
             logger.error(f"Error saving tasks for project {self.name}: {e}")

@@ -4,15 +4,12 @@ Manages multiple projects and provides collection-level operations
 """
 
 import logging
-import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
 
 from projects.project import Project, Task
 
-# Initialize logging to stderr
-logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 logger = logging.getLogger(__name__)
 
 class Projects:
