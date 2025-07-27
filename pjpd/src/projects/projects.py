@@ -135,7 +135,7 @@ class Projects:
             tasks = project.tasks
             
             if priority_filter is not None:
-                tasks = [t for t in tasks if t.priority == priority_filter]
+                tasks = [t for t in tasks if t.priority >= priority_filter]
                 
             if status_filter is not None:
                 tasks = [t for t in tasks if t.status == status_filter]
@@ -206,8 +206,8 @@ class Projects:
         # Get all todo tasks
         todo_tasks = self.get_all_tasks(status_filter="ToDo")
         
-        # Sort by priority (1=High, 2=Medium, 3=Note)
-        todo_tasks.sort(key=lambda t: t.priority)
+        # Sort by priority (plain integer, higher numbers = higher priority)
+        todo_tasks.sort(key=lambda t: t.priority, reverse=True)
         
         # Return the top tasks up to the limit
         return todo_tasks[:limit]
@@ -218,9 +218,9 @@ class Projects:
         if not project:
             return False
         
-        # Get all tasks and sort by priority
+        # Get all tasks and sort by priority (higher numbers first)
         tasks = project.tasks
-        tasks.sort(key=lambda t: t.priority)
+        tasks.sort(key=lambda t: t.priority, reverse=True)
         
         # Save the sorted tasks
         project._save_tasks()

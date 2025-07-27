@@ -12,11 +12,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Task:
     """Represents a single task in a project"""
-    # Priority mapping: text -> integer
-    PRIORITY_MAP = {"high": 1, "medium": 2, "note": 3}
-
     id: str
-    priority: int  # 1=High, 2=Medium, 3=Note
+    priority: int  # Plain integer priority (higher numbers = higher priority)
     status: str    # "ToDo" or "Done"
     description: str
 
@@ -27,7 +24,8 @@ class Task:
         if value.isdigit():
             new_state["priority"] = int(value)
         else:
-            new_state["priority"] = Task.PRIORITY_MAP.get(value.lower(), state.get("priority", 2))
+            # If not a digit, keep the existing priority
+            return False, state
         return True, new_state
 
     @staticmethod
@@ -76,7 +74,7 @@ class Task:
 
             # Defaults stored in mutable state dict for easy updating
             state = {
-                "priority": 2,   # Medium by default
+                "priority": 1,   # Default priority (lowest)
                 "status": "ToDo",
                 "task_id": "",
             }
@@ -111,7 +109,7 @@ class Task:
     def to_text(self) -> str:
         """Convert task to text format (each property on its own line)."""
         lines = [
-            f"Priority: {self.priority}",
+            f"Priority: {self.priority:4d}",
             f"Status: {self.status}",
             f"ID: {self.id}",
             self.description.strip(),

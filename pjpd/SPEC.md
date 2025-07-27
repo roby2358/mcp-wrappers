@@ -31,16 +31,16 @@ This specification outlines the design, structure, and operational requirements 
 * `add_task` - Create a new task with parameters:
     * `project` (string, required): Project name (becomes filename without .txt)
     * `description` (string, required): Task description
-    * `priority` (integer, required): Priority level (1=High, 2=Medium, 3=Note)
+    * `priority` (integer, required): Priority level (plain integer, higher numbers = higher priority)
 * `list_tasks` - List tasks with optional filtering:
     * `project` (string, optional): Filter by specific project
-    * `priority` (integer, optional): Filter by priority level
+    * `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
     * `status` (string, optional): Filter by status ("ToDo" or "Done")
     * `max_results` (integer, optional): Maximum number of results to return
 * `update_task` - Update an existing task:
     * `task_id` (string, required): 12-character task ID
     * `description` (string, optional): New task description
-    * `priority` (integer, optional): New priority level
+    * `priority` (integer, optional): New priority level (plain integer)
     * `status` (string, optional): New status ("ToDo" or "Done")
 * `mark_done` - Mark a task as completed:
     * `task_id` (string, required): 12-character task ID
@@ -53,7 +53,7 @@ This specification outlines the design, structure, and operational requirements 
 * `sort_project` - Re-sort tasks within a project:
     * `project` (string, required): Project name to sort
     * `sort_by` (string, optional): Sort criteria (default: "priority_text")
-        * "priority_text": Sort by priority (1, 2, 3) then alphabetically by task description
+        * "priority_text": Sort by priority (plain integer) then alphabetically by task description
 
 ## Startup Behavior
 
@@ -71,7 +71,7 @@ This specification outlines the design, structure, and operational requirements 
 * Each task **MUST** be delimited by a separator line consisting of exactly three hyphens (`---`) on a line by itself
 * Each task **MUST** contain exactly four lines in this order:
     1. `ID: {12-character-random-string}`
-    2. `Priority: {1|2|3} {High|Medium|Note}`
+    2. `Priority: {integer}`
     3. `Status: {ToDo|Done}`
     4. Task description (may span multiple lines)
 * Task IDs **MUST** be exactly 12 characters using the URL-safe Base64 alphabet (A-Z, a-z, 0-9, -, _)
@@ -83,17 +83,17 @@ This specification outlines the design, structure, and operational requirements 
 
 ```
 ID: aB3dEf7gHiJk
-Priority: 1 High
+Priority:    1
 Status: ToDo
 Add functionality to encapsulate the cardinal graham meters.
 ---
 ID: mN9pQr2sT4uV
-Priority: 2 Medium
+Priority:   10
 Status: Done
 Update documentation for the new API endpoints.
 ---
 ID: wX6yZ1aB5cDe
-Priority: 3 Note
+Priority:  100
 Status: ToDo
 Consider refactoring the error handling in the main loop for better readability.
 ---
@@ -113,9 +113,9 @@ Consider refactoring the error handling in the main loop for better readability.
 
 ### Priority Levels
 
-* **Priority 1 (High)**: Tasks that act as dependencies for other work
-* **Priority 2 (Medium)**: Standard tasks
-* **Priority 3 (Note)**: Nice-to-have items, reminders, refactoring notes
+* **Higher numbers = higher priority**: Tasks with priority 100 have higher priority than tasks with priority 1
+* **Plain integers**: Priority is stored as a plain integer value
+* **4-digit formatting**: When rendered in files, priorities are formatted as 4 digits with space padding
 
 ### Status Values
 
@@ -130,7 +130,7 @@ Consider refactoring the error handling in the main loop for better readability.
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file
 * Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `---` separator
 * The system **MUST** be able to locate any task by ID across all project files
-* Tasks within a project **MAY** be re-sorted by priority (1, 2, 3) followed by alphabetical order of task description
+* Tasks within a project **MAY** be re-sorted by priority (plain integer) followed by alphabetical order of task description
 * Sorting operations **MUST** preserve all task data including IDs, status, and descriptions
 * Sorting **MUST** rewrite the entire project file with tasks in the new order
 
@@ -149,9 +149,8 @@ Consider refactoring the error handling in the main loop for better readability.
 ### Next Steps Algorithm
 
 * **MUST** prioritize tasks in this order:
-    1. Priority 1 (High) tasks with Status: ToDo
-    2. Priority 2 (Medium) tasks with Status: ToDo
-    3. Priority 3 (Note) tasks with Status: ToDo
+    1. Higher priority number tasks with Status: ToDo (e.g., priority 100 before priority 1)
+    2. Tasks are sorted by priority value in descending order
 * **MUST** return tasks from multiple projects when available
 * **SHOULD** indicate which project each suggested task belongs to
 

@@ -57,7 +57,7 @@ class TaskDict(TypedDict):
 
     id: str
     project: str
-    priority: int  # 1=High, 2=Medium, 3=Note
+    priority: int  # Plain integer priority (higher numbers = higher priority)
     status: str  # Keep string to avoid Enum/JSON serialisation issues
     description: str
 
@@ -172,7 +172,7 @@ async def list_tasks(
 
     Args:
         project: Filter tasks by a specific project name.
-        priority: Filter tasks by priority level (1=High, 2=Medium, 3=Note).
+        priority: Filter tasks by priority level (returns all tasks >= this priority).
         status: Filter tasks by status (TaskStatus.TODO or TaskStatus.DONE).
         max_results: Maximum number of tasks to return.
 
@@ -201,8 +201,8 @@ async def list_tasks(
             # filter_tasks returns plain Dicts; cast for stricter typing purposes
             tasks.extend(filtered_tasks)  # type: ignore[arg-type]
 
-        # Sort tasks by priority then description for deterministic output
-        tasks.sort(key=lambda item: (item["priority"], item["description"].lower()))
+        # Sort tasks by priority (higher numbers first) then description for deterministic output
+        tasks.sort(key=lambda item: (-item["priority"], item["description"].lower()))
 
         # Apply max_results limit if provided, otherwise use config default
         if max_results is not None and max_results > 0:

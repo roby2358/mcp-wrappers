@@ -133,8 +133,11 @@ class Project:
             # Ensure directory exists
             self.file_path.parent.mkdir(parents=True, exist_ok=True)
             
+            # Sort tasks by priority (descending) before saving
+            sorted_tasks = sorted(self.tasks, key=lambda task: task.priority, reverse=True)
+            
             # Convert tasks to text format
-            task_texts = [task.to_text() for task in self.tasks]
+            task_texts = [task.to_text() for task in sorted_tasks]
             
             # Join with --- separators
             content = '\n---\n'.join(task_texts)
@@ -150,8 +153,8 @@ class Project:
         return len(self.tasks)
     
     def get_tasks_by_priority(self, priority: int) -> List[Task]:
-        """Get all tasks with a specific priority"""
-        return [task for task in self.tasks if task.priority == priority]
+        """Get all tasks with priority >= the specified value"""
+        return [task for task in self.tasks if task.priority >= priority]
     
     def get_tasks_by_status(self, status: str) -> List[Task]:
         """Get all tasks with a specific status"""
@@ -162,9 +165,9 @@ class Project:
         todo_tasks = self.get_tasks_by_status("ToDo")
         done_tasks = self.get_tasks_by_status("Done")
         
-        high_priority_todo = [t for t in todo_tasks if t.priority == 1]
-        medium_priority_todo = [t for t in todo_tasks if t.priority == 2]
-        note_todo = [t for t in todo_tasks if t.priority == 3]
+        high_priority_todo = [t for t in todo_tasks if t.priority >= 100]
+        medium_priority_todo = [t for t in todo_tasks if 10 <= t.priority < 100]
+        low_priority_todo = [t for t in todo_tasks if t.priority < 10]
         
         return {
             "name": self.name,
@@ -173,14 +176,14 @@ class Project:
             "done_tasks": len(done_tasks),
             "high_priority_todo": len(high_priority_todo),
             "medium_priority_todo": len(medium_priority_todo),
-            "note_todo": len(note_todo)
+            "low_priority_todo": len(low_priority_todo)
         }
     
     def filter_tasks(self, priority: Optional[int] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """Filter tasks by priority and status, returning them as dictionaries.
         
         Args:
-            priority: Filter tasks by priority level (1=High, 2=Medium, 3=Note).
+            priority: Filter tasks by priority level (plain integer). Returns all tasks >= this priority.
             status: Filter tasks by status ("ToDo" or "Done").
             
         Returns:
@@ -189,8 +192,8 @@ class Project:
         filtered_tasks = []
         
         for task in self.tasks:
-            # Filter by priority if specified
-            if priority is not None and task.priority != priority:
+            # Filter by priority if specified (>= priority)
+            if priority is not None and task.priority < priority:
                 continue
                 
             # Filter by status if specified (case-insensitive comparison)
