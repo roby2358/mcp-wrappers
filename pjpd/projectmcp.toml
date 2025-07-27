@@ -1,0 +1,10 @@
+# ProjectMCP Configuration
+# This file configures the ProjectMCP server behavior
+
+# Directory where project files are stored
+# Default: ~/projects
+projects_directory = "~/projects"
+
+# Maximum number of results to return in list operations
+# Default: 50
+max_results = 50 

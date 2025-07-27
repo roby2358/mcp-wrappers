@@ -11,6 +11,7 @@ from typing import Dict, Any, List
 
 from mcp.server.fastmcp import FastMCP
 from projects import Projects
+from config import Config
 
 # Centralized logging configuration
 def setup_logging():
@@ -25,9 +26,10 @@ def setup_logging():
 setup_logging()
 
 # Create the MCP server instance
-mcp = FastMCP("hello-world")
+mcp = FastMCP("projectmcp")
 
-# Create a single Projects instance to track the path
+# Create configuration and projects manager instances
+config = Config()
 projects_manager = Projects()
 
 def mcp_success(result: Any) -> Dict[str, Any]:
@@ -66,19 +68,19 @@ async def list_projects(path: str = None) -> Dict[str, Any]:
     List all projects with their task counts and overview.
     
     Args:
-        path: Optional path to the projects directory. If not provided, uses the previously set path or defaults to ~/projects.
+        path: Optional path to the projects directory. If not provided, uses the configured path or defaults to ~/projects.
     
     Returns a comprehensive overview of all projects including task counts, 
     todo/done status, and project details.
     """
     try:
-        # Set the projects directory if a path is provided
+        # Set the projects directory if a path is provided, otherwise use config
         if path:
             projects_dir = Path(path)
             projects_manager.set_projects_dir(projects_dir)
         elif projects_manager.projects_dir is None:
-            # Use default if no path has been set yet
-            projects_dir = Path.home() / "projects"
+            # Use configured projects directory
+            projects_dir = Path(config(Config.PROJECTS_DIRECTORY, "~/projects"))
             projects_manager.set_projects_dir(projects_dir)
         
         # Get comprehensive project overview
@@ -125,10 +127,10 @@ async def list_tasks(
     """
 
     try:
-        # Ensure the projects directory is set (use default if not already defined)
+        # Ensure the projects directory is set (use config if not already defined)
         if projects_manager.projects_dir is None:
-            default_dir = Path.home() / "projects"
-            projects_manager.set_projects_dir(default_dir)
+            projects_dir = Path(config(Config.PROJECTS_DIRECTORY, "~/projects"))
+            projects_manager.set_projects_dir(projects_dir)
 
         # Helper to normalise status input (keep None or exact value)
         if status is not None:
@@ -158,9 +160,13 @@ async def list_tasks(
         # Sort tasks by priority then description for deterministic output
         tasks.sort(key=lambda item: (item["priority"], item["description"].lower()))
 
-        # Apply max_results limit if provided
+        # Apply max_results limit if provided, otherwise use config default
         if max_results is not None and max_results > 0:
             tasks = tasks[:max_results]
+        else:
+            max_results_from_config = config(Config.MAX_RESULTS, 50)
+            if max_results_from_config > 0:
+                tasks = tasks[:max_results_from_config]
 
         return mcp_success({
             "total_tasks": len(tasks),
