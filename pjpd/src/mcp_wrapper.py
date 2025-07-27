@@ -3,15 +3,26 @@
 Hello World MCP Server using the official MCP SDK
 """
 
-import asyncio
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, TypedDict, Literal, Union
+
+from enum import Enum
 
 from mcp.server.fastmcp import FastMCP
 from projects import Projects
 from config import Config
+
+# Constants
+NO_PROJECTS_RESPONSE = {
+    "projects": [],
+    "total_projects": 0,
+    "total_tasks": 0,
+    "total_todo": 0,
+    "total_done": 0,
+    "message": "No projects found. Create your first project by adding a task!"
+}
 
 # Centralized logging configuration
 def setup_logging():
@@ -30,23 +41,63 @@ mcp = FastMCP("projectmcp")
 
 # Create configuration and projects manager instances
 config = Config()
-projects_manager = Projects()
+projects_manager = Projects(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
 
-def mcp_success(result: Any) -> Dict[str, Any]:
+# Strict typing helpers -----------------------------------------------------
+
+class TaskStatus(str, Enum):
+    """Enumerated set of valid task statuses."""
+
+    TODO = "ToDo"
+    DONE = "Done"
+
+
+class TaskDict(TypedDict):
+    """Dictionary representation of a task returned by the API."""
+
+    id: str
+    project: str
+    priority: int  # 1=High, 2=Medium, 3=Note
+    status: str  # Keep string to avoid Enum/JSON serialisation issues
+    description: str
+
+
+class MCPResponseSuccess(TypedDict):
+    """Successful MCP response schema."""
+
+    success: Literal[True]
+    result: Any
+    error: str
+
+
+class MCPResponseFailure(TypedDict):
+    """Failed MCP response schema."""
+
+    success: Literal[False]
+    result: str
+    error: str
+
+
+MCPResponse = Union[MCPResponseSuccess, MCPResponseFailure]
+
+# MCP Tools and prompts -----------------------------------------------------
+
+
+def mcp_success(result: Any) -> MCPResponse:
     """Return a successful MCP response with the given result."""
-    return {
-        "success": True,
-        "result": result,
-        "error": ""
-    }
+    return MCPResponseSuccess(
+        success=True,
+        result=result,
+        error="",
+    )
 
-def mcp_failure(error_message: str) -> Dict[str, Any]:
+def mcp_failure(error_message: str) -> MCPResponse:
     """Return a failed MCP response with the given error message."""
-    return {
-        "success": False,
-        "result": "",
-        "error": error_message
-    }
+    return MCPResponseFailure(
+        success=False,
+        result="",
+        error=error_message,
+    )
 
 @mcp.prompt()
 def intro() -> str:
@@ -57,8 +108,6 @@ def intro() -> str:
         intro_path = Path(__file__).parent.parent / "resources" / "intro.txt"
         with open(intro_path, "r", encoding="utf-8") as f:
             return f.read()
-    except FileNotFoundError:
-        return "ProjectMCP Intro text missing: FileNotFoundError"
     except Exception as e:
         return f"Error loading intro text: {str(e)}"
 
@@ -78,48 +127,53 @@ async def list_projects(path: str = None) -> Dict[str, Any]:
         if path:
             projects_dir = Path(path)
             projects_manager.set_projects_dir(projects_dir)
-        elif projects_manager.projects_dir is None:
-            # Use configured projects directory
-            projects_dir = Path(config(Config.PROJECTS_DIRECTORY, "~/projects"))
-            projects_manager.set_projects_dir(projects_dir)
         
-        # Get comprehensive project overview
         overview = projects_manager.get_overview()
         
         if overview["total_projects"] == 0:
-            return mcp_success({
-                "projects": [],
-                "total_projects": 0,
-                "total_tasks": 0,
-                "total_todo": 0,
-                "total_done": 0,
-                "message": "No projects found. Create your first project by adding a task!"
-            })
+            return mcp_success(NO_PROJECTS_RESPONSE)
         
         return mcp_success(overview)
         
     except Exception as e:
         return mcp_failure(f"Error listing projects: {str(e)}")
 
-
-# ---------------------------------------------------------------------------
-# list_tasks tool
-# ---------------------------------------------------------------------------
+@mcp.tool()
+async def new_project(project: str) -> Dict[str, Any]:
+    """Create a new empty project file.
+    
+    Args:
+        project: The name of the project to create.
+    
+    Returns:
+        Standard MCP response indicating success or failure.
+    """
+    try:
+        created_project = projects_manager.create_project(project)
+        
+        return mcp_success({
+            "project_name": created_project.name,
+            "file_path": str(created_project.file_path),
+            "message": f"Project '{created_project.name}' created successfully"
+        })
+        
+    except Exception as e:
+        return mcp_failure(f"Error creating project: {str(e)}")
 
 
 @mcp.tool()
 async def list_tasks(
     project: str | None = None,
     priority: int | None = None,
-    status: str | None = None,
+    status: TaskStatus | None = None,
     max_results: int | None = None,
-) -> Dict[str, Any]:
+) -> MCPResponse:
     """List tasks with optional filtering.
 
     Args:
         project: Filter tasks by a specific project name.
         priority: Filter tasks by priority level (1=High, 2=Medium, 3=Note).
-        status: Filter tasks by status ("ToDo" or "Done").
+        status: Filter tasks by status (TaskStatus.TODO or TaskStatus.DONE).
         max_results: Maximum number of tasks to return.
 
     Returns:
@@ -127,35 +181,25 @@ async def list_tasks(
     """
 
     try:
-        # Ensure the projects directory is set (use config if not already defined)
-        if projects_manager.projects_dir is None:
-            projects_dir = Path(config(Config.PROJECTS_DIRECTORY, "~/projects"))
-            projects_manager.set_projects_dir(projects_dir)
+        status_str: str | None
+        if status is None:
+            status_str = None
+        elif isinstance(status, TaskStatus):
+            status_str = status.value.lower()
+        else:
+            # Fallback for string input; mypy will warn if mis-typed
+            status_str = str(status).strip().lower()
 
-        # Helper to normalise status input (keep None or exact value)
-        if status is not None:
-            status = status.strip()
-
-        tasks: List[Dict[str, Any]] = []
+        tasks: List[TaskDict] = []
 
         # Iterate over projects and gather tasks that match filters
         for proj in projects_manager.projects.values():
-            if project and proj.name != project:
+            if project and proj.name.lower() != project.lower():
                 continue
 
-            for t in proj.tasks:
-                if priority is not None and t.priority != priority:
-                    continue
-                if status is not None and t.status != status:
-                    continue
-
-                tasks.append({
-                    "id": t.id,
-                    "project": proj.name,
-                    "priority": t.priority,
-                    "status": t.status,
-                    "description": t.description,
-                })
+            filtered_tasks = proj.filter_tasks(priority=priority, status=status_str)
+            # filter_tasks returns plain Dicts; cast for stricter typing purposes
+            tasks.extend(filtered_tasks)  # type: ignore[arg-type]
 
         # Sort tasks by priority then description for deterministic output
         tasks.sort(key=lambda item: (item["priority"], item["description"].lower()))
@@ -168,29 +212,15 @@ async def list_tasks(
             if max_results_from_config > 0:
                 tasks = tasks[:max_results_from_config]
 
-        return mcp_success({
-            "total_tasks": len(tasks),
-            "tasks": tasks,
-        })
+        return mcp_success(
+            {
+                "total_tasks": len(tasks),
+                "tasks": tasks,
+            }
+        )
 
     except Exception as e:
         return mcp_failure(f"Error listing tasks: {str(e)}")
-
-@mcp.tool()
-async def echo(message: str) -> Dict[str, Any]:
-    """
-    Echo back the provided message.
-    This tool simply returns the message that was sent to it.
-    """
-    if not message:
-        return mcp_failure("Error: No message provided.")
-
-    try:
-        # Simply return the message
-        return mcp_success(message)
-
-    except Exception as e:
-        return mcp_failure(f"Error processing message: {str(e)}")
 
 def main():
     """Entry point for the application."""

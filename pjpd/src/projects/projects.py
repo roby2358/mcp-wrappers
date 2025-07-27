@@ -15,14 +15,40 @@ logger = logging.getLogger(__name__)
 class Projects:
     """Manages multiple projects and provides collection-level operations"""
     
-    def __init__(self, projects_dir: Path = None):
-        self.projects_dir = Path(projects_dir) if projects_dir else None
+    def __init__(self, projects_dir: Path | str | None = None):
+        """Create a Projects manager.
+
+        Args:
+            projects_dir: Path to the directory containing project *.txt files. If
+                the directory does not yet exist it will be created automatically.
+                When *None*, the directory must be provided later via
+                `set_projects_dir` before attempting to access projects.
+        """
+
+        # Normalise to a ``Path`` (and expand ~ for user convenience)
+        self.projects_dir = Path(projects_dir).expanduser() if projects_dir else None
+
+        # Create the directory up-front so subsequent file operations succeed
+        if self.projects_dir is not None:
+            self.projects_dir.mkdir(parents=True, exist_ok=True)
+
         self._projects: Optional[Dict[str, Project]] = None
         
-    def set_projects_dir(self, projects_dir: Path) -> None:
-        """Set the projects directory and clear cached projects"""
-        self.projects_dir = Path(projects_dir)
-        self._projects = None  # Clear cache to force reload
+    def set_projects_dir(self, projects_dir: Path | str) -> None:
+        """Update the projects directory.
+
+        The directory will be created if it does not already exist and the
+        in-memory cache will be cleared to ensure a fresh reload the next time
+        projects are accessed.
+        """
+
+        self.projects_dir = Path(projects_dir).expanduser()
+
+        # Guarantee directory existence so downstream operations are safe
+        self.projects_dir.mkdir(parents=True, exist_ok=True)
+
+        # Clear cache to force reload on next access
+        self._projects = None
         
     @property
     def projects(self) -> Dict[str, Project]:

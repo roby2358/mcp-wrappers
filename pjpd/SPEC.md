@@ -26,6 +26,8 @@ This specification outlines the design, structure, and operational requirements 
 
 #### Required Tools
 
+* `new_project` - Create a new empty project file:
+    * `project` (string, required): Project name (becomes filename without .txt)
 * `add_task` - Create a new task with parameters:
     * `project` (string, required): Project name (becomes filename without .txt)
     * `description` (string, required): Task description

@@ -18,6 +18,7 @@ Priority Levels:
 • Priority 3 (Note): Nice-to-have items, reminders, refactoring notes
 
 Available Tools:
+• new_project - Create a new empty project file
 • add_task - Create new tasks with project, description, and priority
 • list_tasks - List tasks with optional filtering by project, priority, or status
 • update_task - Update existing task description, priority, or status
@@ -27,6 +28,6 @@ Available Tools:
 • list_projects - Return list of all projects with task counts (optional path parameter)
 • sort_project - Re-sort tasks within a project by priority
 
-Projects are stored as .txt files in the projects directory (~/projects by default), with each project having its own file. You can specify a custom path when using list_projects. The system automatically creates project files when you add your first task to a new project.
+Projects are stored as .txt files in the projects directory (~/projects by default), with each project having its own file. You can specify a custom path when using list_projects. The system automatically creates project files when you add your first task to a new project, or you can create empty project files using the new_project tool.
 
-Get started by adding a task to a project or listing existing projects! 
+Get started by creating a new project or adding a task to an existing project! 

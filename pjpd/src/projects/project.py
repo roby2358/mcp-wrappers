@@ -174,4 +174,35 @@ class Project:
             "high_priority_todo": len(high_priority_todo),
             "medium_priority_todo": len(medium_priority_todo),
             "note_todo": len(note_todo)
-        } 
+        }
+    
+    def filter_tasks(self, priority: Optional[int] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Filter tasks by priority and status, returning them as dictionaries.
+        
+        Args:
+            priority: Filter tasks by priority level (1=High, 2=Medium, 3=Note).
+            status: Filter tasks by status ("ToDo" or "Done").
+            
+        Returns:
+            List of task dictionaries with id, priority, status, and description.
+        """
+        filtered_tasks = []
+        
+        for task in self.tasks:
+            # Filter by priority if specified
+            if priority is not None and task.priority != priority:
+                continue
+                
+            # Filter by status if specified (case-insensitive comparison)
+            if status is not None and task.status.lower() != status.lower():
+                continue
+                
+            filtered_tasks.append({
+                "id": task.id,
+                "project": self.name,
+                "priority": task.priority,
+                "status": task.status,
+                "description": task.description,
+            })
+            
+        return filtered_tasks 
