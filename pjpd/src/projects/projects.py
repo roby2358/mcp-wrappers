@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
 
-from projects.project import Project, Task
+from .project import Project, Task
 
 logger = logging.getLogger(__name__)
 

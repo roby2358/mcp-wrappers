@@ -96,17 +96,33 @@ class Project:
         return self.update_task(task_id, status="Done")
     
     def _write_atomic(self, content: str) -> None:
-        """Write content to a temp file with timestamp and atomically replace the project file"""
+        """
+        Atomically write updated project content while keeping a timestamped backup.
+
+        Steps:
+        1. Ensure a `bak` directory exists alongside the project file.
+        2. Write the new content to `<project>.<timestamp><suffix>` in the project directory.
+        3. Move the existing `<project><suffix>` (if any) to `bak/<project>.<timestamp><suffix>`.
+        4. Atomically move the new file into place as `<project><suffix>`.
+        """
         try:
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            temp_path = self.file_path.with_name(
-                f"{self.file_path.stem}.{timestamp}{self.file_path.suffix}"
-            )
-            # Write to the temporary file first
-            with open(temp_path, "w", encoding="utf-8") as f:
+            project_dir = self.file_path.parent
+            bak_dir = project_dir / "bak"
+            bak_dir.mkdir(parents=True, exist_ok=True)
+
+            # Step 2: write the new content to a timestamped file in the project directory
+            new_path = self.file_path.with_name(f"{self.file_path.stem}.{timestamp}{self.file_path.suffix}")
+            with open(new_path, "w", encoding="utf-8") as f:
                 f.write(content)
-            # Atomically move it into place
-            os.replace(temp_path, self.file_path)
+
+            # Step 3: move the old project file to bak/ if it exists
+            if self.file_path.exists():
+                bak_path = bak_dir / f"{self.file_path.stem}.{timestamp}{self.file_path.suffix}"
+                os.replace(self.file_path, bak_path)
+
+            # Step 4: atomically move the new file into place
+            os.replace(new_path, self.file_path)
         except Exception as e:
             logger.error(f"Error writing tasks for project {self.name}: {e}")
             raise
