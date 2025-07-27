@@ -44,16 +44,12 @@ This specification outlines the design, structure, and operational requirements 
     * `status` (string, optional): New status ("ToDo" or "Done")
 * `mark_done` - Mark a task as completed:
     * `task_id` (string, required): 12-character task ID
-* `get_overview` - Return summary of all projects and tasks:
-    * `include_done` (boolean, optional): Include completed tasks in overview (default: false)
+
 * `next_steps` - Determine high-priority tasks to work on next:
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
 * `list_projects` - Return list of all projects with task counts:
     * `path` (string, optional): Path to projects directory (default: ~/projects)
-* `sort_project` - Re-sort tasks within a project:
-    * `project` (string, required): Project name to sort
-    * `sort_by` (string, optional): Sort criteria (default: "priority_text")
-        * "priority_text": Sort by priority (plain integer) then alphabetically by task description
+
 
 ## Startup Behavior
 
@@ -130,9 +126,7 @@ Consider refactoring the error handling in the main loop for better readability.
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file
 * Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `---` separator
 * The system **MUST** be able to locate any task by ID across all project files
-* Tasks within a project **MAY** be re-sorted by priority (plain integer) followed by alphabetical order of task description
-* Sorting operations **MUST** preserve all task data including IDs, status, and descriptions
-* Sorting **MUST** rewrite the entire project file with tasks in the new order
+
 
 ---
 
