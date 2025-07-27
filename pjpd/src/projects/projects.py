@@ -3,7 +3,9 @@ Projects Management
 Manages multiple projects and provides collection-level operations
 """
 
+# Built-ins
 import logging
+import re
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
@@ -12,7 +14,13 @@ from .project import Project, Task
 
 logger = logging.getLogger(__name__)
 
+# Characters permitted to survive in a sanitised project filename.
+# Keep this at module level so it is computed once and easily discovered by
+# readers and other modules.
+ALLOWED_NAME_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-_@#$%!")
+
 class Projects:
+
     """Manages multiple projects and provides collection-level operations"""
     
     def __init__(self, projects_dir: Path | str | None = None):
@@ -55,7 +63,15 @@ class Projects:
         """Get all projects, loading from disk if needed"""
         if self._projects is None:
             self._load_projects()
-        return self._projects or {}
+
+        # _load_projects() guarantees ``self._projects`` is at least an empty
+        # dictionary.  We must return the *same* object so that callers can
+        # freely mutate it (e.g. ``self.projects[<name>] = project``) and the
+        # changes remain visible to the manager.  Returning a new empty dict
+        # (as the previous implementation did when the cache was empty) breaks
+        # this contract and causes newly-created projects to disappear from
+        # the in-memory cache.
+        return self._projects
     
     def _load_projects(self) -> None:
         """Load all projects from the projects directory"""
@@ -80,8 +96,22 @@ class Projects:
             self._projects = {}
     
     def get_project(self, name: str) -> Optional[Project]:
-        """Get a project by name"""
-        return self.projects.get(name)
+        """Retrieve a project by its *original* or sanitised name.
+
+        Consumers may pass either the exact name they initially provided when
+        the project was created (which could contain spaces or other
+        characters) *or* the sanitised filename-friendly version.  We therefore
+        attempt both look-ups to provide the most ergonomic API.
+        """
+
+        # Direct look-up first (handles already-sanitised names)
+        project = self.projects.get(name)
+        if project is not None:
+            return project
+
+        # Fall back to the sanitised variant
+        safe_name = self._sanitize_name(name)
+        return self.projects.get(safe_name)
     
     def create_project(self, name: str) -> Project:
         """Create a new project"""
@@ -89,25 +119,32 @@ class Projects:
         safe_name = self._sanitize_name(name)
         file_path = self.projects_dir / f"{safe_name}.txt"
         
-        project = Project(safe_name, file_path)
-        self.projects[safe_name] = project
-        
         # Ensure the projects directory exists
         self.projects_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create an empty project file if it doesn't exist
+        if not file_path.exists():
+            file_path.touch()
+        
+        project = Project(safe_name, file_path)
+        self.projects[safe_name] = project
         
         return project
     
     def _sanitize_name(self, name: str) -> str:
         """Sanitize a project name for use as a filename"""
-        import re
-        # Replace invalid characters with underscores
-        sanitized = re.sub(r'[<>:"/\\|?*]', '_', name)
-        # Remove leading/trailing spaces and dots
-        sanitized = sanitized.strip('. ')
-        # If empty after sanitization, use a default name
-        if not sanitized:
-            sanitized = "project"
-        return sanitized
+        # Normalise to lower-case for consistency and easier look-ups
+        name = name.lower()
+
+        # Replace all disallowed characters with underscores
+        transformed = [ch if ch in ALLOWED_NAME_CHARS else "_" for ch in name]
+        name = re.sub(r"_+", "_", "".join(transformed))
+
+        # Strip leading / trailing underscores or dots to avoid hidden / invalid
+        # filenames on some filesystems.
+        name = name.strip("._")
+
+        return name or "project"
     
     def list_projects(self) -> List[Dict[str, Any]]:
         """List all projects with their task counts"""

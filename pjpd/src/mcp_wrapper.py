@@ -125,8 +125,7 @@ async def list_projects(path: str = None) -> Dict[str, Any]:
     try:
         # Set the projects directory if a path is provided, otherwise use config
         if path:
-            projects_dir = Path(path)
-            projects_manager.set_projects_dir(projects_dir)
+            projects_manager.set_projects_dir(Path(path))
         
         overview = projects_manager.get_overview()
         
@@ -159,6 +158,34 @@ async def new_project(project: str) -> Dict[str, Any]:
         
     except Exception as e:
         return mcp_failure(f"Error creating project: {str(e)}")
+
+
+@mcp.tool()
+async def add_task(project: str, description: str, priority: int = 2) -> Dict[str, Any]:
+    """Add a new task to a project.
+    
+    Args:
+        project: The name of the project to add the task to. If the project doesn't exist, it will be created.
+        description: The description of the task.
+        priority: The priority level of the task (higher numbers = higher priority). Defaults to 2.
+    
+    Returns:
+        Standard MCP response with task details or error message.
+    """
+    try:
+        task = projects_manager.add_task(project, description, priority)
+        
+        if task:
+            return mcp_success({
+                **task.to_dict(),
+                "project": project,
+                "message": f"Task added to project '{project}' successfully"
+            })
+        else:
+            return mcp_failure(f"Failed to add task to project '{project}'")
+        
+    except Exception as e:
+        return mcp_failure(f"Error adding task: {str(e)}")
 
 
 @mcp.tool()

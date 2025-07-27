@@ -65,9 +65,9 @@ class Task:
 
             Priority: 1
             Status: ToDo
-            ID: a12bcdef34
             This is the description which may span
             multiple lines until the record separator (---).
+            ID: a12bcdef34
         """
         try:
             lines = text.strip().split('\n')
@@ -115,3 +115,12 @@ class Task:
             self.description.strip(),
         ]
         return "\n".join(lines) 
+    
+    def to_dict(self) -> dict:
+        """Convert task to dictionary format for API responses."""
+        return {
+            "id": self.id,
+            "priority": self.priority,
+            "status": self.status,
+            "description": self.description,
+        } 

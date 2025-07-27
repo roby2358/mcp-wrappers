@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+import uuid
 from typing import Dict, List, Any, Optional
 
 from textrec.text_records import TextRecords
@@ -28,7 +29,7 @@ class Project:
         """Get all tasks in this project, loading from file if needed"""
         if self._tasks is None:
             self._load_tasks()
-        return self._tasks or []
+        return self._tasks
     
     def _load_tasks(self) -> None:
         """Load tasks from the project file"""
@@ -51,8 +52,6 @@ class Project:
     
     def add_task(self, description: str, priority: int = 2) -> Task:
         """Add a new task to this project"""
-        import uuid
-        
         # Generate a unique 12-character ID
         task_id = str(uuid.uuid4())[:12]
         
@@ -142,11 +141,12 @@ class Project:
             # Join with --- separators
             content = '\n---\n'.join(task_texts)
             
-            # Write atomically to a timestamped temp file and move into place
+            # Always write the content, even if empty (for empty projects)
             self._write_atomic(content)
                 
         except Exception as e:
             logger.error(f"Error saving tasks for project {self.name}: {e}")
+            raise
     
     def get_task_count(self) -> int:
         """Get the total number of tasks"""
