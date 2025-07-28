@@ -45,12 +45,6 @@ projects_manager = Projects(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")
 
 # Strict typing helpers -----------------------------------------------------
 
-class TaskStatus(str, Enum):
-    """Enumerated set of valid task statuses."""
-
-    TODO = "ToDo"
-    DONE = "Done"
-
 
 class TaskDict(TypedDict):
     """Dictionary representation of a task returned by the API."""
@@ -190,7 +184,7 @@ async def add_task(project: str, description: str, priority: int = 2) -> Dict[st
 
 @mcp.tool()
 async def update_task(project: str, task_id: str, description: str = None, 
-                     priority: int = None, status: TaskStatus = None) -> Dict[str, Any]:
+                     priority: int = None, status: str = "ToDo") -> Dict[str, Any]:
     """Update an existing task in a project.
     
     Args:
@@ -198,17 +192,14 @@ async def update_task(project: str, task_id: str, description: str = None,
         task_id: The unique ID of the task to update.
         description: Optional new description for the task.
         priority: Optional new priority level (higher numbers = higher priority).
-        status: Optional new status (TaskStatus.TODO or TaskStatus.DONE).
+        status: Optional new status ("ToDo" or "Done"). Defaults to "ToDo".
     
     Returns:
         Standard MCP response with updated task details or error message.
     """
     try:
-        # Convert TaskStatus enum to string if provided
-        status_str = status.value if status else None
-        
         updated_task = projects_manager.update_task(
-            project, task_id, description, priority, status_str
+            project, task_id, description, priority, status
         )
         
         if updated_task:
@@ -228,7 +219,7 @@ async def update_task(project: str, task_id: str, description: str = None,
 async def list_tasks(
     project: str | None = None,
     priority: int | None = None,
-    status: TaskStatus | None = None,
+    status: str | None = None,
     max_results: int | None = None,
 ) -> MCPResponse:
     """List tasks with optional filtering.
@@ -236,7 +227,7 @@ async def list_tasks(
     Args:
         project: Filter tasks by a specific project name.
         priority: Filter tasks by priority level (returns all tasks >= this priority).
-        status: Filter tasks by status (TaskStatus.TODO or TaskStatus.DONE).
+        status: Filter tasks by status ("ToDo" or "Done").
         max_results: Maximum number of tasks to return.
 
     Returns:
@@ -247,11 +238,8 @@ async def list_tasks(
         status_str: str | None
         if status is None:
             status_str = None
-        elif isinstance(status, TaskStatus):
-            status_str = status.value.lower()
         else:
-            # Fallback for string input; mypy will warn if mis-typed
-            status_str = str(status).strip().lower()
+            status_str = status.strip().lower()
 
         tasks: List[TaskDict] = []
 
@@ -284,6 +272,82 @@ async def list_tasks(
 
     except Exception as e:
         return mcp_failure(f"Error listing tasks: {str(e)}")
+
+
+@mcp.tool()
+async def mark_done(project: str, task_id: str) -> Dict[str, Any]:
+    """Mark a task as completed.
+    
+    Args:
+        project: The name of the project containing the task.
+        task_id: The unique 10-character task ID to mark as done.
+    
+    Returns:
+        Standard MCP response with updated task details or error message.
+    """
+    try:
+        updated_task = projects_manager.update_task(
+            project, task_id, description=None, priority=0, status="Done"
+        )
+        
+        if not updated_task:
+            return mcp_failure(f"Task '{task_id}' not found in project '{project}'")
+        
+        return mcp_success({
+            **updated_task.to_dict(),
+            "project": project,
+            "message": f"Task '{task_id}' marked as done in project '{project}'"
+        })
+        
+    except Exception as e:
+        return mcp_failure(f"Error marking task as done: {str(e)}")
+
+
+@mcp.tool()
+async def next_steps(max_results: int = 5) -> Dict[str, Any]:
+    """Determine high-priority tasks to work on next.
+    
+    Args:
+        max_results: Maximum number of suggestions to return. Defaults to 5.
+    
+    Returns:
+        Standard MCP response with list of high-priority tasks to work on next.
+    """
+    try:
+        next_tasks = projects_manager.get_next_steps(max_results)
+        
+        if not next_tasks:
+            return mcp_success({
+                "tasks": [],
+                "total_tasks": 0,
+                "message": "No high-priority tasks found. All tasks are completed or no tasks exist."
+            })
+        
+        # Convert tasks to the expected format with project information
+        task_list = []
+        for task in next_tasks:
+            # Find which project this task belongs to
+            project_name = None
+            for proj_name, project in projects_manager.projects.items():
+                if project.get_task(task.id):
+                    project_name = proj_name
+                    break
+            
+            task_dict = {
+                **task.to_dict(),
+                "project": project_name
+            }
+            task_list.append(task_dict)
+        
+        return mcp_success({
+            "tasks": task_list,
+            "total_tasks": len(task_list),
+            "message": f"Found {len(task_list)} high-priority tasks to work on next"
+        })
+        
+    except Exception as e:
+        return mcp_failure(f"Error getting next steps: {str(e)}")
+
 
 def main():
     """Entry point for the application."""

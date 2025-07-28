@@ -38,13 +38,14 @@ This specification outlines the design, structure, and operational requirements 
     * `status` (string, optional): Filter by status ("ToDo" or "Done")
     * `max_results` (integer, optional): Maximum number of results to return
 * `update_task` - Update an existing task:
+    * `project` (string, required): The name of the project containing the task
     * `task_id` (string, required): 10-character task ID
     * `description` (string, optional): New task description
     * `priority` (integer, optional): New priority level (plain integer)
     * `status` (string, optional): New status ("ToDo" or "Done")
 * `mark_done` - Mark a task as completed:
+    * `project` (string, required): The name of the project containing the task
     * `task_id` (string, required): 10-character task ID
-
 * `next_steps` - Determine high-priority tasks to work on next:
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
 * `list_projects` - Return list of all projects with task counts:
