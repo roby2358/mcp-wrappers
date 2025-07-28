@@ -107,9 +107,10 @@ class Task:
                 if not changed:
                     description_lines.append(line)
 
-            # Must have an ID to be valid
+            # Generate ID if missing
             if not state["task_id"]:
-                return None
+                state["task_id"] = cls.generate_task_id()
+                logger.warning(f"Generated missing task ID for malformed record: {state["task_id"]}")
 
             description = "\n".join(description_lines).strip()
 
@@ -121,7 +122,7 @@ class Task:
             )
 
         except Exception as e:
-            logger.error(f"Error parsing task from text: {e}")
+            logger.warning(f"Malformed task record ignored: {e}")
             return None
     
     def to_text(self) -> str:

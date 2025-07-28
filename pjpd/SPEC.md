@@ -24,6 +24,11 @@ This specification outlines the design, structure, and operational requirements 
 * Use MCP SDK "fastmcp>=0.1.0" https://atproto.blue/en/latest/
 * Server **MUST** support stdio transport by default
 
+#### Required Prompts
+
+* `intro` - Return introductory description of the ProjectMCP system:
+    * No parameters required
+
 #### Required Tools
 
 * `new_project` - Create a new empty project file:
@@ -73,7 +78,9 @@ This specification outlines the design, structure, and operational requirements 
     4. Task description (may span multiple lines)
 * Task IDs **MUST** be exactly 10 characters using the URL-safe Base64 alphabet (A-Z, a-z, 0-9, -, _)
 * Task IDs **MUST** be unique within the entire system (across all projects)
+* Task ID uniqueness **MAY** rely on entropy/randomness without coordination - no global registry or coordination mechanism is required
 * Tasks **MUST** be parsed in order of appearance within each file
+* Tasks **MAY** be sorted by priority when saving to disk
 * Empty or malformed tasks **MUST** be ignored with a WARN-level log message
 
 ### Example Task Format
@@ -100,7 +107,8 @@ Consider refactoring the error handling in the main loop for better readability.
 
 * Each project **MUST** be stored as a separate `.txt` file in the projects directory
 * Project files **MUST** be named using the project name with `.txt` extension (e.g., `schedule-mcp.txt`)
-* Project names **MUST** be converted to lowercase and spaces replaced with hyphens for filenames
+* Project names **MUST** be converted to lowercase and all disallowed characters replaced with underscores for filenames
+* Runs of multiple underscores in project names **MUST** be collapsed to a single underscore
 * Each file **MUST** use UTF-8 encoding
 * Files **MAY** be created automatically when adding the first task to a new project
 
