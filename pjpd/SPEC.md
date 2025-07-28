@@ -38,12 +38,12 @@ This specification outlines the design, structure, and operational requirements 
     * `status` (string, optional): Filter by status ("ToDo" or "Done")
     * `max_results` (integer, optional): Maximum number of results to return
 * `update_task` - Update an existing task:
-    * `task_id` (string, required): 12-character task ID
+    * `task_id` (string, required): 10-character task ID
     * `description` (string, optional): New task description
     * `priority` (integer, optional): New priority level (plain integer)
     * `status` (string, optional): New status ("ToDo" or "Done")
 * `mark_done` - Mark a task as completed:
-    * `task_id` (string, required): 12-character task ID
+    * `task_id` (string, required): 10-character task ID
 
 * `next_steps` - Determine high-priority tasks to work on next:
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
@@ -66,11 +66,11 @@ This specification outlines the design, structure, and operational requirements 
 
 * Each task **MUST** be delimited by a separator line consisting of exactly three hyphens (`---`) on a line by itself
 * Each task **MUST** contain exactly four lines in this order:
-    1. `ID: {12-character-random-string}`
+    1. `ID: {10-character-random-string}`
     2. `Priority: {integer}`
     3. `Status: {ToDo|Done}`
     4. Task description (may span multiple lines)
-* Task IDs **MUST** be exactly 12 characters using the URL-safe Base64 alphabet (A-Z, a-z, 0-9, -, _)
+* Task IDs **MUST** be exactly 10 characters using the URL-safe Base64 alphabet (A-Z, a-z, 0-9, -, _)
 * Task IDs **MUST** be unique within the entire system (across all projects)
 * Tasks **MUST** be parsed in order of appearance within each file
 * Empty or malformed tasks **MUST** be ignored with a WARN-level log message
@@ -78,17 +78,17 @@ This specification outlines the design, structure, and operational requirements 
 ### Example Task Format
 
 ```
-ID: aB3dEf7gHiJk
+ID: AB-CDEF-GH
 Priority:    1
 Status: ToDo
 Add functionality to encapsulate the cardinal graham meters.
 ---
-ID: mN9pQr2sT4uV
+ID: 12-3456-78
 Priority:   10
 Status: Done
 Update documentation for the new API endpoints.
 ---
-ID: wX6yZ1aB5cDe
+ID: aB-cDeF-gH
 Priority:  100
 Status: ToDo
 Consider refactoring the error handling in the main loop for better readability.
@@ -120,7 +120,7 @@ Consider refactoring the error handling in the main loop for better readability.
 
 ### Task Operations
 
-* Tasks **MUST** be identified by their unique 12-character ID across all projects
+* Tasks **MUST** be identified by their unique 10-character ID across all projects
 * Task IDs **MUST** be generated automatically when creating new tasks
 * Task updates **MUST** preserve the original file structure and separator format
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file

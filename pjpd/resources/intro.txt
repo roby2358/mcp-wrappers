@@ -10,7 +10,7 @@ Key Features:
 • Project overviews and next steps recommendations
 
 Task Format:
-Each task is stored with a unique 12-character ID, priority level, status (ToDo/Done), and description, separated by "---" lines.
+Each task is stored with a unique 10-character ID, priority level, status (ToDo/Done), and description, separated by "---" lines.
 
 Priority Levels:
 • Higher numbers = higher priority (e.g., priority 100 is higher than priority 1)

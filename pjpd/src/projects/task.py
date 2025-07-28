@@ -4,10 +4,15 @@ Represents a single task in a project
 """
 
 import logging
+import random
+import string
 from dataclasses import dataclass
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# URL-safe base64 alphabet: A-Z, a-z, 0-9, -, _
+URL_SAFE_BASE64_CHARS = string.ascii_letters + string.digits + "-_"
 
 @dataclass
 class Task:
@@ -16,6 +21,19 @@ class Task:
     priority: int  # Plain integer priority (higher numbers = higher priority)
     status: str    # "ToDo" or "Done"
     description: str
+
+    @staticmethod
+    def generate_task_id() -> str:
+        """Generate a unique task ID in format XX-XXXX-XX using URL-safe base64 characters.
+        
+        Returns:
+            A 10-character task ID in the format XX-XXXX-XX where X are URL-safe base64 characters.
+        """
+        # Generate 8 random characters
+        chars = [random.choice(URL_SAFE_BASE64_CHARS) for _ in range(8)]
+        
+        # Format as XX-XXXX-XX
+        return f"{chars[0]}{chars[1]}-{chars[2]}{chars[3]}{chars[4]}{chars[5]}-{chars[6]}{chars[7]}"
 
     @staticmethod
     def _parse_priority(value: str, state: dict) -> tuple[bool, dict]:

@@ -189,6 +189,42 @@ async def add_task(project: str, description: str, priority: int = 2) -> Dict[st
 
 
 @mcp.tool()
+async def update_task(project: str, task_id: str, description: str = None, 
+                     priority: int = None, status: TaskStatus = None) -> Dict[str, Any]:
+    """Update an existing task in a project.
+    
+    Args:
+        project: The name of the project containing the task.
+        task_id: The unique ID of the task to update.
+        description: Optional new description for the task.
+        priority: Optional new priority level (higher numbers = higher priority).
+        status: Optional new status (TaskStatus.TODO or TaskStatus.DONE).
+    
+    Returns:
+        Standard MCP response with updated task details or error message.
+    """
+    try:
+        # Convert TaskStatus enum to string if provided
+        status_str = status.value if status else None
+        
+        updated_task = projects_manager.update_task(
+            project, task_id, description, priority, status_str
+        )
+        
+        if updated_task:
+            return mcp_success({
+                **updated_task.to_dict(),
+                "project": project,
+                "message": f"Task '{task_id}' updated successfully in project '{project}'"
+            })
+        else:
+            return mcp_failure(f"Task '{task_id}' not found in project '{project}'")
+        
+    except Exception as e:
+        return mcp_failure(f"Error updating task: {str(e)}")
+
+
+@mcp.tool()
 async def list_tasks(
     project: str | None = None,
     priority: int | None = None,

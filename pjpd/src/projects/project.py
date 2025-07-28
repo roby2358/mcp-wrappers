@@ -52,11 +52,9 @@ class Project:
     
     def add_task(self, description: str, priority: int = 2) -> Task:
         """Add a new task to this project"""
-        # Generate a unique 12-character ID
-        task_id = str(uuid.uuid4())[:12]
-        
+        # Generate a unique task ID
         task = Task(
-            id=task_id,
+            id=Task.generate_task_id(),
             priority=priority,
             status="ToDo",
             description=description
