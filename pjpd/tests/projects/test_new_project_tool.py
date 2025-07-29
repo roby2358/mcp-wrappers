@@ -112,21 +112,19 @@ class TestNewProjectTool:
         assert "Permission denied" in result["error"]
     
     async def test_new_project_empty_name(self, mock_projects_manager, mock_config):
-        """Test creating a project with an empty name"""
-        # Setup mock project (should handle empty name gracefully)
-        mock_project = MagicMock()
-        mock_project.name = "project"  # Default name when empty
-        mock_project.file_path = Path("~/projects/project.txt")
-        
-        # Setup projects manager mock
-        mock_projects_manager.create_project.return_value = mock_project
-        
-        # Call the tool with empty name
+        """Test that creating a project with an empty name returns a failure response."""
+
+        # Configure the projects manager to raise ValueError for an empty name
+        mock_projects_manager.create_project.side_effect = ValueError(
+            "Project name cannot be empty or invalid"
+        )
+
+        # Call the tool with an empty project name
         result = await new_project("")
-        
-        # Verify the result
-        assert result["success"] is True
-        assert result["result"]["project_name"] == "project"
+
+        # Verify that the response indicates failure
+        assert result["success"] is False
+        assert "Project name cannot be empty or invalid" in result["error"]
     
     async def test_new_project_unicode_name(self, temp_projects_dir, mock_projects_manager, mock_config):
         """Test creating a project with unicode characters in the name"""

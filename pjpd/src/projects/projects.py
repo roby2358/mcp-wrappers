@@ -37,9 +37,6 @@ class Projects:
                 the directory does not yet exist it will be created automatically.
         """
         self.set_projects_dir(projects_dir)
-        
-        # Load initial projects
-        self.refresh_projects()
  
 
     def set_projects_dir(self, projects_dir: Path | str) -> None:
@@ -176,7 +173,10 @@ class Projects:
         # filenames on some filesystems.
         name = name.strip("._")
 
-        return name or "project"
+        if not name:
+            raise ValueError(f"Project name cannot be empty or invalid: {name}")
+        
+        return name
     
     def list_projects(self) -> List[Dict[str, Any]]:
         """List all projects with their task counts.

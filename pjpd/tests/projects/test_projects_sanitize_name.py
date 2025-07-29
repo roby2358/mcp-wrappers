@@ -1,26 +1,40 @@
 import pytest
 import tempfile
-import os
 
 from src.projects.projects import Projects
 
+
+# ----------------------------
+# Valid name cases
+# ----------------------------
 
 @pytest.mark.parametrize(
     "raw, expected",
     [
         ("My Project! @#$%", "my_project!_@#$%"),
         ("  My   Project  ", "my_project"),
-        ("", "project"),
-        ("..", "project"),
         ("FileName*Inva|id", "filename_inva_id"),
         ("Multiple    Spaces", "multiple_spaces"),
-        ("___", "project"),
         ("Project!Name!", "project!name!"),
     ],
 )
-def test_sanitize_name(raw: str, expected: str):
-    """Ensure `_sanitize_name` normalises project names into safe filenames."""
+def test_sanitize_name_valid(raw: str, expected: str):
+    """Valid names should be sanitized correctly."""
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        projects = Projects(temp_dir)  # Directory needed but not used for sanitisation logic
-        assert projects._sanitize_name(raw) == expected 
+        projects = Projects(temp_dir)
+        assert projects._sanitize_name(raw) == expected
+
+
+# ----------------------------
+# Invalid name cases
+# ----------------------------
+
+@pytest.mark.parametrize("invalid", ["", "..", "___"])
+def test_sanitize_name_invalid(invalid: str):
+    """Invalid names should raise a ValueError."""
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        projects = Projects(temp_dir)
+        with pytest.raises(ValueError):
+            projects._sanitize_name(invalid) 
