@@ -76,7 +76,8 @@ This specification outlines the design, structure, and operational requirements 
     2. `Priority: {integer}`
     3. `Status: {ToDo|Done}`
     4. Task description (may span multiple lines)
-* Task IDs **MUST** be exactly 10 characters using the URL-safe Base64 alphabet (A-Z, a-z, 0-9, -, _)
+* Task IDs **MUST** be exactly 10 characters
+* Task ID character sets **SHOULD** use base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0) to facilitate manual entry
 * Task IDs **MUST** be unique within the entire system (across all projects)
 * Task ID uniqueness **MAY** rely on entropy/randomness without coordination - no global registry or coordination mechanism is required
 * Tasks **MUST** be parsed in order of appearance within each file
@@ -111,6 +112,19 @@ Consider refactoring the error handling in the main loop for better readability.
 * Runs of multiple underscores in project names **MUST** be collapsed to a single underscore
 * Each file **MUST** use UTF-8 encoding
 * Files **MAY** be created automatically when adding the first task to a new project
+
+### Ignore File Support
+
+* When scanning for project files, the system **MUST** honor a `.ignore` file in the projects directory
+* The `.ignore` file **MAY** contain a list of file patterns to ignore, one per line
+* Ignore patterns **MUST** support simple wildcard semantics:
+    * `*` matches any sequence of characters
+    * Patterns are matched against the full filename (including extension)
+    * Patterns are case-sensitive
+* Empty lines and lines starting with `#` **MUST** be treated as comments and ignored
+* Leading and trailing whitespace **MUST** be stripped from ignore patterns
+* If a `.ignore` file does not exist, files **MUST NOT** be ignored
+* The system **MUST** only scan the projects directory itself (no recursive traversal)
 
 ---
 

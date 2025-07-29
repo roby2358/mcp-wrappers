@@ -11,6 +11,7 @@ from typing import Dict, List, Any, Optional
 from collections import defaultdict
 
 from .project import Project, Task
+from .ignore_list import IgnoreList
 
 logger = logging.getLogger(__name__)
 
@@ -84,12 +85,16 @@ class Projects:
             # Find all .txt files in the projects directory
             project_files = list(self.projects_dir.glob("*.txt"))
             
-            for project_file in project_files:
+            # Apply ignore list filtering
+            ignore_list = IgnoreList(self.projects_dir)
+            filtered_files = ignore_list.filter_files(project_files)
+            
+            for project_file in filtered_files:
                 project_name = project_file.stem  # filename without extension
                 project = Project(project_name, project_file)
                 self._projects[project_name] = project
                 
-            logger.info(f"Loaded {len(self._projects)} projects")
+            logger.info(f"Loaded {len(self._projects)} projects (filtered from {len(project_files)} .txt files)")
             
         except Exception as e:
             logger.error(f"Error loading projects: {e}")
