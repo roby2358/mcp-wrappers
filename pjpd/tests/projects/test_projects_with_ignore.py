@@ -24,7 +24,7 @@ class TestProjectsWithIgnore:
         
         # Load projects
         projects = Projects(tmp_path)
-        projects._load_projects()
+        projects.refresh_projects()
         
         # Should only load non-ignored projects
         assert "project1" in projects.projects
@@ -41,7 +41,7 @@ class TestProjectsWithIgnore:
         
         # Load projects (no .ignore file)
         projects = Projects(tmp_path)
-        projects._load_projects()
+        projects.refresh_projects()
         
         # Should load all .txt files
         assert "project1" in projects.projects
@@ -62,7 +62,7 @@ class TestProjectsWithIgnore:
         
         # Load projects
         projects = Projects(tmp_path)
-        projects._load_projects()
+        projects.refresh_projects()
         
         # Should ignore files matching patterns but not comments
         assert "project1" in projects.projects
@@ -82,7 +82,7 @@ class TestProjectsWithIgnore:
         
         # Load projects
         projects = Projects(tmp_path)
-        projects._load_projects()
+        projects.refresh_projects()
         
         # Should ignore files despite whitespace in patterns
         assert "project1" in projects.projects

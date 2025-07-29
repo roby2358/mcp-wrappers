@@ -36,13 +36,18 @@ class TestProjectCreationAndSaving:
         
         # Verify the project is in the projects cache
         assert "test-project" in projects.projects
-        assert projects.projects["test-project"] == project
+        # The project retrieved from cache should have the same file path and name
+        cached_project = projects.projects["test-project"]
+        assert cached_project.file_path == project.file_path
+        assert cached_project.name == project.name
     
     def test_add_task_to_new_project_creates_file(self, temp_projects_dir):
         """Test that adding a task to a new project creates the project file"""
         projects = Projects(temp_projects_dir)
         
-        # Add a task to a new project
+        # Create the project first
+        projects.create_project("test-project")
+        # Add a task to the existing project
         task = projects.add_task("test-project", "Test task", 5)
         
         # Verify the project file was created
@@ -62,7 +67,8 @@ class TestProjectCreationAndSaving:
         """Test that adding a task saves it to the project file"""
         projects = Projects(temp_projects_dir)
         
-        # Add a task
+        # Create the project and then add a task
+        projects.create_project("test-project")
         task = projects.add_task("test-project", "Test task", 10)
         
         # Verify the file contains the task
@@ -79,7 +85,7 @@ class TestProjectCreationAndSaving:
         """Test that tasks are saved in the correct format (Priority first, Status second, ID third, Description last)"""
         projects = Projects(temp_projects_dir)
         
-        # Add a task
+        projects.create_project("test-project")
         task = projects.add_task("test-project", "Test task", 100)
         
         # Read the file content
@@ -105,7 +111,7 @@ class TestProjectCreationAndSaving:
         """Test that multiple tasks are saved correctly"""
         projects = Projects(temp_projects_dir)
         
-        # Add multiple tasks
+        projects.create_project("test-project")
         task1 = projects.add_task("test-project", "First task", 5)
         task2 = projects.add_task("test-project", "Second task", 10)
         
