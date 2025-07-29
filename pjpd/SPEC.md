@@ -16,56 +16,6 @@ This specification outlines the design, structure, and operational requirements 
     * `projects_directory` = "~/projects"
     * `max_results` = 50
 
-## API
-
-### MCP Interface
-
-* The system **MUST** present an MCP tools interface
-* Use MCP SDK "fastmcp>=0.1.0" https://atproto.blue/en/latest/
-* Server **MUST** support stdio transport by default
-
-#### Required Prompts
-
-* `intro` - Return introductory description of the ProjectMCP system:
-    * No parameters required
-
-#### Required Tools
-
-* `new_project` - Create a new empty project file:
-    * `project` (string, required): Project name (becomes filename without .txt)
-* `add_task` - Create a new task with parameters:
-    * `project` (string, required): Project name (becomes filename without .txt)
-    * `description` (string, required): Task description
-    * `priority` (integer, required): Priority level (plain integer, higher numbers = higher priority)
-* `list_tasks` - List tasks with optional filtering:
-    * `project` (string, optional): Filter by specific project
-    * `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
-    * `status` (string, optional): Filter by status ("ToDo" or "Done")
-    * `max_results` (integer, optional): Maximum number of results to return
-* `update_task` - Update an existing task:
-    * `project` (string, required): The name of the project containing the task
-    * `task_id` (string, required): 10-character task ID
-    * `description` (string, optional): New task description
-    * `priority` (integer, optional): New priority level (plain integer)
-    * `status` (string, optional): New status ("ToDo" or "Done")
-* `mark_done` - Mark a task as completed:
-    * `project` (string, required): The name of the project containing the task
-    * `task_id` (string, required): 10-character task ID
-* `next_steps` - Determine high-priority tasks to work on next:
-    * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
-* `list_projects` - Return list of all projects with task counts:
-    * `path` (string, optional): Path to projects directory (default: ~/projects)
-* `get_statistics` - Get comprehensive statistics about all projects:
-    * No parameters required
-
-
-## Startup Behavior
-
-* Projects **MUST NOT** be indexed at startup (let the user initiate via tool calls)
-* System **MUST** create projects directory if it doesn't exist
-* Startup **MUST** complete successfully even if some project files contain malformed tasks
-* All logging output **MUST** be directed to stderr
-
 ---
 
 ## Data Format and Storage
@@ -132,16 +82,13 @@ Consider refactoring the error handling in the main loop for better readability.
 
 ## Task Management
 
-### Priority Levels
+### Priority and Status
 
-* **Higher numbers = higher priority**: Tasks with priority 100 have higher priority than tasks with priority 1
-* **Plain integers**: Priority is stored as a plain integer value
-* **4-digit formatting**: When rendered in files, priorities are formatted as 4 digits with space padding
-
-### Status Values
-
-* **ToDo**: Task needs to be completed (default for new tasks)
-* **Done**: Task has been completed
+* **Priority Levels**: Higher numbers = higher priority (e.g., priority 100 > priority 1)
+* **Priority Storage**: Stored as plain integers, formatted as 4 digits with space padding when rendered
+* **Status Values**:
+    * `ToDo`: Task needs to be completed (default for new tasks)
+    * `Done`: Task has been completed
 
 ### Task Operations
 
@@ -151,8 +98,51 @@ Consider refactoring the error handling in the main loop for better readability.
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file
 * Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `---` separator
 * The system **MUST** be able to locate any task by ID across all project files
-* **Task Access Requirement**: All task operations **MUST** be performed through a project, id pair. The system **MUST** validate that the specified project exists before attempting to access or modify any task. This ensures that tasks are always accessed in the context of their containing project and prevents orphaned task references.
+* **Task Access Requirement**: All task operations **MUST** be performed through a project, id pair. The system **MUST** validate that the specified project exists before attempting to access or modify any task.
 
+---
+
+## API
+
+### MCP Interface
+
+* The system **MUST** present an MCP tools interface
+* Use MCP SDK "fastmcp>=0.1.0" https://atproto.blue/en/latest/
+* Server **MUST** support stdio transport by default
+
+#### Required Prompts
+
+* `intro` - Return introductory description of the ProjectMCP system:
+    * No parameters required
+
+#### Required Tools
+
+* `new_project` - Create a new empty project file:
+    * `project` (string, required): Project name (becomes filename without .txt)
+* `add_task` - Create a new task with parameters:
+    * `project` (string, required): Project name (becomes filename without .txt)
+    * `description` (string, required): Task description
+    * `priority` (integer, required): Priority level (higher numbers = higher priority)
+* `list_tasks` - List tasks with optional filtering:
+    * `project` (string, optional): Filter by specific project
+    * `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
+    * `status` (string, optional): Filter by status ("ToDo" or "Done")
+    * `max_results` (integer, optional): Maximum number of results to return
+* `update_task` - Update an existing task:
+    * `project` (string, required): The name of the project containing the task
+    * `task_id` (string, required): 10-character task ID
+    * `description` (string, optional): New task description
+    * `priority` (integer, optional): New priority level
+    * `status` (string, optional): New status ("ToDo" or "Done")
+* `mark_done` - Mark a task as completed:
+    * `project` (string, required): The name of the project containing the task
+    * `task_id` (string, required): 10-character task ID
+* `next_steps` - Determine high-priority tasks to work on next:
+    * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
+* `list_projects` - Return list of all projects with task counts:
+    * `path` (string, optional): Path to projects directory (default: ~/projects)
+* `get_statistics` - Get comprehensive statistics about all projects:
+    * No parameters required
 
 ---
 
@@ -174,13 +164,24 @@ Consider refactoring the error handling in the main loop for better readability.
 * **MUST** return tasks from multiple projects when available
 * **SHOULD** indicate which project each suggested task belongs to
 
-### Error Handling
+---
+
+## Error Handling
 
 * Invalid project names **MUST** return appropriate error messages
-* Missing files **MUST** be handled gracefully (empty project)
+* Missing or ignored files **MUST** be handled gracefully (empty project)
 * Malformed task records **MUST** be logged and skipped
 * Invalid task IDs **MUST** return clear error messages
 * Duplicate task IDs **MUST** be prevented during task creation
+
+---
+
+## Startup Behavior
+
+* Projects **MUST NOT** be indexed at startup (let the user initiate via tool calls)
+* System **MUST** create projects directory if it doesn't exist
+* Startup **MUST** complete successfully even if some project files contain malformed tasks
+* All logging output **MUST** be directed to stderr
 
 ---
 
