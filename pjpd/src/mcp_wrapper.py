@@ -243,14 +243,21 @@ async def list_tasks(
 
         tasks: List[TaskDict] = []
 
-        # Iterate over projects and gather tasks that match filters
-        for proj in projects_manager.projects.values():
-            if project and proj.name.lower() != project.lower():
-                continue
-
-            filtered_tasks = proj.filter_tasks(priority=priority, status=status_str)
-            # filter_tasks returns plain Dicts; cast for stricter typing purposes
+        # If a specific project is requested, validate it exists first
+        if project:
+            target_project = projects_manager.get_project(project)
+            if not target_project:
+                return mcp_failure(f"Project '{project}' not found")
+            
+            # Only process the specified project
+            filtered_tasks = target_project.filter_tasks(priority=priority, status=status_str)
             tasks.extend(filtered_tasks)  # type: ignore[arg-type]
+        else:
+            # Iterate over all projects and gather tasks that match filters
+            for proj in projects_manager.projects.values():
+                filtered_tasks = proj.filter_tasks(priority=priority, status=status_str)
+                # filter_tasks returns plain Dicts; cast for stricter typing purposes
+                tasks.extend(filtered_tasks)  # type: ignore[arg-type]
 
         # Sort tasks by priority (higher numbers first) then description for deterministic output
         tasks.sort(key=lambda item: (-item["priority"], item["description"].lower()))
@@ -347,6 +354,26 @@ async def next_steps(max_results: int = 5) -> Dict[str, Any]:
         
     except Exception as e:
         return mcp_failure(f"Error getting next steps: {str(e)}")
+
+
+@mcp.tool()
+async def get_statistics() -> Dict[str, Any]:
+    """Get comprehensive statistics about all projects.
+    
+    Returns:
+        Standard MCP response with detailed statistics including total counts,
+        breakdowns by priority, status, and project.
+    """
+    try:
+        stats = projects_manager.get_statistics()
+        
+        return mcp_success({
+            **stats,
+            "message": f"Retrieved statistics for {stats['total_projects']} projects with {stats['total_tasks']} total tasks"
+        })
+        
+    except Exception as e:
+        return mcp_failure(f"Error getting statistics: {str(e)}")
 
 
 def main():

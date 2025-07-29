@@ -1,4 +1,6 @@
 import pytest
+import tempfile
+import os
 
 from src.projects.projects import Projects
 
@@ -19,5 +21,6 @@ from src.projects.projects import Projects
 def test_sanitize_name(raw: str, expected: str):
     """Ensure `_sanitize_name` normalises project names into safe filenames."""
 
-    projects = Projects()  # Directory not needed for sanitisation logic
-    assert projects._sanitize_name(raw) == expected 
+    with tempfile.TemporaryDirectory() as temp_dir:
+        projects = Projects(temp_dir)  # Directory needed but not used for sanitisation logic
+        assert projects._sanitize_name(raw) == expected 

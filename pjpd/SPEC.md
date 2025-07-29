@@ -55,6 +55,8 @@ This specification outlines the design, structure, and operational requirements 
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
 * `list_projects` - Return list of all projects with task counts:
     * `path` (string, optional): Path to projects directory (default: ~/projects)
+* `get_statistics` - Get comprehensive statistics about all projects:
+    * No parameters required
 
 
 ## Startup Behavior
@@ -149,6 +151,7 @@ Consider refactoring the error handling in the main loop for better readability.
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file
 * Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `---` separator
 * The system **MUST** be able to locate any task by ID across all project files
+* **Task Access Requirement**: All task operations **MUST** be performed through a project, id pair. The system **MUST** validate that the specified project exists before attempting to access or modify any task. This ensures that tasks are always accessed in the context of their containing project and prevents orphaned task references.
 
 
 ---

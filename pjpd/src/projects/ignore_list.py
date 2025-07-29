@@ -11,29 +11,6 @@ from typing import List, Set
 logger = logging.getLogger(__name__)
 
 
-def _match_pattern(filename: str, pattern: str) -> bool:
-    """Case-sensitive pattern matching with wildcard support.
-    
-    Args:
-        filename: The filename to match against
-        pattern: The pattern to match (supports * and ? wildcards)
-        
-    Returns:
-        True if filename matches pattern, False otherwise
-    """
-    # Convert pattern to regex
-    regex_pattern = pattern.replace('.', r'\.')  # Escape dots
-    regex_pattern = regex_pattern.replace('*', '.*')  # * becomes .*
-    regex_pattern = regex_pattern.replace('?', '.')   # ? becomes .
-    regex_pattern = f'^{regex_pattern}$'  # Anchor to start and end
-    
-    try:
-        return bool(re.match(regex_pattern, filename))
-    except re.error:
-        # If regex compilation fails, fall back to exact match
-        return filename == pattern
-
-
 class IgnoreList:
     """Manages ignore patterns for filtering project files"""
     
@@ -45,7 +22,29 @@ class IgnoreList:
         """
         self.projects_dir = Path(projects_dir)
         self._patterns: List[str] = []
-        self._loaded = False
+        self.load_patterns()
+        
+    def _match_pattern(self, filename: str, pattern: str) -> bool:
+        """Case-sensitive pattern matching with wildcard support.
+        
+        Args:
+            filename: The filename to match against
+            pattern: The pattern to match (supports * and ? wildcards)
+            
+        Returns:
+            True if filename matches pattern, False otherwise
+        """
+        # Convert pattern to regex
+        regex_pattern = pattern.replace('.', r'\.')  # Escape dots
+        regex_pattern = regex_pattern.replace('*', '.*')  # * becomes .*
+        regex_pattern = regex_pattern.replace('?', '.')   # ? becomes .
+        regex_pattern = f'^{regex_pattern}$'  # Anchor to start and end
+        
+        try:
+            return bool(re.match(regex_pattern, filename))
+        except re.error:
+            # If regex compilation fails, fall back to exact match
+            return filename == pattern
         
     def load_patterns(self) -> None:
         """Load ignore patterns from the .ignore file"""
@@ -54,7 +53,6 @@ class IgnoreList:
         
         if not ignore_file.exists():
             logger.debug("No .ignore file found, no files will be ignored")
-            self._loaded = True
             return
             
         try:
@@ -76,8 +74,6 @@ class IgnoreList:
         except Exception as e:
             logger.error(f"Error loading .ignore file: {e}")
             self._patterns = []
-            
-        self._loaded = True
     
     def should_ignore(self, filename: str) -> bool:
         """Check if a filename should be ignored based on the loaded patterns.
@@ -88,11 +84,8 @@ class IgnoreList:
         Returns:
             True if the file should be ignored, False otherwise
         """
-        if not self._loaded:
-            self.load_patterns()
-            
         for pattern in self._patterns:
-            if _match_pattern(filename, pattern):
+            if self._match_pattern(filename, pattern):
                 logger.debug(f"File '{filename}' matches ignore pattern '{pattern}'")
                 return True
                 
@@ -107,9 +100,6 @@ class IgnoreList:
         Returns:
             List of Path objects for files that should not be ignored
         """
-        if not self._loaded:
-            self.load_patterns()
-            
         filtered_files = []
         
         for file_path in files:
@@ -127,12 +117,8 @@ class IgnoreList:
         Returns:
             List of ignore patterns
         """
-        if not self._loaded:
-            self.load_patterns()
-            
         return self._patterns.copy()
     
     def reload(self) -> None:
         """Reload ignore patterns from the .ignore file"""
-        self._loaded = False
         self.load_patterns() 
