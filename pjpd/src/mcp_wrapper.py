@@ -114,7 +114,7 @@ async def list_projects(path: str = None) -> Dict[str, Any]:
         path: Optional path to the projects directory. If not provided, uses the configured path or defaults to ~/projects.
     
     Returns a comprehensive overview of all projects including task counts, 
-    todo/done status, and project details.
+    todo/done status, project details, and the current project directory.
     """
     try:
         # Set the projects directory if a path is provided, otherwise use config
@@ -123,8 +123,11 @@ async def list_projects(path: str = None) -> Dict[str, Any]:
         
         overview = projects_manager.get_overview()
         
+        # Add the current project directory to the response
+        overview["project_directory"] = str(projects_manager.projects_dir)
+        
         if overview["total_projects"] == 0:
-            return mcp_success(NO_PROJECTS_RESPONSE)
+            return mcp_success(overview)
         
         return mcp_success(overview)
         
