@@ -1,0 +1,138 @@
+Product Management Extension Analysis for pjpd
+================================================
+
+1. Context
+----------
+`pjpd` currently focuses on **Project Management**: creating projects, managing tasks, atomic writes, ignore lists, etc.  
+To cover **Product Management** we need to support the upstream activities that determine *what* should be built and *why*, before the *how* and *when* tackled by Project Management.
+
+2. Key Product-Management Domains to Cover
+-----------------------------------------
+A. **Product Vision & Strategy**  
+   • Capture mission, north-star metrics, guardrails.  
+   • Versioned documents; diff-able like code.
+
+B. **Idea / Opportunity Management**  
+   • Intake pipeline for ideas, user feedback, competitor moves.  
+   • Tagging, deduplication, merging, archiving.
+
+C. **Backlog & Prioritisation**  
+   • Epics → stories → tasks hierarchy.  
+   • Scoring frameworks (RICE, MoSCoW, Kano, ICE).  
+   • What-if scenario planning.
+
+D. **Road-mapping & Release Planning**  
+   • Time-phased roadmap views (quarterly, monthly).  
+   • Release objects → version, date range, goals.
+
+E. **Metrics & Validation**  
+   • Experiment tracking (A/B test links, hypotheses, results).  
+   • Outcome metrics (adoption, retention, revenue).  
+   • Close the loop back into prioritization.
+
+F. **Stakeholder Communication**  
+   • Changelogs, progress emails, auto-generated slide decks.  
+   • Public vs internal roadmaps.
+
+3. Proposed Architecture Changes
+--------------------------------
+Folder `src/product/` mirrors `src/projects/`:
+```
+product/
+  __init__.py
+  idea.py            # Idea/Opportunity entity
+  backlog.py         # Epic/Story/Task aggregation
+  scoring.py         # Prioritisation algorithms (pure functions)
+  roadmap.py         # Release & time-line logic
+  metrics.py         # Experiment + KPI models
+  vision.py          # Vision/strategy docs utilities
+```
+
+Key principles:
+• **Functional core / imperative shell** – heavy logic in pure functions (`scoring.py`, `metrics.py`), thin classes for state.  
+• **FastMCP** stdio servers remain default.  
+• Config driven; extend `projectmcp.toml` with `[product]` section.
+
+4. Data Models
+--------------
+```
+Idea(id, title, description, tags, author, created, merged_into)
+Epic(id, title, goal, score, state, children=[Story])
+Story(id, title, acceptance, score, state, linked_tasks)
+Release(id, version, start_date, end_date, goals, stories)
+Metric(id, name, type, baseline, target, current)
+```
+All IDs continue using ULIDs (tests already cover ID generation).
+
+5. CLI / MCP Endpoints
+----------------------
+• `pjpd ideas add|list|merge|archive`  
+• `pjpd backlog score --framework rice`  
+• `pjpd roadmap view --granularity quarter`  
+• `pjpd release create --version 1.2.0`  
+• MCP tools: `list_ideas_tool`, `update_idea_tool`, `prioritize_backlog_tool`, ...
+
+6. Storage & Persistence
+------------------------
+Keep the flat-file JSON model used for tasks/projects for consistency.  
+Large docs (vision, PRDs) stored as Markdown under `products/<product_id>/docs/` so git diff works.
+
+7. Testing Strategy
+-------------------
+• Unit tests per module under `tests/product/`.  
+• Property-based tests for scoring algorithms.  
+• Golden-file tests for roadmap rendering.  
+• Integration tests ensuring project ↔ product links stay consistent.
+
+8. Incremental Roadmap
+----------------------
+Phase 1 – Foundations
+  1. Create data models & persistence helpers.  
+  2. CLI/MCP commands for Ideas CRUD.
+
+Phase 2 – Prioritisation & Backlog
+  3. Implement scoring algorithms.  
+  4. Epics/Stories hierarchy with linking to existing Tasks.
+
+Phase 3 – Road-mapping & Releases
+  5. Release objects, timeline visualisation (ASCII / Mermaid).  
+  6. Auto-generated changelogs from merged tasks.
+
+Phase 4 – Metrics & Validation
+  7. Metric tracking + experiment linkage.  
+  8. Feedback loop influencing backlog scores.
+
+9. Open Questions
+-----------------
+• Do we support multiple products per repo or single monolith?  
+• How to sync with external tools (Jira, Linear) without over-scoping?  
+• UI/visualisation: stick with CLI + generated docs, or add minimal web viewer?
+
+10. Conclusion
+--------------
+Extending `pjpd` into Product Management is feasible by re-using its project/task DNA, favouring functional modules, and incrementally layering higher-order product constructs.  
+Starting with Idea intake and Backlog scoring delivers immediate value while keeping the codebase coherent. 
+
+
+11. Simplified MVP
+------------------
+The absolute minimum to get Product Management off the ground in parity with the current lightweight
+Project‐Management side is roughly a dozen CLI/MCP tools.  Each is a thin wrapper around a pure‐function
+core, returning JSON so it can be composed by higher-level agents:
+
+1. **create_idea_tool** – add a new Idea/Opportunity (title, description, tags).
+2. **list_ideas_tool** – retrieve ideas filtered by tag, status, or search text.
+3. **update_idea_tool** – edit, merge, or archive an existing idea.
+4. **score_backlog_tool** – apply a scoring framework (RICE by default) to all Ideas/Epics.
+5. **create_epic_tool** – turn a validated idea into an Epic (goal, desired outcome).
+6. **list_epics_tool** – simple listing with state filter (planned, in-progress, done).
+7. **create_story_tool** – attach a Story to an Epic, providing acceptance criteria.
+8. **link_task_to_story_tool** – connect existing Project-side tasks to a Story for execution.
+9. **create_release_tool** – define a Release bucket (version, date range).
+10. **assign_story_to_release_tool** – place Stories/Epics into a Release for planning.
+11. **roadmap_view_tool** – render a text-based roadmap grouped by quarter/release.
+12. **metric_update_tool** – record an experiment or KPI measurement against a Story/Epic.
+
+With these commands—a CRUD trio for Ideas, lightweight backlog scoring, minimal Epic/Story hierarchy,
+and skeletal release + metrics hooks—we can capture opportunity, prioritise it, and feed it directly
+into the existing Project-Management execution loop without introducing heavy process overhead. 
