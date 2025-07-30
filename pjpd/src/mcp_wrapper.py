@@ -379,6 +379,18 @@ async def pjpd_get_statistics() -> Dict[str, Any]:
         return mcp_failure(f"Error getting statistics: {str(e)}")
 
 
+# --- Compatibility aliases (for unit tests and backward compatibility) ---
+
+async def list_projects(path: str | None = None):
+    """Alias for pjpd_list_projects to maintain backwards compatibility."""
+    return await pjpd_list_projects(path=path)
+
+
+async def new_project(project: str):
+    """Alias for pjpd_new_project to maintain backwards compatibility."""
+    return await pjpd_new_project(project=project)
+
+
 def main():
     """Entry point for the application."""
     print("Starting Hello World MCP Server...", file=sys.stderr)
