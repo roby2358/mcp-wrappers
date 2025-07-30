@@ -8,6 +8,8 @@ Key Features:
 • Simple, human-readable task format
 • MCP tools for adding, listing, updating, and completing tasks
 • Project overviews and next steps recommendations
+• Comprehensive statistics and reporting
+• Ignore file support for filtering project files
 
 Task Format:
 Each task is stored with a unique 10-character ID, priority level, status (ToDo/Done), and description, separated by "---" lines.
@@ -17,17 +19,30 @@ Priority Levels:
 • Plain integer values stored with 4-digit formatting in files
 • Flexible priority system allowing any integer value
 
-Available Tools:
-• new_project - Create a new empty project file
-• add_task - Create new tasks with project, description, and priority
-• list_tasks - List tasks with optional filtering by project, priority, or status
-• update_task - Update existing task description, priority, or status
-• mark_done - Mark a task as completed
+Available MCP Tools:
 
-• next_steps - Determine high-priority tasks to work on next
-• list_projects - Return list of all projects with task counts (optional path parameter)
+Core Project Management:
+• pjpd_new_project - Create a new empty project file
+• pjpd_list_projects - List all projects with task counts and overview (optional path parameter)
 
+Task Operations:
+• pjpd_add_task - Create new tasks with project, description, and priority
+• pjpd_list_tasks - List tasks with optional filtering by project, priority, status, or max_results
+• pjpd_update_task - Update existing task description, priority, or status
+• pjpd_mark_done - Mark a task as completed
 
-Projects are stored as .txt files in the projects directory (~/projects by default), with each project having its own file. You can specify a custom path when using list_projects. The system automatically creates project files when you add your first task to a new project, or you can create empty project files using the new_project tool.
+Analysis and Reporting:
+• pjpd_next_steps - Determine high-priority tasks to work on next
+• pjpd_get_statistics - Get comprehensive statistics about all projects
 
-Get started by creating a new project or adding a task to an existing project! 
+System Information:
+• pjpd_intro - Return this introductory description (prompt)
+
+Configuration:
+Projects are stored as .txt files in the projects directory (~/projects by default), with each project having its own file. You can specify a custom path when using pjpd_list_projects. The system automatically creates project files when you add your first task to a new project, or you can create empty project files using the pjpd_new_project tool.
+
+The system supports a .ignore file in the projects directory to filter out specific project files, and all configuration is managed through projectmcp.toml.
+
+Get started by creating a new project or adding a task to an existing project!
+
+IMPORTANT: This system modifies local files on disk. Before using any tools that create, update, or modify project files, please ensure you have backed up any important data and consent to these file modifications. 
