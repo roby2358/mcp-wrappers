@@ -94,7 +94,7 @@ def mcp_failure(error_message: str) -> MCPResponse:
     )
 
 @mcp.prompt()
-def intro() -> str:
+def pjpd_intro() -> str:
     """
     Return an introductory prompt that describes the ProjectMCP system.
     """
@@ -106,7 +106,7 @@ def intro() -> str:
         return f"Error loading intro text: {str(e)}"
 
 @mcp.tool()
-async def list_projects(path: str = None) -> Dict[str, Any]:
+async def pjpd_list_projects(path: str = None) -> Dict[str, Any]:
     """
     List all projects with their task counts and overview.
     
@@ -135,7 +135,7 @@ async def list_projects(path: str = None) -> Dict[str, Any]:
         return mcp_failure(f"Error listing projects: {str(e)}")
 
 @mcp.tool()
-async def new_project(project: str) -> Dict[str, Any]:
+async def pjpd_new_project(project: str) -> Dict[str, Any]:
     """Create a new empty project file.
     
     Args:
@@ -158,7 +158,7 @@ async def new_project(project: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def add_task(project: str, description: str, priority: int = 2) -> Dict[str, Any]:
+async def pjpd_add_task(project: str, description: str, priority: int = 2) -> Dict[str, Any]:
     """Add a new task to a project.
     
     Args:
@@ -186,7 +186,7 @@ async def add_task(project: str, description: str, priority: int = 2) -> Dict[st
 
 
 @mcp.tool()
-async def update_task(project: str, task_id: str, description: str = None, 
+async def pjpd_update_task(project: str, task_id: str, description: str = None, 
                      priority: int = None, status: str = "ToDo") -> Dict[str, Any]:
     """Update an existing task in a project.
     
@@ -219,7 +219,7 @@ async def update_task(project: str, task_id: str, description: str = None,
 
 
 @mcp.tool()
-async def list_tasks(
+async def pjpd_list_tasks(
     project: str | None = None,
     priority: int | None = None,
     status: str | None = None,
@@ -285,7 +285,7 @@ async def list_tasks(
 
 
 @mcp.tool()
-async def mark_done(project: str, task_id: str) -> Dict[str, Any]:
+async def pjpd_mark_done(project: str, task_id: str) -> Dict[str, Any]:
     """Mark a task as completed.
     
     Args:
@@ -314,7 +314,7 @@ async def mark_done(project: str, task_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def next_steps(max_results: int = 5) -> Dict[str, Any]:
+async def pjpd_next_steps(max_results: int = 5) -> Dict[str, Any]:
     """Determine high-priority tasks to work on next.
     
     Args:
@@ -360,7 +360,7 @@ async def next_steps(max_results: int = 5) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def get_statistics() -> Dict[str, Any]:
+async def pjpd_get_statistics() -> Dict[str, Any]:
     """Get comprehensive statistics about all projects.
     
     Returns:
