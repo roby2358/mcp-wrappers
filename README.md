@@ -1,7 +1,5 @@
 # MCP Wrappers
 
-*This is a toy. It it not intended for use by serious humans.*
-
 A collection of Model Context Protocol (MCP) server wrappers that provide controlled access to various system tools and services through the MCP protocol. These wrappers enable AI assistants like Claude to safely interact with your system while maintaining security boundaries.
 
 ## What is MCP?
@@ -26,12 +24,15 @@ Secure shell execution wrappers that provide controlled access to command-line t
 
 - **CMD Shell** (`cmd_shell.py`) - Controlled Windows CMD shell with allowlisted commands
 - **Bash Shell** (`bash_shell.py`) - Unix bash wrapper (work in progress)
+- **Persistent CMD Shell** (`persistent_cmd_shell.py`) - Long-running CMD process
+- **Background Reader** (`background_reader.py`) - Read background process output
 
 **Features:**
 - Secure execution of allowlisted commands
 - Protection against command injection
 - Persistent shell processes
 - Clear command output separation
+- Background process monitoring
 
 **Use case:** Safe execution of system commands through Claude with security controls.
 
@@ -54,12 +55,34 @@ A lightweight, local-first vector database for semantic search over plain text d
 - Human-readable `.txt` file storage
 - Vector embeddings using sentence-transformers
 - Fast similarity search with configurable results
+- HTTP server for web-based access
+- Support for multiple document formats
 
 **Use case:** Local document search and knowledge management through natural language queries.
 
+### 5. ProjectMCP (`pjpd/`)
+A lightweight, local-first project management system built on plain `.txt` files.
+
+**Features:**
+- Task management with priority-based organization
+- Project organization with separate `.txt` files
+- Simple, human-readable task format
+- MCP tools for adding, listing, updating, and completing tasks
+- Project overviews and next steps recommendations
+- Ignore file support for flexible project management
+- Atomic operations for data safety
+
+**Use case:** Local project management and task tracking through AI assistants.
+
 ## Quick Start
 
-See the Quick Start directions in each wrapper README.md.
+Each wrapper has its own installation and setup instructions. See the individual README.md files in each wrapper directory:
+
+- [`hello-world/README.md`](hello-world/README.md) - Simple echo tool
+- [`shell/README.md`](shell/README.md) - Shell execution wrappers
+- [`atproto/README.md`](atproto/README.md) - Bluesky social media integration
+- [`vecbook/README.md`](vecbook/README.md) - Local vector document search
+- [`pjpd/README.md`](pjpd/README.md) - Local project management
 
 ## Usage Examples
 
@@ -72,10 +95,10 @@ Then you can ask Claude to echo messages:
 - "Please echo 'Hello, MCP!'"
 - "Can you echo back this message?"
 
-### CMD Shell
+### Shell Wrappers
 Once configured, first send the intro prompt to Claude.
 
-With the CMD shell wrapper, you can safely execute commands:
+With the shell wrappers, you can safely execute commands:
 - "List the files in the current directory"
 - "Show me the content of README.md"
 - "What's the current working directory?"
@@ -90,6 +113,15 @@ Once configured with your document collection, you can:
 - "Search for documents about machine learning"
 - "Find records related to project planning"
 - "What documents mention vector databases?"
+- "Index this new document: [content]"
+
+### ProjectMCP
+Once configured, you can manage projects and tasks:
+- "Create a new project called 'website-redesign'"
+- "Add a high-priority task to fix the login bug"
+- "List all tasks in the current project"
+- "Mark task 'AB-CDEF-GH' as complete"
+- "What are the next steps I should work on?"
 
 ## Development
 
@@ -100,7 +132,7 @@ mcp-wrappers/
 ├── shell/               # Shell execution wrappers
 ├── atproto/             # Bluesky/atproto social media wrapper
 ├── vecbook/             # Local vector document search
-└── pjpd/                # Future wrapper (placeholder)
+└── pjpd/                # Local project management system
 ```
 
 ### Adding New Wrappers
@@ -112,12 +144,31 @@ To add a new wrapper:
 3. Follow the stdio pattern for MCP communication
 4. Include proper error handling and security measures
 5. Add a comprehensive README.md for your wrapper
+6. Include unit tests in a `tests/` directory
+
+### Common Patterns
+
+All wrappers follow these common patterns:
+- **FastMCP Integration**: Use `from mcp.server.fastmcp import FastMCP`
+- **Stdio Transport**: Default to stdio for MCP communication
+- **Error Handling**: Comprehensive try-catch blocks with meaningful error messages
+- **Configuration**: TOML-based configuration files
+- **Testing**: Unit tests with pytest
+- **Documentation**: Clear README.md with usage examples
 
 ### Dependencies
 
 All wrappers use:
+- `fastmcp>=0.1.0` - The FastMCP framework for simplified MCP development
 - `mcp>=1.9.1` - The MCP protocol implementation
 - `uv` - For dependency management (recommended)
+
+## Security Considerations
+
+- **Shell Wrappers**: Use allowlists to prevent command injection
+- **Atproto**: Secure credential storage and authentication
+- **File Operations**: Atomic writes and proper error handling
+- **Input Validation**: All user inputs are validated and sanitized
 
 ## License
 

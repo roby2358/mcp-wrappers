@@ -10,6 +10,8 @@ A lightweight, local-first project management system built on plain `.txt` files
 - **MCP integration**: Full Model Context Protocol support for AI assistant integration
 - **No dependencies**: Minimal external dependencies, just Python and text files
 - **Cross-platform**: Works on Windows, macOS, and Linux
+- **Ignore file support**: Configure which project files to exclude
+- **Atomic operations**: Safe file writing to prevent data corruption
 
 ## Installation
 
@@ -23,7 +25,9 @@ A lightweight, local-first project management system built on plain `.txt` files
 ```bash
 # Install with uv
 uv sync
-.venv\Scripts\activate
+.venv\Scripts\activate  # Windows
+# or
+source .venv/bin/activate  # macOS/Linux
 ```
 
 ## Quick Start
@@ -98,6 +102,19 @@ Update documentation for the new API endpoints.
 - **Priority**: Integer value (higher numbers = higher priority)
 - **Status**: `ToDo` or `Done`
 - **Description**: Multi-line task description
+
+### Ignore File Support
+
+Create a `.ignore` file in your projects directory to exclude specific files:
+
+```
+# Ignore backup files
+*.bak
+*.backup
+
+# Ignore temporary files
+temp_*
+```
 
 ## API Reference
 
@@ -224,6 +241,8 @@ pjpd/
 │   └── textrec/
 │       └── text_records.py # Text record parsing utilities
 ├── tests/                  # Unit tests
+├── resources/
+│   └── intro.txt          # System introduction text
 ├── pjpd.py                # Entry point
 ├── projectmcp.toml        # Configuration
 └── SPEC.md               # Detailed specification
