@@ -4,6 +4,8 @@ Handles discovery and parsing of text files broken into records with --- separat
 """
 
 import logging
+import os
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
 
@@ -65,4 +67,38 @@ class TextRecords:
         except Exception as e:
             logger.error(f"Error parsing file {file_path}: {e}")
         
-        return records 
+        return records
+    
+    def write_atomic(self, file_path: Path, content: str) -> None:
+        """Atomically (and safely) write content to a file with timestamped backup.
+        
+        A timestamped backup is stored in a sibling bak/ directory to keep
+        behaviour consistent across record types.
+        
+        Args:
+            file_path: The target file path to write to
+            content: The content to write to the file
+        """
+        try:
+            # Ensure the target directory exists
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            bak_dir = file_path.parent / "bak"
+            bak_dir.mkdir(parents=True, exist_ok=True)
+
+            # Write new content to timestamped file
+            new_path = file_path.with_name(f"{file_path.stem}.{timestamp}{file_path.suffix}")
+            with open(new_path, "w", encoding="utf-8") as fh:
+                fh.write(content)
+
+            # Move existing file to backup if it exists
+            if file_path.exists():
+                bak_path = bak_dir / f"{file_path.stem}.{timestamp}{file_path.suffix}"
+                os.replace(file_path, bak_path)
+
+            # Atomically move new file into place
+            os.replace(new_path, file_path)
+        except Exception as exc:
+            logger.error("Error writing file %s: %s", file_path, exc)
+            raise 

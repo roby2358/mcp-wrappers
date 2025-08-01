@@ -4,8 +4,6 @@ Represents a single project with its tasks stored in a text file
 """
 
 import logging
-import os
-from datetime import datetime
 from pathlib import Path
 import uuid
 from typing import Dict, List, Any, Optional
@@ -92,44 +90,9 @@ class Project:
         """Mark a task as completed"""
         return self.update_task(task_id, status="Done")
     
-    def _write_atomic(self, content: str) -> None:
-        """
-        Atomically write updated project content while keeping a timestamped backup.
-
-        Steps:
-        1. Ensure a `bak` directory exists alongside the project file.
-        2. Write the new content to `<project>.<timestamp><suffix>` in the project directory.
-        3. Move the existing `<project><suffix>` (if any) to `bak/<project>.<timestamp><suffix>`.
-        4. Atomically move the new file into place as `<project><suffix>`.
-        """
-        try:
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            project_dir = self.file_path.parent
-            bak_dir = project_dir / "bak"
-            bak_dir.mkdir(parents=True, exist_ok=True)
-
-            # Step 2: write the new content to a timestamped file in the project directory
-            new_path = self.file_path.with_name(f"{self.file_path.stem}.{timestamp}{self.file_path.suffix}")
-            with open(new_path, "w", encoding="utf-8") as f:
-                f.write(content)
-
-            # Step 3: move the old project file to bak/ if it exists
-            if self.file_path.exists():
-                bak_path = bak_dir / f"{self.file_path.stem}.{timestamp}{self.file_path.suffix}"
-                os.replace(self.file_path, bak_path)
-
-            # Step 4: atomically move the new file into place
-            os.replace(new_path, self.file_path)
-        except Exception as e:
-            logger.error(f"Error writing tasks for project {self.name}: {e}")
-            raise
-    
     def _save_tasks(self) -> None:
         """Save tasks to the project file"""
         try:
-            # Ensure directory exists
-            self.file_path.parent.mkdir(parents=True, exist_ok=True)
-            
             # Sort tasks by priority (descending) before saving
             sorted_tasks = sorted(self.tasks, key=lambda task: task.priority, reverse=True)
             
@@ -140,7 +103,7 @@ class Project:
             content = '\n---\n'.join(task_texts)
             
             # Always write the content, even if empty (for empty projects)
-            self._write_atomic(content)
+            self.text_records.write_atomic(self.file_path, content)
                 
         except Exception as e:
             logger.error(f"Error saving tasks for project {self.name}: {e}")

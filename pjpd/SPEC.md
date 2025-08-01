@@ -185,6 +185,10 @@ Investigate alternative color palette for dark mode.
 * `add_idea` – Create a new idea in ideas.txt with parameters:
     * `score` (integer, required): Score value (higher numbers = higher relevance)
         * `description` (string, required): Idea description
+* `update_idea` – Update an existing idea:
+    * `idea_id` (string, required): 10-character idea ID
+    * `score` (integer, optional): New score value
+    * `description` (string, optional): New idea description
 * `list_ideas` – List ideas:
     * `max_results` (integer, optional): Maximum number of results to return
 * `remove_idea` – Remove an idea completely:

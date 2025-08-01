@@ -4,15 +4,12 @@ Represents a single task in a project
 """
 
 import logging
-import random
-import string
 from dataclasses import dataclass
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+from textrec.record_id import RecordID
 
-# Base32 alphabet: a-z, 2-9 (excluding 1, l, o for visual clarity)
-BASE32_CHARS = "abcdefghijkmnpqrstuvwxyz23456789"
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Task:
@@ -24,16 +21,10 @@ class Task:
 
     @staticmethod
     def generate_task_id() -> str:
-        """Generate a unique task ID in format XX-XXXX-XX using base32 characters.
-        
-        Returns:
-            A 10-character task ID in the format XX-XXXX-XX where X are base32 characters.
-        """
-        # Generate 8 random characters
-        chars = [random.choice(BASE32_CHARS) for _ in range(8)]
-        
-        # Format as XX-XXXX-XX
-        return f"{chars[0]}{chars[1]}-{chars[2]}{chars[3]}{chars[4]}{chars[5]}-{chars[6]}{chars[7]}"
+        """Generate a unique task ID using RecordID."""
+        return RecordID.generate()
+
+
 
     @staticmethod
     def _parse_priority(value: str, state: dict) -> tuple[bool, dict]:
@@ -109,7 +100,7 @@ class Task:
 
             # Generate ID if missing
             if not state["task_id"]:
-                state["task_id"] = cls.generate_task_id()
+                state["task_id"] = RecordID.generate()
                 logger.warning(f"Generated missing task ID for malformed record: {state["task_id"]}")
 
             description = "\n".join(description_lines).strip()

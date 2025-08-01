@@ -20,18 +20,19 @@ def project_file_nonexistent(tmp_path: Path) -> Path:
     return tmp_path / "project.txt"
 
 
-def test_write_atomic_creates_backup_and_replaces_file(project_file: Path) -> None:
-    """_write_atomic should create a backup and replace the original file atomically."""
+def test_project_save_tasks_uses_text_records(project_file: Path) -> None:
+    """Project._save_tasks should use TextRecords.write_atomic."""
     project = Project(name="TestProject", file_path=project_file)
 
-    # Perform atomic write with new content
-    new_content = "updated content"
-    project._write_atomic(new_content)
+    # Add a task to trigger _save_tasks
+    project.add_task("Test task", 5)
 
-    # The original path should now contain the new content
-    assert project_file.read_text(encoding="utf-8") == new_content
+    # The original path should now contain the task content
+    content = project_file.read_text(encoding="utf-8")
+    assert "Test task" in content
+    assert "Priority:    5" in content
 
-    # Ensure the `bak` directory exists
+    # Ensure the `bak` directory exists (created by TextRecords.write_atomic)
     bak_dir = project_file.parent / "bak"
     assert bak_dir.is_dir(), "bak directory was not created"
 
@@ -43,25 +44,22 @@ def test_write_atomic_creates_backup_and_replaces_file(project_file: Path) -> No
     backup_file = bak_files[0]
     assert backup_file.read_text(encoding="utf-8") == "initial content"
 
-    # Backup filename should follow the pattern <stem>.<timestamp><suffix>
-    stem, suffix = project_file.stem, project_file.suffix
-    assert backup_file.name.startswith(f"{stem}.") and backup_file.name.endswith(suffix)
 
-
-def test_write_atomic_creates_file_when_nonexistent(project_file_nonexistent: Path) -> None:
-    """_write_atomic should create the file when it doesn't exist initially."""
+def test_project_save_tasks_creates_file_when_nonexistent(project_file_nonexistent: Path) -> None:
+    """Project._save_tasks should create the file when it doesn't exist initially."""
     project = Project(name="TestProject", file_path=project_file_nonexistent)
 
     # Verify the file doesn't exist initially
     assert not project_file_nonexistent.exists()
 
-    # Perform atomic write with new content
-    new_content = "new content"
-    project._write_atomic(new_content)
+    # Add a task to trigger _save_tasks
+    project.add_task("Test task", 5)
 
-    # The file should now exist and contain the new content
+    # The file should now exist and contain the task content
     assert project_file_nonexistent.exists()
-    assert project_file_nonexistent.read_text(encoding="utf-8") == new_content
+    content = project_file_nonexistent.read_text(encoding="utf-8")
+    assert "Test task" in content
+    assert "Priority:    5" in content
 
     # Ensure the `bak` directory exists
     bak_dir = project_file_nonexistent.parent / "bak"

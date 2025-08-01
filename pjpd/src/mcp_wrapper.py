@@ -12,6 +12,7 @@ from enum import Enum
 
 from mcp.server.fastmcp import FastMCP
 from projects import Projects
+from ideas import Ideas
 from config import Config
 
 # Constants
@@ -44,6 +45,7 @@ mcp = FastMCP("projectmcp")
 # Create configuration and projects manager instances
 config = Config()
 projects_manager = Projects(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
+ideas_manager = Ideas(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
 
 # Strict typing helpers -----------------------------------------------------
 
@@ -381,6 +383,109 @@ async def pjpd_get_statistics() -> Dict[str, Any]:
         return mcp_failure(f"Error getting statistics: {str(e)}")
 
 
+@mcp.tool()
+async def pjpd_list_ideas(max_results: int = None) -> Dict[str, Any]:
+    """List ideas with optional filtering.
+    
+    Args:
+        max_results: Maximum number of results to return.
+    
+    Returns:
+        Standard MCP response with list of ideas sorted by score (highest first).
+    """
+    try:
+        ideas = ideas_manager.list_ideas(max_results=max_results)
+        
+        return mcp_success({
+            "total_ideas": len(ideas),
+            "ideas": ideas,
+            "message": f"Retrieved {len(ideas)} ideas"
+        })
+        
+    except Exception as e:
+        return mcp_failure(f"Error listing ideas: {str(e)}")
+
+
+@mcp.tool()
+async def pjpd_add_idea(score: int, description: str) -> Dict[str, Any]:
+    """Create a new idea in ideas.txt with parameters.
+    
+    Args:
+        score: Score value (higher numbers = higher relevance).
+        description: Idea description.
+    
+    Returns:
+        Standard MCP response with created idea details or error message.
+    """
+    try:
+        idea = ideas_manager.add_idea(description, score)
+        
+        return mcp_success({
+            **idea.to_dict(),
+            "message": f"Idea added successfully with ID '{idea.id}'"
+        })
+        
+    except Exception as e:
+        return mcp_failure(f"Error adding idea: {str(e)}")
+
+
+@mcp.tool()
+async def pjpd_update_idea(idea_id: str, score: int = None, description: str = None) -> Dict[str, Any]:
+    """Update an existing idea.
+    
+    Args:
+        idea_id: 10-character idea ID.
+        score: Optional new score value.
+        description: Optional new idea description.
+    
+    Returns:
+        Standard MCP response with updated idea details or error message.
+    """
+    try:
+        updated = ideas_manager.update_idea(idea_id, description, score)
+        
+        if not updated:
+            return mcp_failure(f"Idea '{idea_id}' not found")
+        
+        # Find the updated idea to return its details
+        for idea in ideas_manager.ideas:
+            if idea.id == idea_id:
+                return mcp_success({
+                    **idea.to_dict(),
+                    "message": f"Idea '{idea_id}' updated successfully"
+                })
+        
+        return mcp_failure(f"Error retrieving updated idea '{idea_id}'")
+        
+    except Exception as e:
+        return mcp_failure(f"Error updating idea: {str(e)}")
+
+
+@mcp.tool()
+async def pjpd_remove_idea(idea_id: str) -> Dict[str, Any]:
+    """Remove an idea completely.
+    
+    Args:
+        idea_id: 10-character idea ID.
+    
+    Returns:
+        Standard MCP response indicating success or failure.
+    """
+    try:
+        removed = ideas_manager.remove_idea(idea_id)
+        
+        if removed:
+            return mcp_success({
+                "idea_id": idea_id,
+                "message": f"Idea '{idea_id}' removed successfully"
+            })
+        else:
+            return mcp_failure(f"Idea '{idea_id}' not found")
+        
+    except Exception as e:
+        return mcp_failure(f"Error removing idea: {str(e)}")
+
+
 # --- Compatibility aliases (for unit tests and backward compatibility) ---
 
 async def list_projects(path: str | None = None):
@@ -395,7 +500,7 @@ async def new_project(project: str):
 
 def main():
     """Entry point for the application."""
-    logger.info("Starting Pjpd MCP Server...", file=sys.stderr)
+    logger.info("Starting Pjpd MCP Server...")
     mcp.run()
 
 if __name__ == "__main__":

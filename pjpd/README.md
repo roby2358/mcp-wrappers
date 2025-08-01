@@ -32,6 +32,19 @@ source .venv/bin/activate  # macOS/Linux
 
 ## Quick Start
 
+### Run in Claude Desktop
+
+Add this to your desktop configuration
+
+```json
+  "mcpServers": {
+    "pjpd": {
+      "command": "uv",
+      "args": ["--directory", "C:\\work\\mcp-wrappers\\pjpd", "run", "python", "pjpd.py"]
+    }
+  }
+```
+
 ### 1. Start the MCP Server
 
 ```bash
