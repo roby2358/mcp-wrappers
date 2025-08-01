@@ -36,6 +36,8 @@ def setup_logging():
 # Initialize logging
 setup_logging()
 
+logger = logging.getLogger(__name__)
+
 # Create the MCP server instance
 mcp = FastMCP("projectmcp")
 
@@ -393,7 +395,7 @@ async def new_project(project: str):
 
 def main():
     """Entry point for the application."""
-    print("Starting Hello World MCP Server...", file=sys.stderr)
+    logger.info("Starting Pjpd MCP Server...", file=sys.stderr)
     mcp.run()
 
 if __name__ == "__main__":

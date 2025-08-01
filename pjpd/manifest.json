@@ -1,0 +1,30 @@
+{
+  "dxt_version": "0.1",
+  "name": "MCPProjectManager",
+  "version": "0.1.0",
+  "description": "Lightweight, local-first project management system",
+  "long_description": "Reads and updates .txt project files on local disk for project management functions.",
+  "author": {
+    "name": "Rob Young",
+    "email": "yuwakisa@gmail.com"
+  },
+  "icon": "icon.png",
+  "server": {
+    "type": "python",
+    "entry_point": "pjpd.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "\"${__dirname}\"",
+        "run",
+        "python",
+        "pjpd.py"
+      ],
+      "env": {
+      }
+    }
+  },
+  "prompts_generated": true,
+  "license": "MIT"
+}
