@@ -13,6 +13,7 @@ from enum import Enum
 from mcp.server.fastmcp import FastMCP
 from projects import Projects
 from ideas import Ideas
+from epics import Epics
 from config import Config
 
 # Constants
@@ -46,6 +47,8 @@ mcp = FastMCP("projectmcp")
 config = Config()
 projects_manager = Projects(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
 ideas_manager = Ideas(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
+# Epics manager parallels ideas_manager but operates on epics.txt
+epics_manager = Epics(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
 
 # Strict typing helpers -----------------------------------------------------
 
@@ -123,7 +126,12 @@ async def pjpd_list_projects(path: str = None) -> Dict[str, Any]:
     try:
         # Set the projects directory if a path is provided, otherwise use config
         if path:
-            projects_manager.set_projects_dir(Path(path))
+            # Update all managers to point at the *same* projects directory so
+            # `ideas.txt` and `epics.txt` live alongside project task files.
+            new_dir = Path(path)
+            projects_manager.set_projects_dir(new_dir)
+            ideas_manager.set_directory(new_dir)
+            epics_manager.set_directory(new_dir)
         
         overview = projects_manager.get_overview()
         
@@ -484,6 +492,135 @@ async def pjpd_remove_idea(idea_id: str) -> Dict[str, Any]:
         
     except Exception as e:
         return mcp_failure(f"Error removing idea: {str(e)}")
+
+
+# --------------------------------------------------------------------------
+# Epics tools
+# --------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def pjpd_list_epics(max_results: int = None) -> Dict[str, Any]:
+    """List epics with optional filtering.
+
+    Args:
+        max_results: Maximum number of results to return.
+
+    Returns:
+        Standard MCP response with list of epics sorted by score (highest first).
+    """
+    try:
+        epics = epics_manager.list_epics(max_results=max_results)
+
+        return mcp_success({
+            "total_epics": len(epics),
+            "epics": epics,
+            "message": f"Retrieved {len(epics)} epics"
+        })
+
+    except Exception as e:
+        return mcp_failure(f"Error listing epics: {str(e)}")
+
+
+@mcp.tool()
+async def pjpd_add_epic(score: int, description: str, ideas: str = "", projects: str = "") -> Dict[str, Any]:
+    """Create a new epic in epics.txt.
+
+    Args:
+        score: Score value (higher numbers = higher relevance).
+        description: Epic description.
+        ideas: Space-delimited list of idea IDs (optional).
+        projects: Space-delimited list of project names (optional).
+
+    Returns:
+        Standard MCP response with created epic details or error message.
+    """
+    try:
+        epic = epics_manager.add_epic(
+            description=description,
+            score=score,
+            ideas=ideas.split() if ideas else [],
+            projects=projects.split() if projects else [],
+        )
+
+        return mcp_success({
+            **epic.to_dict(),
+            "message": f"Epic added successfully with ID '{epic.id}'"
+        })
+
+    except Exception as e:
+        return mcp_failure(f"Error adding epic: {str(e)}")
+
+
+@mcp.tool()
+async def pjpd_update_epic(
+    epic_id: str,
+    score: int = None,
+    description: str = None,
+    ideas: str = None,
+    projects: str = None,
+) -> Dict[str, Any]:
+    """Update an existing epic.
+
+    Args:
+        epic_id: 10-character epic ID.
+        score: Optional new score.
+        description: Optional new description.
+        ideas: Optional space-delimited list of idea IDs.
+        projects: Optional space-delimited list of project names.
+
+    Returns:
+        Standard MCP response with updated epic details or error message.
+    """
+    try:
+        updated = epics_manager.update_epic(
+            epic_id,
+            description=description,
+            score=score,
+            ideas=ideas.split() if ideas is not None else None,
+            projects=projects.split() if projects is not None else None,
+        )
+
+        if not updated:
+            return mcp_failure(f"Epic '{epic_id}' not found")
+
+        # Find the updated epic to return its details
+        for epic in epics_manager.epics:
+            if epic.id == epic_id:
+                return mcp_success({
+                    **epic.to_dict(),
+                    "message": f"Epic '{epic_id}' updated successfully"
+                })
+
+        return mcp_failure(f"Error retrieving updated epic '{epic_id}'")
+
+    except Exception as e:
+        return mcp_failure(f"Error updating epic: {str(e)}")
+
+
+@mcp.tool()
+async def pjpd_mark_epic_done(epic_id: str) -> Dict[str, Any]:
+    """Mark an epic as done by setting its score to 0.
+
+    Args:
+        epic_id: 10-character epic ID.
+
+    Returns:
+        Standard MCP response indicating success or failure.
+    """
+    try:
+        marked_done = epics_manager.mark_epic_done(epic_id)
+
+        if marked_done:
+            return mcp_success({
+                "epic_id": epic_id,
+                "message": f"Epic '{epic_id}' marked as done (score set to 0)"
+            })
+        else:
+            return mcp_failure(f"Epic '{epic_id}' not found")
+
+    except Exception as e:
+        return mcp_failure(f"Error marking epic as done: {str(e)}")
 
 
 # --- Compatibility aliases (for unit tests and backward compatibility) ---

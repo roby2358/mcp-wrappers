@@ -58,6 +58,8 @@ better readability.
 
 ### Idea Record Format (NEW)
 
+*See also: [Epic Record Format](#epic-record-format-new) for grouping ideas and projects into higher-level workstreams.*
+
 * Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
 * Each idea **MUST** contain **three or more** lines in this order:
     1. `ID: {10-character-random-string}`
@@ -81,6 +83,21 @@ Score:    5
 Investigate alternative color palette for dark mode.
 ---
 ```
+
+### Epic Record Format (NEW)
+
+* Each epic **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
+* Each epic **MUST** contain **five or more** lines in this order:
+    1. `Score: {integer}`
+    2. `Ideas: {space-delimited-list-of-idea-ids}`
+    3. `Projects: {space-delimited-list-of-project-names}`
+    4. `ID: {10-character-random-string}`
+    5. Epic description (may span multiple lines)
+* Epic IDs **MUST** follow the same uniqueness rules as task and idea IDs and share the same global ID space.
+* Epics **MUST** be sorted by score when saving to disk (higher scores first).
+* `mark_epic_done` **MUST NOT** delete the record; instead it **MUST** set the epic's score to `0`.
+* Epics **MUST NOT** require referential integrity. It is acceptable if referenced idea IDs or project names do not exist.
+* Empty or malformed epic records **MUST** be ignored with a WARN-level log message.
 
 ### File Organization
 
@@ -156,17 +173,19 @@ Investigate alternative color palette for dark mode.
 
 #### Required Tools
 
+* `list_projects` – Return list of all projects with task counts:
+    * `path` (string, optional): Path to projects directory (default: ~/projects)
 * `new_project` – Create a new empty project file:
     * `project` (string, required): Project name (becomes filename without .txt)
-* `add_task` – Create a new task with parameters:
-    * `project` (string, required): Project name (becomes filename without .txt)
-    * `description` (string, required): Task description
-    * `priority` (integer, required): Priority level (higher numbers = higher priority)
 * `list_tasks` – List tasks with optional filtering:
     * `project` (string, optional): Filter by specific project
     * `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
     * `status` (string, optional): Filter by status ("ToDo" or "Done")
     * `max_results` (integer, optional): Maximum number of results to return
+* `add_task` – Create a new task with parameters:
+    * `project` (string, required): Project name (becomes filename without .txt)
+    * `description` (string, required): Task description
+    * `priority` (integer, required): Priority level (higher numbers = higher priority)
 * `update_task` – Update an existing task:
     * `project` (string, required): The name of the project containing the task
     * `task_id` (string, required): 10-character task ID
@@ -178,10 +197,10 @@ Investigate alternative color palette for dark mode.
     * `task_id` (string, required): 10-character task ID
 * `next_steps` – Determine high-priority tasks to work on next:
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
-* `list_projects` – Return list of all projects with task counts:
-    * `path` (string, optional): Path to projects directory (default: ~/projects)
 * `get_statistics` – Get comprehensive statistics about all projects:
     * No parameters required
+* `list_ideas` – List ideas:
+    * `max_results` (integer, optional): Maximum number of results to return
 * `add_idea` – Create a new idea in ideas.txt with parameters:
     * `score` (integer, required): Score value (higher numbers = higher relevance)
         * `description` (string, required): Idea description
@@ -189,10 +208,23 @@ Investigate alternative color palette for dark mode.
     * `idea_id` (string, required): 10-character idea ID
     * `score` (integer, optional): New score value
     * `description` (string, optional): New idea description
-* `list_ideas` – List ideas:
-    * `max_results` (integer, optional): Maximum number of results to return
 * `remove_idea` – Remove an idea completely:
     * `idea_id` (string, required): 10-character idea ID
+* `list_epics` – List epics:
+    * `max_results` (integer, optional): Maximum number of results to return
+* `add_epic` – Create a new epic in epics.txt with parameters:
+    * `score` (integer, required): Score value (higher numbers = higher relevance)
+    * `description` (string, required): Epic description
+    * `ideas` (string, optional): Space-delimited list of idea IDs
+    * `projects` (string, optional): Space-delimited list of project names
+* `update_epic` – Update an existing epic:
+    * `epic_id` (string, required): 10-character epic ID
+    * `score` (integer, optional): New score value
+    * `description` (string, optional): New epic description
+    * `ideas` (string, optional): Space-delimited list of idea IDs
+    * `projects` (string, optional): Space-delimited list of project names
+* `mark_epic_done` – Mark an epic as done (sets score to 0):
+    * `epic_id` (string, required): 10-character epic ID
 
 ---
 

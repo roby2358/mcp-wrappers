@@ -23,10 +23,27 @@ class Ideas:
     """Manage a collection of :pyclass:`ideas.idea.Idea` records."""
 
     def __init__(self, directory: Path | str):
-        self.directory = Path(directory).expanduser()
-        self.ideas_file: Path = self.directory / "ideas.txt"
-        self.text_records = TextRecords(self.directory)
+        self.set_directory(directory)
         self._ideas: Optional[List[Idea]] = None
+
+    # ------------------------------------------------------------------
+    # Configuration helpers
+    # ------------------------------------------------------------------
+    def set_directory(self, directory: Path | str) -> None:
+        """Update the directory containing *ideas.txt*.
+
+        Changing the projects directory at runtime allows the Ideas manager to
+        follow the current *Projects* location configured by the user (for
+        example via the *path* parameter to the *list_projects* tool).
+        """
+        self.directory = Path(directory).expanduser()
+        # Ensure the directory exists so downstream operations are safe
+        self.directory.mkdir(parents=True, exist_ok=True)
+        self.ideas_file = self.directory / "ideas.txt"
+        # Re-initialise TextRecords so it points at the new directory
+        self.text_records = TextRecords(self.directory)
+        # Drop any cached data so it will be lazily re-loaded next access
+        self._ideas = None
 
     # ------------------------------------------------------------------
     # Internal helpers
