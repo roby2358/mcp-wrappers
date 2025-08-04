@@ -128,20 +128,9 @@ class TestNewProjectTool:
     
     async def test_new_project_unicode_name(self, temp_projects_dir, mock_projects_manager, mock_config):
         """Test creating a project with unicode characters in the name"""
-        # Setup mock project
-        mock_project = MagicMock()
-        mock_project.name = "proj-t-unicode"
-        mock_project.file_path = temp_projects_dir / "proj-t-unicode.txt"
-        
-        # Setup projects manager mock
-        mock_projects_manager.create_project.return_value = mock_project
-        
         # Call the tool with unicode characters
         result = await new_project("Projëct with Ünicode")
         
-        # Verify the result
-        assert result["success"] is True
-        assert result["result"]["project_name"] == "proj-t-unicode"
-        
-        # Verify projects manager was called
-        mock_projects_manager.create_project.assert_called_once_with("Projëct with Ünicode") 
+        # Verify the result - unicode characters should be rejected
+        assert result["success"] is False
+        assert "Project name contains invalid characters" in result["error"] 

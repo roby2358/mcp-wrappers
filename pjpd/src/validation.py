@@ -5,6 +5,24 @@ Pydantic models for MCP tool validation.
 from typing import Optional, List, Dict, Any, Literal, Union
 from pydantic import BaseModel, Field, field_validator
 import re
+from src.projects.projects import ALLOWED_NAME_CHARS
+
+# Regex patterns for validation
+TAG_PATTERN = r'^[a-zA-Z0-9\-]+$'
+ID_PATTERN = r'^[a-zA-Z0-9\-]+-\d+$'
+
+def validate_tag_format(value: str) -> str:
+    """Validate that a tag contains only alphanumeric characters and hyphens."""
+    if not re.match(TAG_PATTERN, value):
+        raise ValueError("Tag can only contain alphanumeric characters and hyphens")
+    return value
+
+
+def validate_id_format(value: str, id_type: str = "ID") -> str:
+    """Validate that an ID follows the format <tag>-XXXX where XXXX is a number."""
+    if not re.match(ID_PATTERN, value):
+        raise ValueError(f"{id_type} must be in format <tag>-XXXX where XXXX is a number")
+    return value
 
 
 class TaskDict(BaseModel):
@@ -48,12 +66,10 @@ class NewProjectRequest(BaseModel):
     def validate_project_name(cls, v):
         if not v.strip():
             raise ValueError("Project name cannot be empty or invalid")
-        # Allow most characters for project names, but exclude dangerous ones
-        if re.search(r'[<>:"/\\|?*]', v):
-            raise ValueError("Project name cannot contain invalid filesystem characters")
-        # Also reject common special characters that might cause issues
-        if re.search(r'[@#$%^&*+=]', v):
-            raise ValueError("Project name cannot contain special characters")
+        # Check if all characters are in the allowed set
+        invalid_chars = [ch for ch in v if ch not in ALLOWED_NAME_CHARS]
+        if invalid_chars:
+            raise ValueError(f"Project name contains invalid characters: {invalid_chars}. Allowed characters are: {''.join(sorted(ALLOWED_NAME_CHARS))}")
         return v.strip()
 
 
@@ -62,14 +78,12 @@ class AddTaskRequest(BaseModel):
     project: str = Field(..., min_length=1, description="The name of the project to add the task to")
     description: str = Field(..., min_length=1, description="The description of the task")
     priority: int = Field(default=2, ge=0, le=10, description="Priority level (0-10, higher numbers = higher priority)")
-    tag: str = Field(default="task", min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
+    tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
     
     @field_validator('tag')
     @classmethod
     def validate_tag(cls, v):
-        if not re.match(r'^[a-zA-Z0-9\-]+$', v):
-            raise ValueError("Tag can only contain alphanumeric characters and hyphens")
-        return v
+        return validate_tag_format(v)
 
 
 class UpdateTaskRequest(BaseModel):
@@ -90,9 +104,7 @@ class UpdateTaskRequest(BaseModel):
     @field_validator('task_id')
     @classmethod
     def validate_task_id(cls, v):
-        if not re.match(r'^[a-zA-Z0-9\-]+-\d+$', v):
-            raise ValueError("Task ID must be in format <tag>-XXXX where XXXX is a number")
-        return v
+        return validate_id_format(v, "Task ID")
 
 
 class ListTasksRequest(BaseModel):
@@ -118,9 +130,7 @@ class MarkDoneRequest(BaseModel):
     @field_validator('task_id')
     @classmethod
     def validate_task_id(cls, v):
-        if not re.match(r'^[a-zA-Z0-9\-]+-\d+$', v):
-            raise ValueError("Task ID must be in format <tag>-XXXX where XXXX is a number")
-        return v
+        return validate_id_format(v, "Task ID")
 
 
 class NextStepsRequest(BaseModel):
@@ -137,14 +147,12 @@ class AddIdeaRequest(BaseModel):
     """Request model for adding an idea."""
     score: int = Field(..., ge=0, le=100, description="Score value (0-100, higher numbers = higher relevance)")
     description: str = Field(..., min_length=1, description="Idea description")
-    tag: str = Field(default="idea", min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
+    tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
     
     @field_validator('tag')
     @classmethod
     def validate_tag(cls, v):
-        if not re.match(r'^[a-zA-Z0-9\-]+$', v):
-            raise ValueError("Tag can only contain alphanumeric characters and hyphens")
-        return v
+        return validate_tag_format(v)
 
 
 class UpdateIdeaRequest(BaseModel):
@@ -156,12 +164,7 @@ class UpdateIdeaRequest(BaseModel):
     @field_validator('idea_id')
     @classmethod
     def validate_idea_id(cls, v):
-        # Allow test IDs that don't follow the standard format
-        if v in ["NONEXIST", "AAA111BBB2", "ABC123DEF4"]:
-            return v
-        if not re.match(r'^[a-zA-Z0-9\-]+-\d+$', v):
-            raise ValueError("Idea ID must be in format <tag>-XXXX where XXXX is a number")
-        return v
+        return validate_id_format(v, "Idea ID")
 
 
 class RemoveIdeaRequest(BaseModel):
@@ -171,12 +174,7 @@ class RemoveIdeaRequest(BaseModel):
     @field_validator('idea_id')
     @classmethod
     def validate_idea_id(cls, v):
-        # Allow test IDs that don't follow the standard format
-        if v in ["NONEXIST", "AAA111BBB2", "ABC123DEF4"]:
-            return v
-        if not re.match(r'^[a-zA-Z0-9\-]+-\d+$', v):
-            raise ValueError("Idea ID must be in format <tag>-XXXX where XXXX is a number")
-        return v
+        return validate_id_format(v, "Idea ID")
 
 
 class ListEpicsRequest(BaseModel):
@@ -188,16 +186,14 @@ class AddEpicRequest(BaseModel):
     """Request model for adding an epic."""
     score: int = Field(..., ge=0, le=100, description="Score value (0-100, higher numbers = higher relevance)")
     description: str = Field(..., min_length=1, description="Epic description")
-    tag: str = Field(default="epic", min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
+    tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
     ideas: str = Field(default="", description="Space-delimited list of idea IDs (optional)")
     projects: str = Field(default="", description="Space-delimited list of project names (optional)")
     
     @field_validator('tag')
     @classmethod
     def validate_tag(cls, v):
-        if not re.match(r'^[a-zA-Z0-9\-]+$', v):
-            raise ValueError("Tag can only contain alphanumeric characters and hyphens")
-        return v
+        return validate_tag_format(v)
 
 
 class UpdateEpicRequest(BaseModel):
@@ -211,12 +207,7 @@ class UpdateEpicRequest(BaseModel):
     @field_validator('epic_id')
     @classmethod
     def validate_epic_id(cls, v):
-        # Allow test IDs that don't follow the standard format
-        if v in ["NONEXIST", "AAA111BBB2"]:
-            return v
-        if not re.match(r'^[a-zA-Z0-9\-]+-\d+$', v):
-            raise ValueError("Epic ID must be in format <tag>-XXXX where XXXX is a number")
-        return v
+        return validate_id_format(v, "Epic ID")
 
 
 class MarkEpicDoneRequest(BaseModel):
@@ -226,12 +217,7 @@ class MarkEpicDoneRequest(BaseModel):
     @field_validator('epic_id')
     @classmethod
     def validate_epic_id(cls, v):
-        # Allow test IDs that don't follow the standard format
-        if v in ["NONEXIST", "AAA111BBB2"]:
-            return v
-        if not re.match(r'^[a-zA-Z0-9\-]+-\d+$', v):
-            raise ValueError("Epic ID must be in format <tag>-XXXX where XXXX is a number")
-        return v
+        return validate_id_format(v, "Epic ID")
 
 
 # Response models

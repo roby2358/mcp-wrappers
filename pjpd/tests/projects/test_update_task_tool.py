@@ -100,7 +100,7 @@ class TestUpdateTaskTool:
         
         # Try to update a non-existent task
         updated_task = projects_manager.update_task(
-            "test-project", "nonexistent-id", description="New description"
+            "test-project", "task-9999", description="New description"
         )
         
         assert updated_task is None
@@ -110,7 +110,7 @@ class TestUpdateTaskTool:
         # Try to update a task in a non-existent project
         with pytest.raises(ValueError):
             projects_manager.update_task(
-                "nonexistent-project", "some-task-id", description="New description"
+                "nonexistent-project", "task-1234", description="New description"
             )
     
     def test_update_task_persistence(self, projects_manager):

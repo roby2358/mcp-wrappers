@@ -15,10 +15,13 @@ from .ignore_list import IgnoreList
 
 logger = logging.getLogger(__name__)
 
-# Characters permitted to survive in a sanitised project filename.
+# Characters permitted in project names (for validation)
 # Keep this at module level so it is computed once and easily discovered by
 # readers and other modules.
-ALLOWED_NAME_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-_@#$%!")
+ALLOWED_NAME_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_@#$%! ")
+
+# Characters permitted in sanitized filenames (spaces are replaced with underscores)
+FILENAME_SAFE_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-_@#$%!")
 
 class Projects:
 
@@ -173,7 +176,7 @@ class Projects:
         name = name.lower()
 
         # Replace all disallowed characters with underscores
-        transformed = [ch if ch in ALLOWED_NAME_CHARS else "_" for ch in name]
+        transformed = [ch if ch in FILENAME_SAFE_CHARS else "_" for ch in name]
         name = re.sub(r"_+", "_", "".join(transformed))
 
         # Strip leading / trailing underscores or dots to avoid hidden / invalid

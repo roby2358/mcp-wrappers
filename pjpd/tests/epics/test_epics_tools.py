@@ -41,14 +41,14 @@ class TestEpicsTools:
         """Test successful listing of epics."""
         mock_epics = [
             {
-                "id": "AAA111BBB2",
+                "id": "epic-1234",
                 "score": 100,
                 "ideas": ["IDEA1"],
                 "projects": ["proj"],
                 "description": "High level feature",
             },
             {
-                "id": "CCC333DDD4",
+                "id": "epic-5678",
                 "score": 50,
                 "ideas": [],
                 "projects": [],
@@ -71,7 +71,7 @@ class TestEpicsTools:
     async def test_add_epic_success(self, mock_epics_manager):
         """Test successful addition of an epic."""
         mock_epic = Epic(
-            id="AAA111BBB2",
+            id="epic-1234",
             tag="epic",
             score=75,
             ideas=["IDEA1"],
@@ -83,7 +83,7 @@ class TestEpicsTools:
         result = await pjpd_add_epic(score=75, description="Epic description", ideas="IDEA1", projects="proj1")
 
         assert result["success"] is True
-        assert result["result"]["id"] == "AAA111BBB2"
+        assert result["result"]["id"] == "epic-1234"
         assert result["result"]["score"] == 75
         assert "Epic added successfully" in result["result"]["message"]
         mock_epics_manager.add_epic.assert_called_once_with(
@@ -101,7 +101,7 @@ class TestEpicsTools:
     async def test_update_epic_success(self, mock_epics_manager):
         """Test successful update of an epic."""
         mock_epic = Epic(
-            id="AAA111BBB2",
+            id="epic-1234",
             tag="epic",
             score=100,
             ideas=[],
@@ -111,10 +111,10 @@ class TestEpicsTools:
         mock_epics_manager.update_epic.return_value = True
         mock_epics_manager.epics = [mock_epic]
 
-        result = await pjpd_update_epic(epic_id="AAA111BBB2", score=100, description="Updated epic")
+        result = await pjpd_update_epic(epic_id="epic-1234", score=100, description="Updated epic")
 
         assert result["success"] is True
-        assert result["result"]["id"] == "AAA111BBB2"
+        assert result["result"]["id"] == "epic-1234"
         assert result["result"]["score"] == 100
         assert "updated successfully" in result["result"]["message"]
         mock_epics_manager.update_epic.assert_called_once()
@@ -124,7 +124,7 @@ class TestEpicsTools:
         """Test updating an epic that doesn't exist."""
         mock_epics_manager.update_epic.return_value = False
 
-        result = await pjpd_update_epic(epic_id="NONEXIST", score=50)
+        result = await pjpd_update_epic(epic_id="epic-9999", score=50)
 
         assert result["success"] is False
         assert "not found" in result["error"]
@@ -137,19 +137,19 @@ class TestEpicsTools:
         """Test successful marking of an epic as done."""
         mock_epics_manager.mark_epic_done.return_value = True
 
-        result = await pjpd_mark_epic_done(epic_id="AAA111BBB2")
+        result = await pjpd_mark_epic_done(epic_id="epic-1234")
 
         assert result["success"] is True
-        assert result["result"]["epic_id"] == "AAA111BBB2"
+        assert result["result"]["epic_id"] == "epic-1234"
         assert "marked as done" in result["result"]["message"]
-        mock_epics_manager.mark_epic_done.assert_called_once_with("AAA111BBB2")
+        mock_epics_manager.mark_epic_done.assert_called_once_with("epic-1234")
 
     @pytest.mark.asyncio
     async def test_mark_epic_done_not_found(self, mock_epics_manager):
         """Test marking an epic as done that doesn't exist."""
         mock_epics_manager.mark_epic_done.return_value = False
 
-        result = await pjpd_mark_epic_done(epic_id="NONEXIST")
+        result = await pjpd_mark_epic_done(epic_id="epic-9999")
 
         assert result["success"] is False
         assert "not found" in result["error"]

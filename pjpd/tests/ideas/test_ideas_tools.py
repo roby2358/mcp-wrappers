@@ -39,8 +39,8 @@ class TestIdeasTools:
         """Test successful listing of ideas."""
         # Mock ideas data
         mock_ideas = [
-            {"id": "ABC123DEF4", "score": 100, "description": "High priority idea"},
-            {"id": "XYZ789GHI0", "score": 50, "description": "Medium priority idea"},
+            {"id": "idea-1234", "score": 100, "description": "High priority idea"},
+            {"id": "idea-5678", "score": 50, "description": "Medium priority idea"},
         ]
         mock_ideas_manager.list_ideas.return_value = mock_ideas
 
@@ -54,7 +54,7 @@ class TestIdeasTools:
 
     async def test_list_ideas_no_max_results(self, mock_ideas_manager):
         """Test listing ideas without max_results parameter."""
-        mock_ideas = [{"id": "ABC123DEF4", "score": 100, "description": "Test idea"}]
+        mock_ideas = [{"id": "idea-1234", "score": 100, "description": "Test idea"}]
         mock_ideas_manager.list_ideas.return_value = mock_ideas
 
         result = await pjpd_list_ideas()
@@ -74,13 +74,13 @@ class TestIdeasTools:
 
     async def test_add_idea_success(self, mock_ideas_manager):
         """Test successful addition of an idea."""
-        mock_idea = Idea(id="ABC123DEF4", tag="idea", score=75, description="Test idea")
+        mock_idea = Idea(id="idea-1234", tag="idea", score=75, description="Test idea")
         mock_ideas_manager.add_idea.return_value = mock_idea
 
         result = await pjpd_add_idea(score=75, description="Test idea")
 
         assert result["success"] is True
-        assert result["result"]["id"] == "ABC123DEF4"
+        assert result["result"]["id"] == "idea-1234"
         assert result["result"]["score"] == 75
         assert result["result"]["description"] == "Test idea"
         assert "Idea added successfully" in result["result"]["message"]
@@ -97,30 +97,30 @@ class TestIdeasTools:
 
     async def test_update_idea_success(self, mock_ideas_manager):
         """Test successful update of an idea."""
-        mock_idea = Idea(id="ABC123DEF4", tag="idea", score=100, description="Updated idea")
+        mock_idea = Idea(id="idea-1234", tag="idea", score=100, description="Updated idea")
         mock_ideas_manager.update_idea.return_value = True
         mock_ideas_manager.ideas = [mock_idea]
 
         result = await pjpd_update_idea(
-            idea_id="ABC123DEF4", 
+            idea_id="idea-1234", 
             score=100, 
             description="Updated idea"
         )
 
         assert result["success"] is True
-        assert result["result"]["id"] == "ABC123DEF4"
+        assert result["result"]["id"] == "idea-1234"
         assert result["result"]["score"] == 100
         assert result["result"]["description"] == "Updated idea"
         assert "updated successfully" in result["result"]["message"]
         mock_ideas_manager.update_idea.assert_called_once_with(
-            "ABC123DEF4", "Updated idea", 100
+            "idea-1234", "Updated idea", 100
         )
 
     async def test_update_idea_not_found(self, mock_ideas_manager):
         """Test updating an idea that doesn't exist."""
         mock_ideas_manager.update_idea.return_value = False
 
-        result = await pjpd_update_idea(idea_id="NONEXIST", score=50)
+        result = await pjpd_update_idea(idea_id="idea-9999", score=50)
 
         assert result["success"] is False
         assert "not found" in result["error"]
@@ -129,7 +129,7 @@ class TestIdeasTools:
         """Test error handling in update_idea."""
         mock_ideas_manager.update_idea.side_effect = Exception("Test error")
 
-        result = await pjpd_update_idea(idea_id="ABC123DEF4", score=50)
+        result = await pjpd_update_idea(idea_id="idea-1234", score=50)
 
         assert result["success"] is False
         assert "Error updating idea" in result["error"]
@@ -138,18 +138,18 @@ class TestIdeasTools:
         """Test successful removal of an idea."""
         mock_ideas_manager.remove_idea.return_value = True
 
-        result = await pjpd_remove_idea(idea_id="ABC123DEF4")
+        result = await pjpd_remove_idea(idea_id="idea-1234")
 
         assert result["success"] is True
-        assert result["result"]["idea_id"] == "ABC123DEF4"
+        assert result["result"]["idea_id"] == "idea-1234"
         assert "removed successfully" in result["result"]["message"]
-        mock_ideas_manager.remove_idea.assert_called_once_with("ABC123DEF4")
+        mock_ideas_manager.remove_idea.assert_called_once_with("idea-1234")
 
     async def test_remove_idea_not_found(self, mock_ideas_manager):
         """Test removing an idea that doesn't exist."""
         mock_ideas_manager.remove_idea.return_value = False
 
-        result = await pjpd_remove_idea(idea_id="NONEXIST")
+        result = await pjpd_remove_idea(idea_id="idea-9999")
 
         assert result["success"] is False
         assert "not found" in result["error"]
@@ -158,7 +158,7 @@ class TestIdeasTools:
         """Test error handling in remove_idea."""
         mock_ideas_manager.remove_idea.side_effect = Exception("Test error")
 
-        result = await pjpd_remove_idea(idea_id="ABC123DEF4")
+        result = await pjpd_remove_idea(idea_id="idea-1234")
 
         assert result["success"] is False
         assert "Error removing idea" in result["error"]

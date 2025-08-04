@@ -42,10 +42,10 @@ class TestNewProjectRequest:
     def test_invalid_project_name_with_special_chars(self):
         """Test that project names with special characters are rejected."""
         with pytest.raises(ValidationError):
-            NewProjectRequest(project="my@project")
+            NewProjectRequest(project="my*project")
         
         with pytest.raises(ValidationError):
-            NewProjectRequest(project="my#project")
+            NewProjectRequest(project="my|project")
 
 
 class TestAddTaskRequest:
@@ -68,7 +68,8 @@ class TestAddTaskRequest:
         """Test that default values work correctly."""
         request = AddTaskRequest(
             project="my-project",
-            description="Do something"
+            description="Do something",
+            tag="task"
         )
         assert request.priority == 2
         assert request.tag == "task"
