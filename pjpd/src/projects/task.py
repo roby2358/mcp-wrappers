@@ -15,16 +15,15 @@ logger = logging.getLogger(__name__)
 class Task:
     """Represents a single task in a project"""
     id: str
+    tag: str
     priority: int  # Plain integer priority (higher numbers = higher priority)
     status: str    # "ToDo" or "Done"
     description: str
 
     @staticmethod
-    def generate_task_id() -> str:
-        """Generate a unique task ID using RecordID."""
-        return RecordID.generate()
-
-
+    def generate_task_id(tag: str) -> str:
+        """Generate a unique task ID using the provided tag and RecordID."""
+        return RecordID.generate_with_tag(tag)
 
     @staticmethod
     def _parse_priority(value: str, state: dict) -> tuple[bool, dict]:
@@ -64,6 +63,11 @@ class Task:
             new_state["task_id"] = value
             return True, new_state
 
+        elif key == "tag":
+            new_state = state.copy()
+            new_state["tag"] = value
+            return True, new_state
+
         return False, state
     
     @classmethod
@@ -74,9 +78,10 @@ class Task:
 
             Priority: 1
             Status: ToDo
+            Tag: {1-12-character-string}
+            ID: {tag}-{4-character-random-string}
             This is the description which may span
             multiple lines until the record separator (---).
-            ID: a12bcdef34
         """
         try:
             lines = text.strip().split('\n')
@@ -86,6 +91,7 @@ class Task:
                 "priority": 1,   # Default priority (lowest)
                 "status": "ToDo",
                 "task_id": "",
+                "tag": "",
             }
 
             description_lines: list[str] = []
@@ -100,13 +106,27 @@ class Task:
 
             # Generate ID if missing
             if not state["task_id"]:
-                state["task_id"] = RecordID.generate()
+                if state["tag"]:
+                    state["task_id"] = Task.generate_task_id(state["tag"])
+                else:
+                    # Fallback to old format for backward compatibility
+                    state["task_id"] = RecordID.generate()
+                    state["tag"] = "legacy"
                 logger.warning(f"Generated missing task ID for malformed record: {state["task_id"]}")
+
+            # Ensure tag is set
+            if not state["tag"]:
+                # Try to extract tag from ID if it follows the new format
+                if "-" in state["task_id"] and len(state["task_id"].split("-")[0]) <= 12:
+                    state["tag"] = state["task_id"].split("-")[0]
+                else:
+                    state["tag"] = "legacy"
 
             description = "\n".join(description_lines).strip()
 
             return cls(
                 id=state["task_id"],
+                tag=state["tag"],
                 priority=state["priority"],
                 status=state["status"],
                 description=description,
@@ -121,6 +141,7 @@ class Task:
         lines = [
             f"Priority: {self.priority:4d}",
             f"Status: {self.status}",
+            f"Tag: {self.tag}",
             f"ID: {self.id}",
             self.description.strip(),
         ]
@@ -130,6 +151,7 @@ class Task:
         """Convert task to dictionary format for API responses."""
         return {
             "id": self.id,
+            "tag": self.tag,
             "priority": self.priority,
             "status": self.status,
             "description": self.description,

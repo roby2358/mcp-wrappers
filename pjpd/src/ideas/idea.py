@@ -20,7 +20,8 @@ class Idea:
 
     The *Idea Record Format* (see SPEC.md) requires::
 
-        ID: {10-character-id}
+        ID: {tag}-{4-character-random-string}
+        Tag: {1-12-character-string}
         Score: {integer}
         Free-form description spanning multiple lines
 
@@ -29,6 +30,7 @@ class Idea:
     """
 
     id: str
+    tag: str
     score: int
     description: str
 
@@ -36,9 +38,9 @@ class Idea:
     # ID generation
     # ------------------------------------------------------------------
     @classmethod
-    def generate_idea_id(cls) -> str:
-        """Generate a unique idea ID using the shared RecordID generator."""
-        return RecordID.generate()
+    def generate_idea_id(cls, tag: str) -> str:
+        """Generate a unique idea ID using the provided tag and RecordID generator."""
+        return RecordID.generate_with_tag(tag)
 
     # ------------------------------------------------------------------
     # Parsing helpers
@@ -60,7 +62,7 @@ class Idea:
     def _process_property_line(stripped: str, state: dict) -> tuple[bool, dict]:
         """Detect and process a property *key: value* line.
 
-        For *Idea* records only *ID* and *Score* properties are supported.
+        For *Idea* records *ID*, *Tag*, and *Score* properties are supported.
         """
         parts = stripped.split(":", 1)
         if len(parts) != 2:
@@ -75,6 +77,10 @@ class Idea:
         elif key == "id":
             new_state = state.copy()
             new_state["idea_id"] = value
+            return True, new_state
+        elif key == "tag":
+            new_state = state.copy()
+            new_state["tag"] = value
             return True, new_state
         return False, state
 
@@ -95,6 +101,7 @@ class Idea:
             state = {
                 "score": 1,  # Reasonable default when absent / malformed
                 "idea_id": "",
+                "tag": "",
             }
             description_lines: list[str] = []
 
@@ -106,14 +113,32 @@ class Idea:
 
             # Handle missing ID
             if not state["idea_id"]:
-                state["idea_id"] = RecordID.generate()
+                if state["tag"]:
+                    state["idea_id"] = Idea.generate_idea_id(state["tag"])
+                else:
+                    # Fallback to old format for backward compatibility
+                    state["idea_id"] = RecordID.generate()
+                    state["tag"] = "legacy"
                 logger.warning(
                     "Generated missing idea ID for malformed record: %s", state["idea_id"]
                 )
 
+            # Ensure tag is set
+            if not state["tag"]:
+                # Try to extract tag from ID if it follows the new format
+                if "-" in state["idea_id"] and len(state["idea_id"].split("-")[0]) <= 12:
+                    state["tag"] = state["idea_id"].split("-")[0]
+                else:
+                    state["tag"] = "legacy"
+
             description = "\n".join(description_lines).strip()
 
-            return cls(id=state["idea_id"], score=state["score"], description=description)
+            return cls(
+                id=state["idea_id"], 
+                tag=state["tag"],
+                score=state["score"], 
+                description=description
+            )
         except Exception as exc:  # pragma: no cover – broad catch mirrors Task.from_text
             logger.warning("Malformed idea record ignored: %s", exc)
             return None
@@ -124,8 +149,9 @@ class Idea:
     def to_text(self) -> str:
         """Render the idea back to its on-disk record form."""
         lines = [
-            f"ID: {self.id}",
+            f"Tag: {self.tag}",
             f"Score: {self.score:4d}",
+            f"ID: {self.id}",
             self.description.strip(),
         ]
         return "\n".join(lines)
@@ -134,6 +160,7 @@ class Idea:
         """Convert to a plain dictionary for API responses or tests."""
         return {
             "id": self.id,
+            "tag": self.tag,
             "score": self.score,
             "description": self.description,
         }

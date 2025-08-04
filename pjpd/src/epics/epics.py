@@ -31,12 +31,23 @@ class Epics:
     def set_directory(self, directory: Path | str) -> None:
         """Update the directory containing *epics.txt*.
 
+        The directory must exist or an exception will be raised.
         Keeping the Epics manager in sync with the active *Projects* directory
         ensures the `epics.txt` file is created beside project task files – not
         in a stale default location (e.g. `~/projects`).
+        
+        Raises:
+            FileNotFoundError: If the specified directory doesn't exist.
         """
         self.directory = Path(directory).expanduser()
-        self.directory.mkdir(parents=True, exist_ok=True)
+        
+        # Check if directory exists and raise exception if it doesn't
+        if not self.directory.exists():
+            raise FileNotFoundError(f"Epics directory does not exist: {self.directory}")
+        
+        if not self.directory.is_dir():
+            raise FileNotFoundError(f"Path exists but is not a directory: {self.directory}")
+            
         self.epics_file = self.directory / "epics.txt"
         self.text_records = TextRecords(self.directory)
         # Invalidate cache so data is re-loaded on next access
@@ -94,6 +105,7 @@ class Epics:
         self,
         description: str,
         score: int,
+        tag: str = "epic",
         ideas: Optional[List[str]] = None,
         projects: Optional[List[str]] = None,
     ) -> Epic:
@@ -101,7 +113,8 @@ class Epics:
         ideas = ideas or []
         projects = projects or []
         epic = Epic(
-            id=Epic.generate_epic_id(),
+            id=Epic.generate_epic_id(tag),
+            tag=tag,
             score=score,
             ideas=ideas,
             projects=projects,

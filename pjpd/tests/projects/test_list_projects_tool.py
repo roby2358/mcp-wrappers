@@ -167,4 +167,17 @@ class TestListProjectsTool:
         # Verify the result
         assert result["success"] is False
         assert "Error listing projects" in result["error"]
-        assert "Test error" in result["error"] 
+        assert "Test error" in result["error"]
+    
+    async def test_list_projects_missing_directory(self, mock_projects_manager, mock_config):
+        """Test list_projects when the specified projects directory doesn't exist"""
+        # Setup projects manager to raise FileNotFoundError for missing directory
+        mock_projects_manager.set_projects_dir.side_effect = FileNotFoundError("Projects directory does not exist: /nonexistent/path")
+        
+        # Call the tool with a non-existent path
+        result = await list_projects(path="/nonexistent/path")
+        
+        # Verify the result
+        assert result["success"] is False
+        assert "Error listing projects" in result["error"]
+        assert "Projects directory does not exist" in result["error"] 

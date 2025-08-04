@@ -57,6 +57,7 @@ class TaskDict(TypedDict):
     """Dictionary representation of a task returned by the API."""
 
     id: str
+    tag: str
     project: str
     priority: int  # Plain integer priority (higher numbers = higher priority)
     status: str  # Keep string to avoid Enum/JSON serialisation issues
@@ -170,19 +171,20 @@ async def pjpd_new_project(project: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_add_task(project: str, description: str, priority: int = 2) -> Dict[str, Any]:
+async def pjpd_add_task(project: str, description: str, priority: int = 2, tag: str = "task") -> Dict[str, Any]:
     """Add a new task to a project.
     
     Args:
         project: The name of the project to add the task to. If the project doesn't exist, it will be created.
         description: The description of the task.
         priority: The priority level of the task (higher numbers = higher priority). Defaults to 2.
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Defaults to "task".
     
     Returns:
         Standard MCP response with task details or error message.
     """
     try:
-        task = projects_manager.add_task(project, description, priority)
+        task = projects_manager.add_task(project, description, priority, tag)
         
         if task:
             return mcp_success({
@@ -204,7 +206,7 @@ async def pjpd_update_task(project: str, task_id: str, description: str = None,
     
     Args:
         project: The name of the project containing the task.
-        task_id: The unique ID of the task to update.
+        task_id: The unique tag-based task ID (format: `<tag>-XXXX`) to update.
         description: Optional new description for the task.
         priority: Optional new priority level (higher numbers = higher priority).
         status: Optional new status ("ToDo" or "Done"). Defaults to "ToDo".
@@ -302,7 +304,7 @@ async def pjpd_mark_done(project: str, task_id: str) -> Dict[str, Any]:
     
     Args:
         project: The name of the project containing the task.
-        task_id: The unique 10-character task ID to mark as done.
+        task_id: The unique tag-based task ID (format: `<tag>-XXXX`) to mark as done.
     
     Returns:
         Standard MCP response with updated task details or error message.
@@ -415,18 +417,19 @@ async def pjpd_list_ideas(max_results: int = None) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_add_idea(score: int, description: str) -> Dict[str, Any]:
+async def pjpd_add_idea(score: int, description: str, tag: str = "idea") -> Dict[str, Any]:
     """Create a new idea in ideas.txt with parameters.
     
     Args:
         score: Score value (higher numbers = higher relevance).
         description: Idea description.
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Defaults to "idea".
     
     Returns:
         Standard MCP response with created idea details or error message.
     """
     try:
-        idea = ideas_manager.add_idea(description, score)
+        idea = ideas_manager.add_idea(description, score, tag)
         
         return mcp_success({
             **idea.to_dict(),
@@ -442,7 +445,7 @@ async def pjpd_update_idea(idea_id: str, score: int = None, description: str = N
     """Update an existing idea.
     
     Args:
-        idea_id: 10-character idea ID.
+        idea_id: Tag-based idea ID (format: `<tag>-XXXX`).
         score: Optional new score value.
         description: Optional new idea description.
     
@@ -474,7 +477,7 @@ async def pjpd_remove_idea(idea_id: str) -> Dict[str, Any]:
     """Remove an idea completely.
     
     Args:
-        idea_id: 10-character idea ID.
+        idea_id: Tag-based idea ID (format: `<tag>-XXXX`).
     
     Returns:
         Standard MCP response indicating success or failure.
@@ -523,12 +526,13 @@ async def pjpd_list_epics(max_results: int = None) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_add_epic(score: int, description: str, ideas: str = "", projects: str = "") -> Dict[str, Any]:
+async def pjpd_add_epic(score: int, description: str, tag: str = "epic", ideas: str = "", projects: str = "") -> Dict[str, Any]:
     """Create a new epic in epics.txt.
 
     Args:
         score: Score value (higher numbers = higher relevance).
         description: Epic description.
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Defaults to "epic".
         ideas: Space-delimited list of idea IDs (optional).
         projects: Space-delimited list of project names (optional).
 
@@ -539,6 +543,7 @@ async def pjpd_add_epic(score: int, description: str, ideas: str = "", projects:
         epic = epics_manager.add_epic(
             description=description,
             score=score,
+            tag=tag,
             ideas=ideas.split() if ideas else [],
             projects=projects.split() if projects else [],
         )
@@ -563,7 +568,7 @@ async def pjpd_update_epic(
     """Update an existing epic.
 
     Args:
-        epic_id: 10-character epic ID.
+        epic_id: Tag-based epic ID (format: `<tag>-XXXX`).
         score: Optional new score.
         description: Optional new description.
         ideas: Optional space-delimited list of idea IDs.
@@ -603,7 +608,7 @@ async def pjpd_mark_epic_done(epic_id: str) -> Dict[str, Any]:
     """Mark an epic as done by setting its score to 0.
 
     Args:
-        epic_id: 10-character epic ID.
+        epic_id: Tag-based epic ID (format: `<tag>-XXXX`).
 
     Returns:
         Standard MCP response indicating success or failure.

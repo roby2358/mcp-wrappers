@@ -42,17 +42,24 @@ class Projects:
     def set_projects_dir(self, projects_dir: Path | str) -> None:
         """Update the projects directory.
 
-        The directory will be created if it does not already exist and the
-        in-memory cache will be cleared to ensure a fresh reload the next time
+        The directory must exist or an exception will be raised.
+        The in-memory cache will be cleared to ensure a fresh reload the next time
         projects are accessed.
 
         Args:
             projects_dir: Path to the directory containing project files.
+            
+        Raises:
+            FileNotFoundError: If the specified projects directory doesn't exist.
         """
         self.projects_dir = Path(projects_dir).expanduser()
 
-        # Guarantee directory existence so downstream operations are safe
-        self.projects_dir.mkdir(parents=True, exist_ok=True)
+        # Check if directory exists and raise exception if it doesn't
+        if not self.projects_dir.exists():
+            raise FileNotFoundError(f"Projects directory does not exist: {self.projects_dir}")
+        
+        if not self.projects_dir.is_dir():
+            raise FileNotFoundError(f"Path exists but is not a directory: {self.projects_dir}")
 
         self.refresh_projects()
         
@@ -249,13 +256,14 @@ class Projects:
         
         return all_tasks
     
-    def add_task(self, project_name: str, description: str, priority: int = 2) -> Optional[Task]:
+    def add_task(self, project_name: str, description: str, priority: int = 2, tag: str = "task") -> Optional[Task]:
         """Add a task to a project.
         
         Args:
             project_name: Name of the project to add the task to.
             description: Description of the task.
             priority: Priority level for the task (default: 2).
+            tag: Tag string for the task (default: "task").
             
         Returns:
             The created Task instance, or None if the operation failed.
@@ -266,7 +274,7 @@ class Projects:
         self.refresh_projects()
         
         project = self.get_project(project_name)
-        return project.add_task(description, priority)
+        return project.add_task(description, priority, tag)
     
     def get_task(self, project_name: str, task_id: str) -> Optional[Task]:
         """Get a specific task from a project.

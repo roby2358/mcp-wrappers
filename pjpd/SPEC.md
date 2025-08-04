@@ -23,13 +23,16 @@ This specification outlines the design, structure, and operational requirements 
 ### Task Record Format
 
 * Each task **MUST** be delimited by a separator line consisting of exactly three hyphens (`---`) on a line by itself
-* Each task **MUST** contain exactly four lines in this order:
-    1. `ID: {10-character-random-string}`
-    2. `Priority: {integer}`
-    3. `Status: {ToDo|Done}`
-    4. Task description (may span multiple lines)
-* Task IDs **MUST** be exactly 10 characters
-* Task ID character sets **SHOULD** use base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0) to facilitate manual entry
+* Each task **MUST** contain exactly five lines in this order:
+    1. `ID: {tag}-{4-character-random-string}`
+    2. `Tag: {1-12-character-string}`
+    3. `Priority: {integer}`
+    4. `Status: {ToDo|Done}`
+    5. Task description (may span multiple lines)
+* Task IDs **MUST** be in the format `<tag>-XXXX` where:
+    * `<tag>` is a 1-12 character string provided at creation
+    * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)
+* Task tags **MUST** be 1-12 characters long and contain only alphanumeric characters and hyphens
 * Task IDs **MUST** be unique within the entire system (across all projects)
 * Task ID uniqueness **MAY** rely on entropy/randomness without coordination – no global registry or coordination mechanism is required
 * Tasks **MUST** be parsed in order of appearance within each file
@@ -39,17 +42,20 @@ This specification outlines the design, structure, and operational requirements 
 
 ### Example Task Format
 ```
-ID: AB-CDEF-GH
+ID: bug-AB12
+Tag: bug
 Priority:    1
 Status: ToDo
 Add functionality to encapsulate the cardinal graham meters.
 ---
-ID: 12-3456-78
+ID: doc-3456
+Tag: doc
 Priority:   10
 Status: Done
 Update documentation for the new API endpoints.
 ---
-ID: aB-cDeF-gH
+ID: refactor-cDeF
+Tag: refactor
 Priority:  100
 Status: ToDo
 Refactor the error handling in the main loop for 
@@ -61,10 +67,15 @@ better readability.
 *See also: [Epic Record Format](#epic-record-format-new) for grouping ideas and projects into higher-level workstreams.*
 
 * Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
-* Each idea **MUST** contain **three or more** lines in this order:
-    1. `ID: {10-character-random-string}`
-    2. `Score: {integer}`
-    3. Idea description (may span multiple lines)
+* Each idea **MUST** contain **four or more** lines in this order:
+    1. `ID: {tag}-{4-character-random-string}`
+    2. `Tag: {1-12-character-string}`
+    3. `Score: {integer}`
+    4. Idea description (may span multiple lines)
+* Idea IDs **MUST** be in the format `<tag>-XXXX` where:
+    * `<tag>` is a 1-12 character string provided at creation
+    * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)
+* Idea tags **MUST** be 1-12 characters long and contain only alphanumeric characters and hyphens
 * Idea records **MUST NOT** include a `Status:` line. Ideas are considered non-actionable until promoted to a task.
 * Idea IDs **MUST** follow the same uniqueness rules as task IDs and share the same global ID space.
 * Ideas **MUST** be sorted by score when saving to disk (higher scores first).
@@ -74,11 +85,13 @@ better readability.
 #### Example Idea Format
 
 ```
-ID: ABCDEFGHIJ
+ID: ai-ABCD
+Tag: ai
 Score:   75
 Implement experimental AI-assisted code review workflow.
 ---
-ID: KLMNOPQRST
+ID: ui-KLMN
+Tag: ui
 Score:    5
 Investigate alternative color palette for dark mode.
 ---
@@ -87,12 +100,17 @@ Investigate alternative color palette for dark mode.
 ### Epic Record Format (NEW)
 
 * Each epic **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
-* Each epic **MUST** contain **five or more** lines in this order:
+* Each epic **MUST** contain **six or more** lines in this order:
     1. `Score: {integer}`
     2. `Ideas: {space-delimited-list-of-idea-ids}`
     3. `Projects: {space-delimited-list-of-project-names}`
-    4. `ID: {10-character-random-string}`
-    5. Epic description (may span multiple lines)
+    4. `ID: {tag}-{4-character-random-string}`
+    5. `Tag: {1-12-character-string}`
+    6. Epic description (may span multiple lines)
+* Epic IDs **MUST** be in the format `<tag>-XXXX` where:
+    * `<tag>` is a 1-12 character string provided at creation
+    * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)
+* Epic tags **MUST** be 1-12 characters long and contain only alphanumeric characters and hyphens
 * Epic IDs **MUST** follow the same uniqueness rules as task and idea IDs and share the same global ID space.
 * Epics **MUST** be sorted by score when saving to disk (higher scores first).
 * `mark_epic_done` **MUST NOT** delete the record; instead it **MUST** set the epic's score to `0`.
@@ -142,8 +160,8 @@ Investigate alternative color palette for dark mode.
 
 ### Task Operations
 
-* Tasks **MUST** be identified by their project and 10-character ID
-* Task IDs **MUST** be generated automatically when creating new tasks
+* Tasks **MUST** be identified by their project and tag-based ID (format: `<tag>-XXXX`)
+* Task IDs **MUST** be generated automatically when creating new tasks using the provided tag
 * Task updates **MUST** preserve the original file structure and separator format
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file
 * Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `---` separator
@@ -152,8 +170,8 @@ Investigate alternative color palette for dark mode.
 
 ### Idea Operations
 
-* Ideas **MUST** be identified by their unique 10-character ID within the project directory idea.txt file.
-* Idea IDs **MUST** be generated automatically when creating new ideas.
+* Ideas **MUST** be identified by their unique tag-based ID (format: `<tag>-XXXX`) within the project directory idea.txt file.
+* Idea IDs **MUST** be generated automatically when creating new ideas using the provided tag.
 * Idea updates **MUST** preserve the original file structure and separator format while sorted for score.
 
 ---
@@ -186,15 +204,16 @@ Investigate alternative color palette for dark mode.
     * `project` (string, required): Project name (becomes filename without .txt)
     * `description` (string, required): Task description
     * `priority` (integer, required): Priority level (higher numbers = higher priority)
+    * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
 * `update_task` – Update an existing task:
     * `project` (string, required): The name of the project containing the task
-    * `task_id` (string, required): 10-character task ID
+    * `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
     * `description` (string, optional): New task description
     * `priority` (integer, optional): New priority level
     * `status` (string, optional): New status ("ToDo" or "Done")
 * `mark_done` – Mark a task as completed:
     * `project` (string, required): The name of the project containing the task
-    * `task_id` (string, required): 10-character task ID
+    * `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
 * `next_steps` – Determine high-priority tasks to work on next:
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
 * `get_statistics` – Get comprehensive statistics about all projects:
@@ -203,28 +222,30 @@ Investigate alternative color palette for dark mode.
     * `max_results` (integer, optional): Maximum number of results to return
 * `add_idea` – Create a new idea in ideas.txt with parameters:
     * `score` (integer, required): Score value (higher numbers = higher relevance)
-        * `description` (string, required): Idea description
+    * `description` (string, required): Idea description
+    * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
 * `update_idea` – Update an existing idea:
-    * `idea_id` (string, required): 10-character idea ID
+    * `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
     * `score` (integer, optional): New score value
     * `description` (string, optional): New idea description
 * `remove_idea` – Remove an idea completely:
-    * `idea_id` (string, required): 10-character idea ID
+    * `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
 * `list_epics` – List epics:
     * `max_results` (integer, optional): Maximum number of results to return
 * `add_epic` – Create a new epic in epics.txt with parameters:
     * `score` (integer, required): Score value (higher numbers = higher relevance)
     * `description` (string, required): Epic description
+    * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
     * `ideas` (string, optional): Space-delimited list of idea IDs
     * `projects` (string, optional): Space-delimited list of project names
 * `update_epic` – Update an existing epic:
-    * `epic_id` (string, required): 10-character epic ID
+    * `epic_id` (string, required): Tag-based epic ID (format: `<tag>-XXXX`)
     * `score` (integer, optional): New score value
     * `description` (string, optional): New epic description
     * `ideas` (string, optional): Space-delimited list of idea IDs
     * `projects` (string, optional): Space-delimited list of project names
 * `mark_epic_done` – Mark an epic as done (sets score to 0):
-    * `epic_id` (string, required): 10-character epic ID
+    * `epic_id` (string, required): Tag-based epic ID (format: `<tag>-XXXX`)
 
 ---
 
@@ -261,7 +282,7 @@ Investigate alternative color palette for dark mode.
 ## Startup Behavior
 
 * Projects **MUST NOT** be indexed at startup (let the user initiate via tool calls)
-* System **MUST** create projects directory if it doesn't exist
+* System **MUST** raise an exception and return an error if the specified projects directory doesn't exist
 * On loading a project directory, the system **MUST** look for a companion `ideas.txt` file and load ideas if the file exists.
 * Startup **MUST** complete successfully even if some project or idea files contain malformed records
 * All logging output **MUST** be directed to stderr

@@ -82,7 +82,7 @@ class TestProjectCreationAndSaving:
         assert "Test task" in content
     
     def test_task_format_is_correct(self, temp_projects_dir):
-        """Test that tasks are saved in the correct format (Priority first, Status second, ID third, Description last)"""
+        """Test that tasks are saved in the correct format (Priority first, Status second, Tag third, ID fourth, Description last)"""
         projects = Projects(temp_projects_dir)
         
         projects.create_project("test-project")
@@ -95,16 +95,17 @@ class TestProjectCreationAndSaving:
         # Split into lines and check the order
         lines = content.strip().split('\n')
         
-        # Should have at least 4 lines: Priority, Status, ID, Description
-        assert len(lines) >= 4
+        # Should have at least 5 lines: Priority, Status, Tag, ID, Description
+        assert len(lines) >= 5
         
-        # Check the order: Priority first, then Status, then ID, then Description last
+        # Check the order: Priority first, then Status, then Tag, then ID, then Description last
         assert lines[0].startswith("Priority: ")
         assert lines[1].startswith("Status: ")
-        assert lines[2].startswith("ID: ")
+        assert lines[2].startswith("Tag: ")
+        assert lines[3].startswith("ID: ")
         
         # The description should be on the last line
-        description = lines[3]
+        description = lines[4]
         assert "Test task" in description
     
     def test_multiple_tasks_are_saved(self, temp_projects_dir):

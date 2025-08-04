@@ -72,6 +72,7 @@ class TestEpicsTools:
         """Test successful addition of an epic."""
         mock_epic = Epic(
             id="AAA111BBB2",
+            tag="epic",
             score=75,
             ideas=["IDEA1"],
             projects=["proj1"],
@@ -85,7 +86,13 @@ class TestEpicsTools:
         assert result["result"]["id"] == "AAA111BBB2"
         assert result["result"]["score"] == 75
         assert "Epic added successfully" in result["result"]["message"]
-        mock_epics_manager.add_epic.assert_called_once()
+        mock_epics_manager.add_epic.assert_called_once_with(
+            description="Epic description",
+            score=75,
+            tag="epic",
+            ideas=["IDEA1"],
+            projects=["proj1"]
+        )
 
     # ------------------------------------------------------------------
     # update_epic
@@ -95,6 +102,7 @@ class TestEpicsTools:
         """Test successful update of an epic."""
         mock_epic = Epic(
             id="AAA111BBB2",
+            tag="epic",
             score=100,
             ideas=[],
             projects=[],

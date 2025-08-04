@@ -7,7 +7,8 @@ ideas and projects:
     Score: {integer}
     Ideas: {space-delimited idea IDs}
     Projects: {space-delimited project names}
-    ID: {10-character record ID}
+    ID: {tag}-{4-character-random-string}
+    Tag: {1-12-character-string}
     <free-form description>
 
 Records are separated by a line containing exactly three dashes (---) which is
@@ -30,6 +31,7 @@ class Epic:
     """Represents a single epic item."""
 
     id: str
+    tag: str
     score: int
     ideas: List[str] = field(default_factory=list)
     projects: List[str] = field(default_factory=list)
@@ -39,9 +41,9 @@ class Epic:
     # ID generation
     # ------------------------------------------------------------------
     @classmethod
-    def generate_epic_id(cls) -> str:  # pragma: no cover – thin wrapper
-        """Generate a unique epic ID using the shared RecordID generator."""
-        return RecordID.generate()
+    def generate_epic_id(cls, tag: str) -> str:
+        """Generate a unique epic ID using the provided tag and RecordID generator."""
+        return RecordID.generate_with_tag(tag)
 
     # ------------------------------------------------------------------
     # Parsing helpers
@@ -73,6 +75,12 @@ class Epic:
         return True, new_state
 
     @staticmethod
+    def _parse_tag(value: str, state: dict) -> tuple[bool, dict]:
+        new_state = state.copy()
+        new_state["tag"] = value
+        return True, new_state
+
+    @staticmethod
     def _process_property_line(stripped: str, state: dict) -> tuple[bool, dict]:
         parts = stripped.split(":", 1)
         if len(parts) != 2:
@@ -90,6 +98,8 @@ class Epic:
             return Epic._parse_projects(value, state)
         if key == "id":
             return Epic._parse_id(value, state)
+        if key == "tag":
+            return Epic._parse_tag(value, state)
         return False, state
 
     # ------------------------------------------------------------------
@@ -112,6 +122,7 @@ class Epic:
                 "ideas": [],
                 "projects": [],
                 "epic_id": "",
+                "tag": "",
             }
             description_lines: list[str] = []
 
@@ -123,15 +134,29 @@ class Epic:
 
             # Handle missing ID
             if not state["epic_id"]:
-                state["epic_id"] = RecordID.generate()
+                if state["tag"]:
+                    state["epic_id"] = Epic.generate_epic_id(state["tag"])
+                else:
+                    # Fallback to old format for backward compatibility
+                    state["epic_id"] = RecordID.generate()
+                    state["tag"] = "legacy"
                 logger.warning(
                     "Generated missing epic ID for malformed record: %s", state["epic_id"]
                 )
+
+            # Ensure tag is set
+            if not state["tag"]:
+                # Try to extract tag from ID if it follows the new format
+                if "-" in state["epic_id"] and len(state["epic_id"].split("-")[0]) <= 12:
+                    state["tag"] = state["epic_id"].split("-")[0]
+                else:
+                    state["tag"] = "legacy"
 
             description = "\n".join(description_lines).strip()
 
             return cls(
                 id=state["epic_id"],
+                tag=state["tag"],
                 score=state["score"],
                 ideas=state["ideas"],
                 projects=state["projects"],
@@ -150,6 +175,7 @@ class Epic:
             f"Score: {self.score:4d}",
             f"Ideas: {' '.join(self.ideas)}",
             f"Projects: {' '.join(self.projects)}",
+            f"Tag: {self.tag}",
             f"ID: {self.id}",
             self.description.strip(),
         ]
@@ -159,6 +185,7 @@ class Epic:
         """Convert to a plain dictionary for API responses or tests."""
         return {
             "id": self.id,
+            "tag": self.tag,
             "score": self.score,
             "ideas": self.ideas,
             "projects": self.projects,

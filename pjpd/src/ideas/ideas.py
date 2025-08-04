@@ -32,13 +32,23 @@ class Ideas:
     def set_directory(self, directory: Path | str) -> None:
         """Update the directory containing *ideas.txt*.
 
+        The directory must exist or an exception will be raised.
         Changing the projects directory at runtime allows the Ideas manager to
         follow the current *Projects* location configured by the user (for
         example via the *path* parameter to the *list_projects* tool).
+        
+        Raises:
+            FileNotFoundError: If the specified directory doesn't exist.
         """
         self.directory = Path(directory).expanduser()
-        # Ensure the directory exists so downstream operations are safe
-        self.directory.mkdir(parents=True, exist_ok=True)
+        
+        # Check if directory exists and raise exception if it doesn't
+        if not self.directory.exists():
+            raise FileNotFoundError(f"Ideas directory does not exist: {self.directory}")
+        
+        if not self.directory.is_dir():
+            raise FileNotFoundError(f"Path exists but is not a directory: {self.directory}")
+            
         self.ideas_file = self.directory / "ideas.txt"
         # Re-initialise TextRecords so it points at the new directory
         self.text_records = TextRecords(self.directory)
@@ -93,9 +103,14 @@ class Ideas:
     # ------------------------------------------------------------------
     # Public operations – mirrors Project API for symmetry
     # ------------------------------------------------------------------
-    def add_idea(self, description: str, score: int) -> Idea:
+    def add_idea(self, description: str, score: int, tag: str = "idea") -> Idea:
         """Create and persist a new idea record."""
-        idea = Idea(id=Idea.generate_idea_id(), score=score, description=description)
+        idea = Idea(
+            id=Idea.generate_idea_id(tag), 
+            tag=tag,
+            score=score, 
+            description=description
+        )
         self.ideas.append(idea)
         self._save_ideas()
         return idea

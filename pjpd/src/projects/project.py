@@ -48,11 +48,12 @@ class Project:
             logger.error(f"Error loading tasks for project {self.name}: {e}")
             self._tasks = []
     
-    def add_task(self, description: str, priority: int = 2) -> Task:
+    def add_task(self, description: str, priority: int = 2, tag: str = "task") -> Task:
         """Add a new task to this project"""
-        # Generate a unique task ID
+        # Generate a unique task ID using the provided tag
         task = Task(
-            id=Task.generate_task_id(),
+            id=Task.generate_task_id(tag),
+            tag=tag,
             priority=priority,
             status="ToDo",
             description=description

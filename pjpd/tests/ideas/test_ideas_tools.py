@@ -74,7 +74,7 @@ class TestIdeasTools:
 
     async def test_add_idea_success(self, mock_ideas_manager):
         """Test successful addition of an idea."""
-        mock_idea = Idea(id="ABC123DEF4", score=75, description="Test idea")
+        mock_idea = Idea(id="ABC123DEF4", tag="idea", score=75, description="Test idea")
         mock_ideas_manager.add_idea.return_value = mock_idea
 
         result = await pjpd_add_idea(score=75, description="Test idea")
@@ -84,7 +84,7 @@ class TestIdeasTools:
         assert result["result"]["score"] == 75
         assert result["result"]["description"] == "Test idea"
         assert "Idea added successfully" in result["result"]["message"]
-        mock_ideas_manager.add_idea.assert_called_once_with("Test idea", 75)
+        mock_ideas_manager.add_idea.assert_called_once_with("Test idea", 75, "idea")
 
     async def test_add_idea_error(self, mock_ideas_manager):
         """Test error handling in add_idea."""
@@ -97,7 +97,7 @@ class TestIdeasTools:
 
     async def test_update_idea_success(self, mock_ideas_manager):
         """Test successful update of an idea."""
-        mock_idea = Idea(id="ABC123DEF4", score=100, description="Updated idea")
+        mock_idea = Idea(id="ABC123DEF4", tag="idea", score=100, description="Updated idea")
         mock_ideas_manager.update_idea.return_value = True
         mock_ideas_manager.ideas = [mock_idea]
 
