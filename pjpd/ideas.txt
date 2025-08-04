@@ -1,0 +1,4 @@
+Tag: reorganize
+Score:   80
+ID: reorganize-bsix
+Move project files (ideas, epics, projects) into a pjpd folder for better organization

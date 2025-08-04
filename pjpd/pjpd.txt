@@ -1,0 +1,5 @@
+Priority:   80
+Status: ToDo
+Tag: reorganize
+ID: reorganize-2kch
+Create pjpd directory and move project files (ideas.txt, epics.txt, projects) into it for better organization
