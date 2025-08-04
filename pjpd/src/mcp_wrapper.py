@@ -156,14 +156,14 @@ async def pjpd_new_project(project: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_add_task(project: str, description: str, priority: int = 2, tag: str = "task") -> Dict[str, Any]:
+async def pjpd_add_task(project: str, description: str, tag: str, priority: int = 2) -> Dict[str, Any]:
     """Add a new task to a project.
     
     Args:
         project: The name of the project to add the task to. If the project doesn't exist, it will be created.
         description: The description of the task.
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Required.
         priority: The priority level of the task (higher numbers = higher priority). Defaults to 2.
-        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Defaults to "task".
     
     Returns:
         Standard MCP response with task details or error message.
@@ -420,13 +420,13 @@ async def pjpd_list_ideas(max_results: int = None) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_add_idea(score: int, description: str, tag: str = "idea") -> Dict[str, Any]:
+async def pjpd_add_idea(score: int, description: str, tag: str) -> Dict[str, Any]:
     """Create a new idea in ideas.txt with parameters.
     
     Args:
         score: Score value (higher numbers = higher relevance).
         description: Idea description.
-        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Defaults to "idea".
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Required.
     
     Returns:
         Standard MCP response with created idea details or error message.
@@ -541,13 +541,13 @@ async def pjpd_list_epics(max_results: int = None) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_add_epic(score: int, description: str, tag: str = "epic", ideas: str = "", projects: str = "") -> Dict[str, Any]:
+async def pjpd_add_epic(score: int, description: str, tag: str, ideas: str = "", projects: str = "") -> Dict[str, Any]:
     """Create a new epic in epics.txt.
 
     Args:
         score: Score value (higher numbers = higher relevance).
         description: Epic description.
-        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Defaults to "epic".
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Required.
         ideas: Space-delimited list of idea IDs (optional).
         projects: Space-delimited list of project names (optional).
 

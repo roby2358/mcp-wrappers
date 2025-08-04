@@ -77,7 +77,7 @@ class TestIdeasTools:
         mock_idea = Idea(id="idea-1234", tag="idea", score=75, description="Test idea")
         mock_ideas_manager.add_idea.return_value = mock_idea
 
-        result = await pjpd_add_idea(score=75, description="Test idea")
+        result = await pjpd_add_idea(score=75, description="Test idea", tag="idea")
 
         assert result["success"] is True
         assert result["result"]["id"] == "idea-1234"
@@ -90,7 +90,7 @@ class TestIdeasTools:
         """Test error handling in add_idea."""
         mock_ideas_manager.add_idea.side_effect = Exception("Test error")
 
-        result = await pjpd_add_idea(score=50, description="Test idea")
+        result = await pjpd_add_idea(score=50, description="Test idea", tag="idea")
 
         assert result["success"] is False
         assert "Error adding idea" in result["error"]

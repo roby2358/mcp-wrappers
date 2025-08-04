@@ -80,7 +80,7 @@ class TestEpicsTools:
         )
         mock_epics_manager.add_epic.return_value = mock_epic
 
-        result = await pjpd_add_epic(score=75, description="Epic description", ideas="IDEA1", projects="proj1")
+        result = await pjpd_add_epic(score=75, description="Epic description", tag="epic", ideas="IDEA1", projects="proj1")
 
         assert result["success"] is True
         assert result["result"]["id"] == "epic-1234"
