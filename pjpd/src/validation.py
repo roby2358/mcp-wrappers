@@ -9,7 +9,7 @@ from src.projects.projects import ALLOWED_NAME_CHARS
 
 # Regex patterns for validation
 TAG_PATTERN = r'^[a-zA-Z0-9\-]+$'
-ID_PATTERN = r'^[a-zA-Z0-9\-]+-\d+$'
+ID_PATTERN = r'^[a-zA-Z0-9\-]+-[a-zA-Z0-9]+$'
 
 def validate_tag_format(value: str) -> str:
     """Validate that a tag contains only alphanumeric characters and hyphens."""
@@ -19,9 +19,9 @@ def validate_tag_format(value: str) -> str:
 
 
 def validate_id_format(value: str, id_type: str = "ID") -> str:
-    """Validate that an ID follows the format <tag>-XXXX where XXXX is a number."""
+    """Validate that an ID follows the format <tag>-XXXX where XXXX is alphanumeric."""
     if not re.match(ID_PATTERN, value):
-        raise ValueError(f"{id_type} must be in format <tag>-XXXX where XXXX is a number")
+        raise ValueError(f"{id_type} must be in format <tag>-XXXX where XXXX is alphanumeric")
     return value
 
 
@@ -89,7 +89,7 @@ class AddTaskRequest(BaseModel):
 class UpdateTaskRequest(BaseModel):
     """Request model for updating a task."""
     project: str = Field(..., min_length=1, description="The name of the project containing the task")
-    task_id: str = Field(..., description="The unique tag-based task ID (format: <tag>-XXXX)")
+    task_id: str = Field(..., description="The unique tag-based task ID (format: <tag>-XXXX where XXXX is alphanumeric)")
     description: Optional[str] = Field(None, description="Optional new description for the task")
     priority: Optional[int] = Field(None, ge=0, le=9999, description="Optional new priority level (0-9999)")
     status: str = Field(default="ToDo", description="Optional new status (ToDo or Done)")
@@ -125,7 +125,7 @@ class ListTasksRequest(BaseModel):
 class MarkDoneRequest(BaseModel):
     """Request model for marking a task as done."""
     project: str = Field(..., min_length=1, description="The name of the project containing the task")
-    task_id: str = Field(..., description="The unique tag-based task ID (format: <tag>-XXXX)")
+    task_id: str = Field(..., description="The unique tag-based task ID (format: <tag>-XXXX where XXXX is alphanumeric)")
     
     @field_validator('task_id')
     @classmethod
@@ -157,7 +157,7 @@ class AddIdeaRequest(BaseModel):
 
 class UpdateIdeaRequest(BaseModel):
     """Request model for updating an idea."""
-    idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX)")
+    idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX where XXXX is alphanumeric)")
     score: Optional[int] = Field(None, ge=0, le=9999, description="Optional new score value (0-9999)")
     description: Optional[str] = Field(None, min_length=1, description="Optional new idea description")
     
@@ -169,7 +169,7 @@ class UpdateIdeaRequest(BaseModel):
 
 class RemoveIdeaRequest(BaseModel):
     """Request model for removing an idea."""
-    idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX)")
+    idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX where XXXX is alphanumeric)")
     
     @field_validator('idea_id')
     @classmethod
@@ -198,7 +198,7 @@ class AddEpicRequest(BaseModel):
 
 class UpdateEpicRequest(BaseModel):
     """Request model for updating an epic."""
-    epic_id: str = Field(..., description="Tag-based epic ID (format: <tag>-XXXX)")
+    epic_id: str = Field(..., description="Tag-based epic ID (format: <tag>-XXXX where XXXX is alphanumeric)")
     score: Optional[int] = Field(None, ge=0, le=9999, description="Optional new score (0-9999)")
     description: Optional[str] = Field(None, min_length=1, description="Optional new description")
     ideas: Optional[str] = Field(None, description="Optional space-delimited list of idea IDs")
@@ -212,7 +212,7 @@ class UpdateEpicRequest(BaseModel):
 
 class MarkEpicDoneRequest(BaseModel):
     """Request model for marking an epic as done."""
-    epic_id: str = Field(..., description="Tag-based epic ID (format: <tag>-XXXX)")
+    epic_id: str = Field(..., description="Tag-based epic ID (format: <tag>-XXXX where XXXX is alphanumeric)")
     
     @field_validator('epic_id')
     @classmethod
