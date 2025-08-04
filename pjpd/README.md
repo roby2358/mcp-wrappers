@@ -118,7 +118,7 @@ Update documentation for the new API endpoints.
 
 ### Ignore File Support
 
-Create a `.ignore` file in your projects directory to exclude specific files:
+Create a `.pjpdignore` file in your projects directory to exclude specific files:
 
 ```
 # Ignore backup files

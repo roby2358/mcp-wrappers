@@ -5,6 +5,7 @@ Handles discovery and parsing of text files broken into records with --- separat
 
 import logging
 import os
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
@@ -15,18 +16,24 @@ class TextRecords:
     """Handles discovery and parsing of text files broken into records with --- separators"""
     
     def __init__(self, path: Path):
-        self.path = Path(path)
+        # URL decode the path if it contains % characters
+        # Cursor encodes : as %3A in file paths
+        path_str = str(path)
+        if '%' in path_str:
+            path_str = urllib.parse.unquote(path_str)
+
+        self.path = Path(path_str)
         
         # Debug logging for path resolution
         logger.info(f"TextRecords path: {self.path}")
         logger.info(f"Path exists: {self.path.exists()}")
+        
+        # Throw an exception if the path does not exist (cross-os, linux, Win 11, osx)
+        if not Path(path_str).exists():
+            raise FileNotFoundError(f"Path does not exist: {path_str}")
     
     def discover_files(self) -> List[Path]:
         """Discover all .txt files in the path recursively"""
-        if not self.path.exists():
-            logger.error(f"Path does not exist: {self.path}")
-            return []
-        
         txt_files = list(self.path.rglob("*.txt"))
         logger.info(f"Found {len(txt_files)} .txt files")
         return txt_files

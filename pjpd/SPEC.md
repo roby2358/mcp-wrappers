@@ -112,15 +112,15 @@ Investigate alternative color palette for dark mode.
 
 ### Ignore File Support
 
-* When scanning for project files, the system **MUST** honor a `.ignore` file in the projects directory
-* The `.ignore` file **MAY** contain a list of file patterns to ignore, one per line
+* When scanning for project files, the system **MUST** honor a `.pjpdignore` file in the projects directory
+* The `.pjpdignore` file **MAY** contain a list of file patterns to ignore, one per line
 * Ignore patterns **MUST** support simple wildcard semantics:
     * `*` matches any sequence of characters
     * Patterns are matched against the full filename (including extension)
     * Patterns are case-sensitive
 * Empty lines and lines starting with `#` **MUST** be treated as comments and ignored
 * Leading and trailing whitespace **MUST** be stripped from ignore patterns
-* If a `.ignore` file does not exist, files **MUST NOT** be ignored
+* If a `.pjpdignore` file does not exist, files **MUST NOT** be ignored
 * The system **MUST** only scan the projects directory itself (no recursive traversal)
 
 ---

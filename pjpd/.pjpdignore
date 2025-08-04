@@ -1,0 +1,5 @@
+# PJPD Ignore File
+# Files and patterns to ignore when scanning for project files
+
+# Analysis files
+pd_analysis.txt

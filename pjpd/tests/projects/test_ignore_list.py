@@ -11,30 +11,30 @@ class TestIgnoreList:
     """Test the IgnoreList class functionality"""
     
     def test_no_ignore_file(self, tmp_path):
-        """Test behavior when no .ignore file exists"""
+        """Test behavior when no .pjpdignore file exists"""
         ignore_list = IgnoreList(tmp_path)
         ignore_list.load_patterns()
         
-        # Should not ignore any files when no .ignore file exists
+        # Should not ignore any files when no .pjpdignore file exists
         assert not ignore_list.should_ignore("project.txt")
         assert not ignore_list.should_ignore("test.txt")
         assert not ignore_list.should_ignore("*.txt")
     
     def test_empty_ignore_file(self, tmp_path):
-        """Test behavior with empty .ignore file"""
-        ignore_file = tmp_path / ".ignore"
+        """Test behavior with empty .pjpdignore file"""
+        ignore_file = tmp_path / ".pjpdignore"
         ignore_file.write_text("")
         
         ignore_list = IgnoreList(tmp_path)
         ignore_list.load_patterns()
         
-        # Should not ignore any files when .ignore file is empty
+        # Should not ignore any files when .pjpdignore file is empty
         assert not ignore_list.should_ignore("project.txt")
         assert not ignore_list.should_ignore("test.txt")
     
     def test_comment_lines(self, tmp_path):
         """Test that comment lines are ignored"""
-        ignore_file = tmp_path / ".ignore"
+        ignore_file = tmp_path / ".pjpdignore"
         ignore_file.write_text("# This is a comment\n*.tmp\n# Another comment")
         
         ignore_list = IgnoreList(tmp_path)
@@ -46,7 +46,7 @@ class TestIgnoreList:
     
     def test_wildcard_patterns(self, tmp_path):
         """Test wildcard pattern matching"""
-        ignore_file = tmp_path / ".ignore"
+        ignore_file = tmp_path / ".pjpdignore"
         ignore_file.write_text("*.tmp\nbackup_*\n*_old.txt")
         
         ignore_list = IgnoreList(tmp_path)
@@ -61,7 +61,7 @@ class TestIgnoreList:
     
     def test_whitespace_handling(self, tmp_path):
         """Test that leading/trailing whitespace is stripped"""
-        ignore_file = tmp_path / ".ignore"
+        ignore_file = tmp_path / ".pjpdignore"
         ignore_file.write_text("  *.tmp  \n  backup_*  ")
         
         ignore_list = IgnoreList(tmp_path)
@@ -74,7 +74,7 @@ class TestIgnoreList:
     
     def test_filter_files(self, tmp_path):
         """Test the filter_files method"""
-        ignore_file = tmp_path / ".ignore"
+        ignore_file = tmp_path / ".pjpdignore"
         ignore_file.write_text("*.tmp\nbackup_*")
         
         # Create some test files
@@ -94,7 +94,7 @@ class TestIgnoreList:
     
     def test_case_sensitive_patterns(self, tmp_path):
         """Test that patterns are case-sensitive"""
-        ignore_file = tmp_path / ".ignore"
+        ignore_file = tmp_path / ".pjpdignore"
         ignore_file.write_text("*.TMP\nBACKUP_*")
         
         ignore_list = IgnoreList(tmp_path)
@@ -108,7 +108,7 @@ class TestIgnoreList:
     
     def test_reload_functionality(self, tmp_path):
         """Test that reload() works correctly"""
-        ignore_file = tmp_path / ".ignore"
+        ignore_file = tmp_path / ".pjpdignore"
         ignore_file.write_text("*.tmp")
         
         ignore_list = IgnoreList(tmp_path)
