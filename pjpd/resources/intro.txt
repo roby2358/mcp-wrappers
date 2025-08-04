@@ -44,3 +44,5 @@ Projects are stored as .txt files in the projects directory (~/projects by defau
 The system supports a .pjpdignore file in the projects directory to filter out specific project files, and all configuration is managed through projectmcp.toml.
 
 This system modifies local files on disk. Before using any tools that create, update, or modify project files, please remind the user to back up any important data. Obtain their consent make file modifications. 
+
+Start by listing projects in the current working directory.

@@ -80,14 +80,14 @@ class TestAddTaskRequest:
             AddTaskRequest(
                 project="my-project",
                 description="Do something",
-                priority=11  # Should be 0-10
+                priority=10000  # Should be 0-9999
             )
         
         with pytest.raises(ValidationError):
             AddTaskRequest(
                 project="my-project",
                 description="Do something",
-                priority=-1  # Should be 0-10
+                priority=-1  # Should be 0-9999
             )
     
     def test_invalid_tag(self):
@@ -115,13 +115,13 @@ class TestUpdateTaskRequest:
         """Test that valid update requests are accepted."""
         request = UpdateTaskRequest(
             project="my-project",
-            task_id="task-1234",
+            task_id="task-a2c4",
             description="Updated description",
             priority=7,
             status="Done"
         )
         assert request.project == "my-project"
-        assert request.task_id == "task-1234"
+        assert request.task_id == "task-a2c4"
         assert request.description == "Updated description"
         assert request.priority == 7
         assert request.status == "Done"
@@ -131,13 +131,13 @@ class TestUpdateTaskRequest:
         with pytest.raises(ValidationError):
             UpdateTaskRequest(
                 project="my-project",
-                task_id="invalid-id"  # Missing number
+                task_id="invalid-id"  # Missing base32 part
             )
         
         with pytest.raises(ValidationError):
             UpdateTaskRequest(
                 project="my-project",
-                task_id="task@1234"  # Contains special character
+                task_id="task@a2c4"  # Contains special character
             )
     
     def test_invalid_status(self):
@@ -145,7 +145,7 @@ class TestUpdateTaskRequest:
         with pytest.raises(ValidationError):
             UpdateTaskRequest(
                 project="my-project",
-                task_id="task-1234",
+                task_id="task-a2c4",
                 status="Invalid"
             )
 
@@ -157,10 +157,10 @@ class TestMarkDoneRequest:
         """Test that valid mark done requests are accepted."""
         request = MarkDoneRequest(
             project="my-project",
-            task_id="task-1234"
+            task_id="task-a2c4"
         )
         assert request.project == "my-project"
-        assert request.task_id == "task-1234"
+        assert request.task_id == "task-a2c4"
     
     def test_invalid_task_id_format(self):
         """Test that invalid task ID formats are rejected."""
@@ -211,13 +211,13 @@ class TestAddIdeaRequest:
         """Test that invalid scores are rejected."""
         with pytest.raises(ValidationError):
             AddIdeaRequest(
-                score=101,  # Should be 0-100
+                score=10000,  # Should be 0-9999
                 description="A great idea"
             )
         
         with pytest.raises(ValidationError):
             AddIdeaRequest(
-                score=-1,  # Should be 0-100
+                score=-1,  # Should be 0-9999
                 description="A great idea"
             )
 
@@ -228,11 +228,11 @@ class TestUpdateIdeaRequest:
     def test_valid_update_idea_request(self):
         """Test that valid update idea requests are accepted."""
         request = UpdateIdeaRequest(
-            idea_id="idea-1234",
+            idea_id="idea-5f6g",
             score=80,
             description="Updated idea"
         )
-        assert request.idea_id == "idea-1234"
+        assert request.idea_id == "idea-5f6g"
         assert request.score == 80
         assert request.description == "Updated idea"
     
@@ -249,8 +249,8 @@ class TestRemoveIdeaRequest:
     
     def test_valid_remove_idea_request(self):
         """Test that valid remove idea requests are accepted."""
-        request = RemoveIdeaRequest(idea_id="idea-1234")
-        assert request.idea_id == "idea-1234"
+        request = RemoveIdeaRequest(idea_id="idea-5f6g")
+        assert request.idea_id == "idea-5f6g"
     
     def test_invalid_idea_id_format(self):
         """Test that invalid idea ID formats are rejected."""
@@ -267,20 +267,20 @@ class TestAddEpicRequest:
             score=85,
             description="A great epic",
             tag="epic",
-            ideas="idea-1234 idea-5678",
+            ideas="idea-a2c4 idea-5f6g",
             projects="project1 project2"
         )
         assert request.score == 85
         assert request.description == "A great epic"
         assert request.tag == "epic"
-        assert request.ideas == "idea-1234 idea-5678"
+        assert request.ideas == "idea-a2c4 idea-5f6g"
         assert request.projects == "project1 project2"
     
     def test_invalid_score(self):
         """Test that invalid scores are rejected."""
         with pytest.raises(ValidationError):
             AddEpicRequest(
-                score=101,  # Should be 0-100
+                score=10000,  # Should be 0-9999
                 description="A great epic"
             )
 
@@ -291,16 +291,16 @@ class TestUpdateEpicRequest:
     def test_valid_update_epic_request(self):
         """Test that valid update epic requests are accepted."""
         request = UpdateEpicRequest(
-            epic_id="epic-1234",
+            epic_id="epic-a2c4",
             score=90,
             description="Updated epic",
-            ideas="idea-1234",
+            ideas="idea-5f6g",
             projects="project1"
         )
-        assert request.epic_id == "epic-1234"
+        assert request.epic_id == "epic-a2c4"
         assert request.score == 90
         assert request.description == "Updated epic"
-        assert request.ideas == "idea-1234"
+        assert request.ideas == "idea-5f6g"
         assert request.projects == "project1"
     
     def test_invalid_epic_id_format(self):
@@ -314,8 +314,8 @@ class TestMarkEpicDoneRequest:
     
     def test_valid_mark_epic_done_request(self):
         """Test that valid mark epic done requests are accepted."""
-        request = MarkEpicDoneRequest(epic_id="epic-1234")
-        assert request.epic_id == "epic-1234"
+        request = MarkEpicDoneRequest(epic_id="epic-a2c4")
+        assert request.epic_id == "epic-a2c4"
     
     def test_invalid_epic_id_format(self):
         """Test that invalid epic ID formats are rejected."""

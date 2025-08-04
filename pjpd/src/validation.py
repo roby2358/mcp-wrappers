@@ -77,7 +77,7 @@ class AddTaskRequest(BaseModel):
     """Request model for adding a task."""
     project: str = Field(..., min_length=1, description="The name of the project to add the task to")
     description: str = Field(..., min_length=1, description="The description of the task")
-    priority: int = Field(default=2, ge=0, le=10, description="Priority level (0-10, higher numbers = higher priority)")
+    priority: int = Field(default=2, ge=0, le=9999, description="Priority level (0-9999, higher numbers = higher priority)")
     tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
     
     @field_validator('tag')
@@ -91,7 +91,7 @@ class UpdateTaskRequest(BaseModel):
     project: str = Field(..., min_length=1, description="The name of the project containing the task")
     task_id: str = Field(..., description="The unique tag-based task ID (format: <tag>-XXXX)")
     description: Optional[str] = Field(None, description="Optional new description for the task")
-    priority: Optional[int] = Field(None, ge=0, le=10, description="Optional new priority level (0-10)")
+    priority: Optional[int] = Field(None, ge=0, le=9999, description="Optional new priority level (0-9999)")
     status: str = Field(default="ToDo", description="Optional new status (ToDo or Done)")
     
     @field_validator('status')
@@ -110,7 +110,7 @@ class UpdateTaskRequest(BaseModel):
 class ListTasksRequest(BaseModel):
     """Request model for listing tasks."""
     project: Optional[str] = Field(None, description="Filter tasks by a specific project name")
-    priority: Optional[int] = Field(None, ge=0, le=10, description="Filter tasks by priority level (returns all tasks >= this priority)")
+    priority: Optional[int] = Field(None, ge=0, le=9999, description="Filter tasks by priority level (returns all tasks >= this priority)")
     status: Optional[str] = Field(None, description="Filter tasks by status (ToDo or Done)")
     max_results: Optional[int] = Field(None, gt=0, le=1000, description="Maximum number of tasks to return")
     
@@ -145,7 +145,7 @@ class ListIdeasRequest(BaseModel):
 
 class AddIdeaRequest(BaseModel):
     """Request model for adding an idea."""
-    score: int = Field(..., ge=0, le=100, description="Score value (0-100, higher numbers = higher relevance)")
+    score: int = Field(..., ge=0, le=9999, description="Score value (0-9999, higher numbers = higher relevance)")
     description: str = Field(..., min_length=1, description="Idea description")
     tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
     
@@ -158,7 +158,7 @@ class AddIdeaRequest(BaseModel):
 class UpdateIdeaRequest(BaseModel):
     """Request model for updating an idea."""
     idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX)")
-    score: Optional[int] = Field(None, ge=0, le=100, description="Optional new score value (0-100)")
+    score: Optional[int] = Field(None, ge=0, le=9999, description="Optional new score value (0-9999)")
     description: Optional[str] = Field(None, min_length=1, description="Optional new idea description")
     
     @field_validator('idea_id')
@@ -184,7 +184,7 @@ class ListEpicsRequest(BaseModel):
 
 class AddEpicRequest(BaseModel):
     """Request model for adding an epic."""
-    score: int = Field(..., ge=0, le=100, description="Score value (0-100, higher numbers = higher relevance)")
+    score: int = Field(..., ge=0, le=9999, description="Score value (0-9999, higher numbers = higher relevance)")
     description: str = Field(..., min_length=1, description="Epic description")
     tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
     ideas: str = Field(default="", description="Space-delimited list of idea IDs (optional)")
@@ -199,7 +199,7 @@ class AddEpicRequest(BaseModel):
 class UpdateEpicRequest(BaseModel):
     """Request model for updating an epic."""
     epic_id: str = Field(..., description="Tag-based epic ID (format: <tag>-XXXX)")
-    score: Optional[int] = Field(None, ge=0, le=100, description="Optional new score (0-100)")
+    score: Optional[int] = Field(None, ge=0, le=9999, description="Optional new score (0-9999)")
     description: Optional[str] = Field(None, min_length=1, description="Optional new description")
     ideas: Optional[str] = Field(None, description="Optional space-delimited list of idea IDs")
     projects: Optional[str] = Field(None, description="Optional space-delimited list of project names")
