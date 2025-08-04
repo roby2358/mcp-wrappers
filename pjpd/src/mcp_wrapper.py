@@ -15,6 +15,13 @@ from projects import Projects
 from ideas import Ideas
 from epics import Epics
 from config import Config
+from validation import (
+    TaskDict,
+    ListProjectsRequest, NewProjectRequest, AddTaskRequest, UpdateTaskRequest,
+    ListTasksRequest, MarkDoneRequest, NextStepsRequest,
+    ListIdeasRequest, AddIdeaRequest, UpdateIdeaRequest, RemoveIdeaRequest,
+    ListEpicsRequest, AddEpicRequest, UpdateEpicRequest, MarkEpicDoneRequest
+)
 
 # Constants
 NO_PROJECTS_RESPONSE = {
@@ -52,54 +59,26 @@ epics_manager = Epics(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
 
 # Strict typing helpers -----------------------------------------------------
 
-
-class TaskDict(TypedDict):
-    """Dictionary representation of a task returned by the API."""
-
-    id: str
-    tag: str
-    project: str
-    priority: int  # Plain integer priority (higher numbers = higher priority)
-    status: str  # Keep string to avoid Enum/JSON serialisation issues
-    description: str
-
-
-class MCPResponseSuccess(TypedDict):
-    """Successful MCP response schema."""
-
-    success: Literal[True]
-    result: Any
-    error: str
-
-
-class MCPResponseFailure(TypedDict):
-    """Failed MCP response schema."""
-
-    success: Literal[False]
-    result: str
-    error: str
-
-
-MCPResponse = Union[MCPResponseSuccess, MCPResponseFailure]
+# Note: TypedDict definitions moved to validation.py as Pydantic models
 
 # MCP Tools and prompts -----------------------------------------------------
 
 
-def mcp_success(result: Any) -> MCPResponse:
+def mcp_success(result: Any) -> Dict[str, Any]:
     """Return a successful MCP response with the given result."""
-    return MCPResponseSuccess(
-        success=True,
-        result=result,
-        error="",
-    )
+    return {
+        "success": True,
+        "result": result,
+        "error": "",
+    }
 
-def mcp_failure(error_message: str) -> MCPResponse:
+def mcp_failure(error_message: str) -> Dict[str, Any]:
     """Return a failed MCP response with the given error message."""
-    return MCPResponseFailure(
-        success=False,
-        result="",
-        error=error_message,
-    )
+    return {
+        "success": False,
+        "result": "",
+        "error": error_message,
+    }
 
 @mcp.prompt()
 def pjpd_intro() -> str:
@@ -125,11 +104,14 @@ async def pjpd_list_projects(path: str = None) -> Dict[str, Any]:
     todo/done status, project details, and the current project directory.
     """
     try:
+        # Validate input using Pydantic
+        request = ListProjectsRequest(path=path)
+        
         # Set the projects directory if a path is provided, otherwise use config
-        if path:
+        if request.path:
             # Update all managers to point at the *same* projects directory so
             # `ideas.txt` and `epics.txt` live alongside project task files.
-            new_dir = Path(path)
+            new_dir = Path(request.path)
             projects_manager.set_projects_dir(new_dir)
             ideas_manager.set_directory(new_dir)
             epics_manager.set_directory(new_dir)
@@ -158,7 +140,10 @@ async def pjpd_new_project(project: str) -> Dict[str, Any]:
         Standard MCP response indicating success or failure.
     """
     try:
-        created_project = projects_manager.create_project(project)
+        # Validate input using Pydantic
+        request = NewProjectRequest(project=project)
+        
+        created_project = projects_manager.create_project(request.project)
         
         return mcp_success({
             "project_name": created_project.name,
@@ -184,16 +169,19 @@ async def pjpd_add_task(project: str, description: str, priority: int = 2, tag: 
         Standard MCP response with task details or error message.
     """
     try:
-        task = projects_manager.add_task(project, description, priority, tag)
+        # Validate input using Pydantic
+        request = AddTaskRequest(project=project, description=description, priority=priority, tag=tag)
+        
+        task = projects_manager.add_task(request.project, request.description, request.priority, request.tag)
         
         if task:
             return mcp_success({
                 **task.to_dict(),
-                "project": project,
-                "message": f"Task added to project '{project}' successfully"
+                "project": request.project,
+                "message": f"Task added to project '{request.project}' successfully"
             })
         else:
-            return mcp_failure(f"Failed to add task to project '{project}'")
+            return mcp_failure(f"Failed to add task to project '{request.project}'")
         
     except Exception as e:
         return mcp_failure(f"Error adding task: {str(e)}")
@@ -215,18 +203,21 @@ async def pjpd_update_task(project: str, task_id: str, description: str = None,
         Standard MCP response with updated task details or error message.
     """
     try:
+        # Validate input using Pydantic
+        request = UpdateTaskRequest(project=project, task_id=task_id, description=description, priority=priority, status=status)
+        
         updated_task = projects_manager.update_task(
-            project, task_id, description, priority, status
+            request.project, request.task_id, request.description, request.priority, request.status
         )
         
         if updated_task:
             return mcp_success({
                 **updated_task.to_dict(),
-                "project": project,
-                "message": f"Task '{task_id}' updated successfully in project '{project}'"
+                "project": request.project,
+                "message": f"Task '{request.task_id}' updated successfully in project '{request.project}'"
             })
         else:
-            return mcp_failure(f"Task '{task_id}' not found in project '{project}'")
+            return mcp_failure(f"Task '{request.task_id}' not found in project '{request.project}'")
         
     except Exception as e:
         return mcp_failure(f"Error updating task: {str(e)}")
@@ -238,7 +229,7 @@ async def pjpd_list_tasks(
     priority: int | None = None,
     status: str | None = None,
     max_results: int | None = None,
-) -> MCPResponse:
+) -> Dict[str, Any]:
     """List tasks with optional filtering.
 
     Args:
@@ -252,27 +243,30 @@ async def pjpd_list_tasks(
     """
 
     try:
+        # Validate input using Pydantic
+        request = ListTasksRequest(project=project, priority=priority, status=status, max_results=max_results)
+        
         status_str: str | None
-        if status is None:
+        if request.status is None:
             status_str = None
         else:
-            status_str = status.strip().lower()
+            status_str = request.status.strip().lower()
 
         tasks: List[TaskDict] = []
 
         # If a specific project is requested, validate it exists first
-        if project:
-            target_project = projects_manager.get_project(project)
+        if request.project:
+            target_project = projects_manager.get_project(request.project)
             if not target_project:
-                return mcp_failure(f"Project '{project}' not found")
+                return mcp_failure(f"Project '{request.project}' not found")
             
             # Only process the specified project
-            filtered_tasks = target_project.filter_tasks(priority=priority, status=status_str)
+            filtered_tasks = target_project.filter_tasks(priority=request.priority, status=status_str)
             tasks.extend(filtered_tasks)  # type: ignore[arg-type]
         else:
             # Iterate over all projects and gather tasks that match filters
             for proj in projects_manager.projects.values():
-                filtered_tasks = proj.filter_tasks(priority=priority, status=status_str)
+                filtered_tasks = proj.filter_tasks(priority=request.priority, status=status_str)
                 # filter_tasks returns plain Dicts; cast for stricter typing purposes
                 tasks.extend(filtered_tasks)  # type: ignore[arg-type]
 
@@ -280,8 +274,8 @@ async def pjpd_list_tasks(
         tasks.sort(key=lambda item: (-item["priority"], item["description"].lower()))
 
         # Apply max_results limit if provided, otherwise use config default
-        if max_results is not None and max_results > 0:
-            tasks = tasks[:max_results]
+        if request.max_results is not None and request.max_results > 0:
+            tasks = tasks[:request.max_results]
         else:
             max_results_from_config = config(Config.MAX_RESULTS, 50)
             if max_results_from_config > 0:
@@ -310,17 +304,20 @@ async def pjpd_mark_done(project: str, task_id: str) -> Dict[str, Any]:
         Standard MCP response with updated task details or error message.
     """
     try:
+        # Validate input using Pydantic
+        request = MarkDoneRequest(project=project, task_id=task_id)
+        
         updated_task = projects_manager.update_task(
-            project, task_id, description=None, priority=0, status="Done"
+            request.project, request.task_id, description=None, priority=0, status="Done"
         )
         
         if not updated_task:
-            return mcp_failure(f"Task '{task_id}' not found in project '{project}'")
+            return mcp_failure(f"Task '{request.task_id}' not found in project '{request.project}'")
         
         return mcp_success({
             **updated_task.to_dict(),
-            "project": project,
-            "message": f"Task '{task_id}' marked as done in project '{project}'"
+            "project": request.project,
+            "message": f"Task '{request.task_id}' marked as done in project '{request.project}'"
         })
         
     except Exception as e:
@@ -338,7 +335,10 @@ async def pjpd_next_steps(max_results: int = 5) -> Dict[str, Any]:
         Standard MCP response with list of high-priority tasks to work on next.
     """
     try:
-        next_tasks = projects_manager.get_next_steps(max_results)
+        # Validate input using Pydantic
+        request = NextStepsRequest(max_results=max_results)
+        
+        next_tasks = projects_manager.get_next_steps(request.max_results)
         
         if not next_tasks:
             return mcp_success({
@@ -404,7 +404,10 @@ async def pjpd_list_ideas(max_results: int = None) -> Dict[str, Any]:
         Standard MCP response with list of ideas sorted by score (highest first).
     """
     try:
-        ideas = ideas_manager.list_ideas(max_results=max_results)
+        # Validate input using Pydantic
+        request = ListIdeasRequest(max_results=max_results)
+        
+        ideas = ideas_manager.list_ideas(max_results=request.max_results)
         
         return mcp_success({
             "total_ideas": len(ideas),
@@ -429,7 +432,10 @@ async def pjpd_add_idea(score: int, description: str, tag: str = "idea") -> Dict
         Standard MCP response with created idea details or error message.
     """
     try:
-        idea = ideas_manager.add_idea(description, score, tag)
+        # Validate input using Pydantic
+        request = AddIdeaRequest(score=score, description=description, tag=tag)
+        
+        idea = ideas_manager.add_idea(request.description, request.score, request.tag)
         
         return mcp_success({
             **idea.to_dict(),
@@ -453,20 +459,23 @@ async def pjpd_update_idea(idea_id: str, score: int = None, description: str = N
         Standard MCP response with updated idea details or error message.
     """
     try:
-        updated = ideas_manager.update_idea(idea_id, description, score)
+        # Validate input using Pydantic
+        request = UpdateIdeaRequest(idea_id=idea_id, score=score, description=description)
+        
+        updated = ideas_manager.update_idea(request.idea_id, request.description, request.score)
         
         if not updated:
-            return mcp_failure(f"Idea '{idea_id}' not found")
+            return mcp_failure(f"Idea '{request.idea_id}' not found")
         
         # Find the updated idea to return its details
         for idea in ideas_manager.ideas:
-            if idea.id == idea_id:
+            if idea.id == request.idea_id:
                 return mcp_success({
                     **idea.to_dict(),
-                    "message": f"Idea '{idea_id}' updated successfully"
+                    "message": f"Idea '{request.idea_id}' updated successfully"
                 })
         
-        return mcp_failure(f"Error retrieving updated idea '{idea_id}'")
+        return mcp_failure(f"Error retrieving updated idea '{request.idea_id}'")
         
     except Exception as e:
         return mcp_failure(f"Error updating idea: {str(e)}")
@@ -483,15 +492,18 @@ async def pjpd_remove_idea(idea_id: str) -> Dict[str, Any]:
         Standard MCP response indicating success or failure.
     """
     try:
-        removed = ideas_manager.remove_idea(idea_id)
+        # Validate input using Pydantic
+        request = RemoveIdeaRequest(idea_id=idea_id)
+        
+        removed = ideas_manager.remove_idea(request.idea_id)
         
         if removed:
             return mcp_success({
-                "idea_id": idea_id,
-                "message": f"Idea '{idea_id}' removed successfully"
+                "idea_id": request.idea_id,
+                "message": f"Idea '{request.idea_id}' removed successfully"
             })
         else:
-            return mcp_failure(f"Idea '{idea_id}' not found")
+            return mcp_failure(f"Idea '{request.idea_id}' not found")
         
     except Exception as e:
         return mcp_failure(f"Error removing idea: {str(e)}")
@@ -513,7 +525,10 @@ async def pjpd_list_epics(max_results: int = None) -> Dict[str, Any]:
         Standard MCP response with list of epics sorted by score (highest first).
     """
     try:
-        epics = epics_manager.list_epics(max_results=max_results)
+        # Validate input using Pydantic
+        request = ListEpicsRequest(max_results=max_results)
+        
+        epics = epics_manager.list_epics(max_results=request.max_results)
 
         return mcp_success({
             "total_epics": len(epics),
@@ -540,12 +555,15 @@ async def pjpd_add_epic(score: int, description: str, tag: str = "epic", ideas: 
         Standard MCP response with created epic details or error message.
     """
     try:
+        # Validate input using Pydantic
+        request = AddEpicRequest(score=score, description=description, tag=tag, ideas=ideas, projects=projects)
+        
         epic = epics_manager.add_epic(
-            description=description,
-            score=score,
-            tag=tag,
-            ideas=ideas.split() if ideas else [],
-            projects=projects.split() if projects else [],
+            description=request.description,
+            score=request.score,
+            tag=request.tag,
+            ideas=request.ideas.split() if request.ideas else [],
+            projects=request.projects.split() if request.projects else [],
         )
 
         return mcp_success({
@@ -578,26 +596,29 @@ async def pjpd_update_epic(
         Standard MCP response with updated epic details or error message.
     """
     try:
+        # Validate input using Pydantic
+        request = UpdateEpicRequest(epic_id=epic_id, score=score, description=description, ideas=ideas, projects=projects)
+        
         updated = epics_manager.update_epic(
-            epic_id,
-            description=description,
-            score=score,
-            ideas=ideas.split() if ideas is not None else None,
-            projects=projects.split() if projects is not None else None,
+            request.epic_id,
+            description=request.description,
+            score=request.score,
+            ideas=request.ideas.split() if request.ideas is not None else None,
+            projects=request.projects.split() if request.projects is not None else None,
         )
 
         if not updated:
-            return mcp_failure(f"Epic '{epic_id}' not found")
+            return mcp_failure(f"Epic '{request.epic_id}' not found")
 
         # Find the updated epic to return its details
         for epic in epics_manager.epics:
-            if epic.id == epic_id:
+            if epic.id == request.epic_id:
                 return mcp_success({
                     **epic.to_dict(),
-                    "message": f"Epic '{epic_id}' updated successfully"
+                    "message": f"Epic '{request.epic_id}' updated successfully"
                 })
 
-        return mcp_failure(f"Error retrieving updated epic '{epic_id}'")
+        return mcp_failure(f"Error retrieving updated epic '{request.epic_id}'")
 
     except Exception as e:
         return mcp_failure(f"Error updating epic: {str(e)}")
@@ -614,15 +635,18 @@ async def pjpd_mark_epic_done(epic_id: str) -> Dict[str, Any]:
         Standard MCP response indicating success or failure.
     """
     try:
-        marked_done = epics_manager.mark_epic_done(epic_id)
+        # Validate input using Pydantic
+        request = MarkEpicDoneRequest(epic_id=epic_id)
+        
+        marked_done = epics_manager.mark_epic_done(request.epic_id)
 
         if marked_done:
             return mcp_success({
-                "epic_id": epic_id,
-                "message": f"Epic '{epic_id}' marked as done (score set to 0)"
+                "epic_id": request.epic_id,
+                "message": f"Epic '{request.epic_id}' marked as done (score set to 0)"
             })
         else:
-            return mcp_failure(f"Epic '{epic_id}' not found")
+            return mcp_failure(f"Epic '{request.epic_id}' not found")
 
     except Exception as e:
         return mcp_failure(f"Error marking epic as done: {str(e)}")
