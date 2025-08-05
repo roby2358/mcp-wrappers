@@ -3,3 +3,9 @@ Status: ToDo
 Tag: reorganize
 ID: reorganize-2kch
 Create pjpd directory and move project files (ideas.txt, epics.txt, projects) into it for better organization
+---
+Priority:    8
+Status: ToDo
+Tag: batch
+ID: batch-k8jd
+Add batch operations for tasks: accept lists of tasks for add, update, and mark done operations
