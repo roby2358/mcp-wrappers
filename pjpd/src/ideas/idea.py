@@ -123,13 +123,11 @@ class Idea:
                     "Generated missing idea ID for malformed record: %s", state["idea_id"]
                 )
 
-            # Ensure tag is set
-            if not state["tag"]:
-                # Try to extract tag from ID if it follows the new format
-                if "-" in state["idea_id"] and len(state["idea_id"].split("-")[0]) <= 12:
-                    state["tag"] = state["idea_id"].split("-")[0]
-                else:
-                    state["tag"] = "legacy"
+            # Extract tag from ID if it follows the new format
+            if "-" in state["idea_id"] and len(state["idea_id"].split("-")[0]) <= 12:
+                state["tag"] = state["idea_id"].split("-")[0]
+            else:
+                state["tag"] = "legacy"
 
             description = "\n".join(description_lines).strip()
 
@@ -150,7 +148,6 @@ class Idea:
         """Render the idea back to its on-disk record form."""
         lines = [
             f"Score: {self.score:4d}",
-            f"Tag: {self.tag}",
             f"ID: {self.id}",
             self.description.strip(),
         ]
@@ -160,7 +157,6 @@ class Idea:
         """Convert to a plain dictionary for API responses or tests."""
         return {
             "id": self.id,
-            "tag": self.tag,
             "score": self.score,
             "description": self.description,
         }

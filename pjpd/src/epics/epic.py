@@ -144,13 +144,11 @@ class Epic:
                     "Generated missing epic ID for malformed record: %s", state["epic_id"]
                 )
 
-            # Ensure tag is set
-            if not state["tag"]:
-                # Try to extract tag from ID if it follows the new format
-                if "-" in state["epic_id"] and len(state["epic_id"].split("-")[0]) <= 12:
-                    state["tag"] = state["epic_id"].split("-")[0]
-                else:
-                    state["tag"] = "legacy"
+            # Extract tag from ID if it follows the new format
+            if "-" in state["epic_id"] and len(state["epic_id"].split("-")[0]) <= 12:
+                state["tag"] = state["epic_id"].split("-")[0]
+            else:
+                state["tag"] = "legacy"
 
             description = "\n".join(description_lines).strip()
 
@@ -175,7 +173,6 @@ class Epic:
             f"Score: {self.score:4d}",
             f"Ideas: {' '.join(self.ideas)}",
             f"Projects: {' '.join(self.projects)}",
-            f"Tag: {self.tag}",
             f"ID: {self.id}",
             self.description.strip(),
         ]
@@ -185,7 +182,6 @@ class Epic:
         """Convert to a plain dictionary for API responses or tests."""
         return {
             "id": self.id,
-            "tag": self.tag,
             "score": self.score,
             "ideas": self.ideas,
             "projects": self.projects,

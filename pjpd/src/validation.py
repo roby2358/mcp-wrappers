@@ -9,7 +9,7 @@ from src.projects.projects import ALLOWED_NAME_CHARS
 
 # Regex patterns for validation
 TAG_PATTERN = r'^[a-zA-Z0-9\-]+$'
-ID_PATTERN = r'^[a-zA-Z0-9\-]+-[a-zA-Z0-9]+$'
+ID_PATTERN = r'^[a-zA-Z0-9\-]+-[a-z2-9]{4}$'
 
 def validate_tag_format(value: str) -> str:
     """Validate that a tag contains only alphanumeric characters and hyphens."""
@@ -28,7 +28,6 @@ def validate_id_format(value: str, id_type: str = "ID") -> str:
 class TaskDict(BaseModel):
     """Dictionary representation of a task returned by the API."""
     id: str
-    tag: str
     project: str
     priority: int = Field(..., description="Plain integer priority (higher numbers = higher priority)")
     status: str = Field(..., description="Task status (ToDo or Done)")
@@ -235,7 +234,6 @@ class ProjectOverview(BaseModel):
 class TaskResponse(BaseModel):
     """Response model for task operations."""
     id: str
-    tag: str
     project: str
     priority: int
     status: str
@@ -271,7 +269,6 @@ class StatisticsResponse(BaseModel):
 class IdeaResponse(BaseModel):
     """Response model for idea operations."""
     id: str
-    tag: str
     score: int
     description: str
     message: str
@@ -287,7 +284,6 @@ class IdeaListResponse(BaseModel):
 class EpicResponse(BaseModel):
     """Response model for epic operations."""
     id: str
-    tag: str
     score: int
     description: str
     ideas: List[str]

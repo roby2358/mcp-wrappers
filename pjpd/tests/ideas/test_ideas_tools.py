@@ -97,23 +97,23 @@ class TestIdeasTools:
 
     async def test_update_idea_success(self, mock_ideas_manager):
         """Test successful update of an idea."""
-        mock_idea = Idea(id="idea-1234", tag="idea", score=100, description="Updated idea")
+        mock_idea = Idea(id="idea-a2c4", tag="idea", score=100, description="Updated idea")
         mock_ideas_manager.update_idea.return_value = True
         mock_ideas_manager.ideas = [mock_idea]
 
         result = await pjpd_update_idea(
-            idea_id="idea-1234", 
+            idea_id="idea-a2c4", 
             score=100, 
             description="Updated idea"
         )
 
         assert result["success"] is True
-        assert result["result"]["id"] == "idea-1234"
+        assert result["result"]["id"] == "idea-a2c4"
         assert result["result"]["score"] == 100
         assert result["result"]["description"] == "Updated idea"
         assert "updated successfully" in result["result"]["message"]
         mock_ideas_manager.update_idea.assert_called_once_with(
-            "idea-1234", "Updated idea", 100
+            "idea-a2c4", "Updated idea", 100
         )
 
     async def test_update_idea_not_found(self, mock_ideas_manager):
@@ -138,12 +138,12 @@ class TestIdeasTools:
         """Test successful removal of an idea."""
         mock_ideas_manager.remove_idea.return_value = True
 
-        result = await pjpd_remove_idea(idea_id="idea-1234")
+        result = await pjpd_remove_idea(idea_id="idea-a2c4")
 
         assert result["success"] is True
-        assert result["result"]["idea_id"] == "idea-1234"
+        assert result["result"]["idea_id"] == "idea-a2c4"
         assert "removed successfully" in result["result"]["message"]
-        mock_ideas_manager.remove_idea.assert_called_once_with("idea-1234")
+        mock_ideas_manager.remove_idea.assert_called_once_with("idea-a2c4")
 
     async def test_remove_idea_not_found(self, mock_ideas_manager):
         """Test removing an idea that doesn't exist."""

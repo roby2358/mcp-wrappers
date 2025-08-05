@@ -94,16 +94,14 @@ max_results = 50
 Tasks are stored in plain text files with the following format:
 
 ```
-ID: bug-AB12
-Tag: bug
 Priority:    1
 Status: ToDo
+ID: bug-AB12
 Add functionality to encapsulate the cardinal graham meters.
 ---
-ID: doc-3456
-Tag: doc
 Priority:   10
 Status: Done
+ID: doc-3456
 Update documentation for the new API endpoints.
 ---
 ```
@@ -114,12 +112,10 @@ Ideas are stored in `ideas.txt` files with the following format:
 
 ```
 Score:   75
-Tag: ai
 ID: ai-ABCD
 Implement experimental AI-assisted code review workflow.
 ---
 Score:    5
-Tag: ui
 ID: ui-KLMN
 Investigate alternative color palette for dark mode.
 ---
@@ -134,7 +130,6 @@ Score:   85
 Ideas: ai-ABCD ui-KLMN
 Projects: website-redesign mobile-app
 ID: platform-EFGH
-Tag: platform
 Build a unified platform for web and mobile development.
 ---
 ```
@@ -150,16 +145,16 @@ Build a unified platform for web and mobile development.
 
 ### Record Properties
 
+> **Note**: Tags are used internally for ID generation but are not exposed in API responses. The tag field is only used when creating new tasks, ideas, or epics.
+
 #### Tasks
 - **ID**: Tag-based unique identifier (format: `<tag>-XXXX`)
-- **Tag**: 1-12 character string (alphanumeric and hyphens only)
 - **Priority**: Integer value (higher numbers = higher priority)
 - **Status**: `ToDo` or `Done`
 - **Description**: Multi-line task description
 
 #### Ideas
 - **ID**: Tag-based unique identifier (format: `<tag>-XXXX`)
-- **Tag**: 1-12 character string (alphanumeric and hyphens only)
 - **Score**: Integer value (higher numbers = higher relevance)
 - **Description**: Multi-line idea description
 
@@ -168,7 +163,6 @@ Build a unified platform for web and mobile development.
 - **Ideas**: Space-delimited list of idea IDs
 - **Projects**: Space-delimited list of project names
 - **ID**: Tag-based unique identifier (format: `<tag>-XXXX`)
-- **Tag**: 1-12 character string (alphanumeric and hyphens only)
 - **Description**: Multi-line epic description
 
 ### Ignore File Support

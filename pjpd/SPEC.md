@@ -23,12 +23,12 @@ This specification outlines the design, structure, and operational requirements 
 ### Task Record Format
 
 * Each task **MUST** be delimited by a separator line consisting of exactly three hyphens (`---`) on a line by itself
-* Each task **MUST** contain exactly five lines in this order:
-    1. `ID: {tag}-{4-character-random-string}`
-    2. `Tag: {1-12-character-string}`
-    3. `Priority: {integer}`
-    4. `Status: {ToDo|Done}`
-    5. Task description (may span multiple lines)
+* Each task **MUST** contain exactly four lines in this order:
+    1. `Priority: {integer}`
+    2. `Status: {ToDo|Done}`
+    3. `ID: {tag}-{4-character-random-string}`
+    4. Task description (may span multiple lines)
+* **Note**: The tag is extracted from the ID for internal use but is not stored separately
 * Task IDs **MUST** be in the format `<tag>-XXXX` where:
     * `<tag>` is a 1-12 character string provided at creation
     * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)
@@ -67,11 +67,11 @@ better readability.
 *See also: [Epic Record Format](#epic-record-format-new) for grouping ideas and projects into higher-level workstreams.*
 
 * Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
-* Each idea **MUST** contain **four or more** lines in this order:
+* Each idea **MUST** contain **three or more** lines in this order:
     1. `Score: {integer}`
-    2. `Tag: {1-12-character-string}`
-    3. `ID: {tag}-{4-character-random-string}`
-    4. Idea description (may span multiple lines)
+    2. `ID: {tag}-{4-character-random-string}`
+    3. Idea description (may span multiple lines)
+* **Note**: The tag is extracted from the ID for internal use but is not stored separately
 * Idea IDs **MUST** be in the format `<tag>-XXXX` where:
     * `<tag>` is a 1-12 character string provided at creation
     * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)
@@ -100,13 +100,13 @@ Investigate alternative color palette for dark mode.
 ### Epic Record Format (NEW)
 
 * Each epic **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
-* Each epic **MUST** contain **six or more** lines in this order:
+* Each epic **MUST** contain **five or more** lines in this order:
     1. `Score: {integer}`
     2. `Ideas: {space-delimited-list-of-idea-ids}`
     3. `Projects: {space-delimited-list-of-project-names}`
     4. `ID: {tag}-{4-character-random-string}`
-    5. `Tag: {1-12-character-string}`
-    6. Epic description (may span multiple lines)
+    5. Epic description (may span multiple lines)
+* **Note**: The tag is extracted from the ID for internal use but is not stored separately
 * Epic IDs **MUST** be in the format `<tag>-XXXX` where:
     * `<tag>` is a 1-12 character string provided at creation
     * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)

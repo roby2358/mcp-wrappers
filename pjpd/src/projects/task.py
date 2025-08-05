@@ -114,13 +114,11 @@ class Task:
                     state["tag"] = "legacy"
                 logger.warning(f"Generated missing task ID for malformed record: {state["task_id"]}")
 
-            # Ensure tag is set
-            if not state["tag"]:
-                # Try to extract tag from ID if it follows the new format
-                if "-" in state["task_id"] and len(state["task_id"].split("-")[0]) <= 12:
-                    state["tag"] = state["task_id"].split("-")[0]
-                else:
-                    state["tag"] = "legacy"
+            # Extract tag from ID if it follows the new format
+            if "-" in state["task_id"] and len(state["task_id"].split("-")[0]) <= 12:
+                state["tag"] = state["task_id"].split("-")[0]
+            else:
+                state["tag"] = "legacy"
 
             description = "\n".join(description_lines).strip()
 
@@ -141,7 +139,6 @@ class Task:
         lines = [
             f"Priority: {self.priority:4d}",
             f"Status: {self.status}",
-            f"Tag: {self.tag}",
             f"ID: {self.id}",
             self.description.strip(),
         ]
@@ -151,7 +148,6 @@ class Task:
         """Convert task to dictionary format for API responses."""
         return {
             "id": self.id,
-            "tag": self.tag,
             "priority": self.priority,
             "status": self.status,
             "description": self.description,

@@ -2,6 +2,10 @@
 
 This document provides the complete API reference for ProjectMCP's MCP tools and prompts.
 
+## API Response Format
+
+> **Note**: Tag fields are used internally for ID generation but are not included in API responses. When creating new tasks, ideas, or epics, you must provide a tag, but the tag will not be returned in response data.
+
 ## MCP Tools
 
 ### Project Management
