@@ -1,49 +1,49 @@
-Score:   85
-Tag: web-ui
-ID: web-ui-vkki
-Add a web framework to serve project status through HTTP and a web UI so people can monitor independently of the MCP tools
----
-Score:   80
 Tag: reorganize
+Score:   80
 ID: reorganize-bsix
 Move project files (ideas, epics, projects) into a pjpd folder for better organization
 ---
-Score:   75
 Tag: batch-ops
+Score:   75
 ID: batch-ops-md8h
 Add batch operations for tasks: accept lists of tasks for add, update, and mark done operations
 ---
-Score:   50
+Tag: web-ui
+Score:   60
+ID: web-ui-vkki
+Add a web framework to serve project status through HTTP and a web UI so people can monitor independently of the MCP tools
+---
 Tag: templates
+Score:   50
 ID: templates-qwe4
 Project Templates - Pre-defined task structures for common project types (website launch, event planning, etc.). Reduces friction for new users. Leverages the text-file approach - templates could be shared as .txt files.
 ---
-Score:   35
 Tag: mobile-ui
+Score:   35
 ID: mobile-ui-y7cv
 Create mobile-responsive dashboard design for the web UI
 ---
-Score:   30
 Tag: rest-api
+Score:   30
 ID: rest-api-2j6s
 Add REST API and web UI controls for basic project management operations
 ---
-Score:   30
 Tag: csv-export
+Score:   30
 ID: csv-export-hg3c
 Add export to CSV functionality for tasks and projects
 ---
-Score:   30
 Tag: archiving
+Score:   30
 ID: archiving-afbp
 Project archiving functionality to move completed projects to an archive directory, reducing clutter while maintaining history
 ---
-Score:   10
 Tag: quick-cap
+Score:   10
 ID: quick-cap-bfrg
 Quick Capture Workflow - One-command task creation with smart defaults. Reduces cognitive load for rapid task capture. Example: add_task("meeting notes", "follow up with client", "followup"). Might be out of scope but worth considering.
 ---
-Score:   10
 Tag: timestamps
+Score:   10
 ID: timestamps-54bz
 Add timestamps to tasks and ideas for tracking creation and modification dates
