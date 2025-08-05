@@ -113,14 +113,14 @@ Update documentation for the new API endpoints.
 Ideas are stored in `ideas.txt` files with the following format:
 
 ```
-ID: ai-ABCD
-Tag: ai
 Score:   75
+Tag: ai
+ID: ai-ABCD
 Implement experimental AI-assisted code review workflow.
 ---
-ID: ui-KLMN
-Tag: ui
 Score:    5
+Tag: ui
+ID: ui-KLMN
 Investigate alternative color palette for dark mode.
 ---
 ```

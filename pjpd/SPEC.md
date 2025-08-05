@@ -68,9 +68,9 @@ better readability.
 
 * Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
 * Each idea **MUST** contain **four or more** lines in this order:
-    1. `ID: {tag}-{4-character-random-string}`
+    1. `Score: {integer}`
     2. `Tag: {1-12-character-string}`
-    3. `Score: {integer}`
+    3. `ID: {tag}-{4-character-random-string}`
     4. Idea description (may span multiple lines)
 * Idea IDs **MUST** be in the format `<tag>-XXXX` where:
     * `<tag>` is a 1-12 character string provided at creation
@@ -85,14 +85,14 @@ better readability.
 #### Example Idea Format
 
 ```
-ID: ai-ABCD
-Tag: ai
 Score:   75
+Tag: ai
+ID: ai-ABCD
 Implement experimental AI-assisted code review workflow.
 ---
-ID: ui-KLMN
-Tag: ui
 Score:    5
+Tag: ui
+ID: ui-KLMN
 Investigate alternative color palette for dark mode.
 ---
 ```

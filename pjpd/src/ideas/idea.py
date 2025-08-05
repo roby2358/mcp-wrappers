@@ -20,9 +20,9 @@ class Idea:
 
     The *Idea Record Format* (see SPEC.md) requires::
 
-        ID: {tag}-{4-character-random-string}
-        Tag: {1-12-character-string}
         Score: {integer}
+        Tag: {1-12-character-string}
+        ID: {tag}-{4-character-random-string}
         Free-form description spanning multiple lines
 
     Records are separated in files by a line containing exactly three dashes
@@ -149,8 +149,8 @@ class Idea:
     def to_text(self) -> str:
         """Render the idea back to its on-disk record form."""
         lines = [
-            f"Tag: {self.tag}",
             f"Score: {self.score:4d}",
+            f"Tag: {self.tag}",
             f"ID: {self.id}",
             self.description.strip(),
         ]
