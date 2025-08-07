@@ -119,26 +119,29 @@ Investigate alternative color palette for dark mode.
 
 ### File Organization
 
+* When a user provides a project directory path that ends with `.../pjpd`, the system **MUST** remove the `pjpd` suffix before performing list_projects operations
 * Each project **MUST** be stored as a separate `.txt` file in the projects directory
 * Project files **MUST** be named using the project name with `.txt` extension (e.g., `schedule-mcp.txt`)
 * Project names **MUST** be converted to lowercase and all disallowed characters replaced with underscores for filenames
 * Runs of multiple underscores in project names **MUST** be collapsed to a single underscore
-* In addition to the project task file, the system **MAY** load a single companion file named `ideas.txt` located in the same directory as the project files.
-* If `ideas.txt` exists, it **MUST** be parsed as an Ideas file following the Idea Record Format.
+* The system **MUST** look for ideas, epics, and project files in a `pjpd` subdirectory under the projects directory
+* Companion files **MUST** be located at:
+  * `{projects_directory}/pjpd/ideas.txt` - Ideas file following the Idea Record Format
+  * `{projects_directory}/pjpd/epics.txt` - Epics file following the Epic Record Format
 * Each file **MUST** use UTF-8 encoding
 * Files **MAY** be created automatically when adding the first task or idea to a new project
 
 ### Ignore File Support
 
-* When scanning for project files, the system **MUST** honor a `.pjpdignore` file in the projects directory
-* The `.pjpdignore` file **MAY** contain a list of file patterns to ignore, one per line
+* When scanning for project files, the system **MUST** honor a `pjpdignore` file located at `{projects_directory}/pjpd/pjpdignore`
+* The `pjpdignore` file **MAY** contain a list of file patterns to ignore, one per line
 * Ignore patterns **MUST** support simple wildcard semantics:
     * `*` matches any sequence of characters
     * Patterns are matched against the full filename (including extension)
     * Patterns are case-sensitive
 * Empty lines and lines starting with `#` **MUST** be treated as comments and ignored
 * Leading and trailing whitespace **MUST** be stripped from ignore patterns
-* If a `.pjpdignore` file does not exist, files **MUST NOT** be ignored
+* If a `pjpdignore` file does not exist, files **MUST NOT** be ignored
 * The system **MUST** only scan the projects directory itself (no recursive traversal)
 
 ---
@@ -170,7 +173,7 @@ Investigate alternative color palette for dark mode.
 
 ### Idea Operations
 
-* Ideas **MUST** be identified by their unique tag-based ID (format: `<tag>-XXXX`) within the project directory idea.txt file.
+* Ideas **MUST** be identified by their unique tag-based ID (format: `<tag>-XXXX`) within the `pjpd/ideas.txt` file.
 * Idea IDs **MUST** be generated automatically when creating new ideas using the provided tag.
 * Idea updates **MUST** preserve the original file structure and separator format while sorted for score.
 
@@ -220,7 +223,7 @@ Investigate alternative color palette for dark mode.
     * No parameters required
 * `list_ideas` – List ideas:
     * `max_results` (integer, optional): Maximum number of results to return
-* `add_idea` – Create a new idea in ideas.txt with parameters:
+* `add_idea` – Create a new idea in pjpd/ideas.txt with parameters:
     * `score` (integer, required): Score value (higher numbers = higher relevance)
     * `description` (string, required): Idea description
     * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
@@ -283,7 +286,9 @@ Investigate alternative color palette for dark mode.
 
 * Projects **MUST NOT** be indexed at startup (let the user initiate via tool calls)
 * System **MUST** raise an exception and return an error if the specified projects directory doesn't exist
-* On loading a project directory, the system **MUST** look for a companion `ideas.txt` file and load ideas if the file exists.
+* On loading a project directory, the system **MUST** look for companion files in the `pjpd` subdirectory:
+  * `{projects_directory}/pjpd/ideas.txt` - Ideas file
+  * `{projects_directory}/pjpd/epics.txt` - Epics file
 * Startup **MUST** complete successfully even if some project or idea files contain malformed records
 * All logging output **MUST** be directed to stderr
 

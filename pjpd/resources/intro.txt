@@ -41,7 +41,7 @@ System Information:
 Configuration:
 Projects are stored as .txt files in the projects directory (~/projects by default), with each project having its own file. You can specify a custom path when using pjpd_list_projects. The system automatically creates project files when you add your first task to a new project, or you can create empty project files using the pjpd_new_project tool.
 
-The system supports a .pjpdignore file in the projects directory to filter out specific project files, and all configuration is managed through projectmcp.toml.
+The system supports a pjpdignore file in the projects directory under pjpd/ to filter out specific project files, and all configuration is managed through projectmcp.toml.
 
 This system modifies local files on disk. Before using any tools that create, update, or modify project files, please remind the user to back up any important data. Obtain their consent make file modifications. 
 

@@ -50,7 +50,7 @@ class Projects:
         projects are accessed.
 
         Args:
-            projects_dir: Path to the directory containing project files.
+            projects_dir: Path to the project directory (without /pjpd).
             
         Raises:
             FileNotFoundError: If the specified projects directory doesn't exist.
@@ -64,6 +64,11 @@ class Projects:
         if not self.projects_dir.is_dir():
             raise FileNotFoundError(f"Path exists but is not a directory: {self.projects_dir}")
 
+        self.projects_subdir = self.projects_dir / "pjpd"
+
+        if not self.projects_subdir.exists():
+            self.projects_subdir.mkdir(parents=True, exist_ok=True)
+        
         self.refresh_projects()
         
     def refresh_projects(self) -> None:
@@ -72,13 +77,13 @@ class Projects:
         This method reloads all project files from the projects directory,
         applying any ignore list filters, and updates the in-memory cache.
         """
-        self._ignore_list = IgnoreList(self.projects_dir)
+        self._ignore_list = IgnoreList(self.projects_subdir)
         
         self._projects = {}
             
         try:
             # Find all .txt files in the projects directory
-            project_files = list(self.projects_dir.glob("*.txt"))
+            project_files = list(self.projects_subdir.glob("*.txt"))
             
             # Apply ignore list filtering
             filtered_files = self._ignore_list.filter_files(project_files)
@@ -149,7 +154,7 @@ class Projects:
         if self._ignore_list.should_ignore(f"{safe_name}.txt"):
             raise ValueError(f"Project name {name} is ignored")
         
-        file_path = self.projects_dir / f"{safe_name}.txt"
+        file_path = self.projects_subdir / f"{safe_name}.txt"
         
         if not file_path.exists():
             file_path.touch()
@@ -202,7 +207,7 @@ class Projects:
         for project in self.projects.values():
             projects_info.append({
                 "name": project.name,
-                "file_path": str(project.file_path.relative_to(self.projects_dir)),
+                "file_path": str(project.file_path.relative_to(self.projects_subdir)),
                 "task_count": project.get_task_count()
             })
         

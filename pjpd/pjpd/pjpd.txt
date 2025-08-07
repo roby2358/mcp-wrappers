@@ -3,6 +3,11 @@ Status: ToDo
 ID: reorganize-2kch
 Create pjpd directory and move project files (ideas.txt, epics.txt, projects) into it for better organization
 ---
+Priority:   70
+Status: ToDo
+ID: rename-ig-ybwv
+Change .pjpdignore to pjpdignore (remove the dot prefix) and move it to the pjpd directory along with other project files
+---
 Priority:    8
 Status: ToDo
 ID: batch-k8jd

@@ -49,7 +49,7 @@ class Ideas:
         if not self.directory.is_dir():
             raise FileNotFoundError(f"Path exists but is not a directory: {self.directory}")
             
-        self.ideas_file = self.directory / "ideas.txt"
+        self.ideas_file = self.directory / "pjpd" / "ideas.txt"
         # Re-initialise TextRecords so it points at the new directory
         self.text_records = TextRecords(self.directory)
         # Drop any cached data so it will be lazily re-loaded next access

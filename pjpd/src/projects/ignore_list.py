@@ -1,6 +1,6 @@
 """
 Ignore List Management
-Handles .pjpdignore file parsing and pattern matching for project file filtering
+Handles pjpdignore file parsing and pattern matching for project file filtering
 """
 
 import logging
@@ -18,7 +18,7 @@ class IgnoreList:
         """Initialize the ignore list for a projects directory.
         
         Args:
-            projects_dir: Path to the projects directory containing the .pjpdignore file
+            projects_dir: Path to the projects directory containing the pjpdignore file
         """
         self.projects_dir = Path(projects_dir)
         self._patterns: List[str] = []
@@ -47,12 +47,12 @@ class IgnoreList:
             return filename == pattern
         
     def load_patterns(self) -> None:
-        """Load ignore patterns from the .pjpdignore file"""
+        """Load ignore patterns from the pjpdignore file"""
         self._patterns = []
-        ignore_file = self.projects_dir / ".pjpdignore"
+        ignore_file = self.projects_dir / "pjpdignore"
         
         if not ignore_file.exists():
-            logger.debug("No .pjpdignore file found, no files will be ignored")
+            logger.debug("No pjpdignore file found, no files will be ignored")
             return
             
         try:
@@ -72,7 +72,7 @@ class IgnoreList:
             logger.info(f"Loaded {len(self._patterns)} ignore patterns from {ignore_file}")
             
         except Exception as e:
-            logger.error(f"Error loading .pjpdignore file: {e}")
+            logger.error(f"Error loading pjpdignore file: {e}")
             self._patterns = []
     
     def should_ignore(self, filename: str) -> bool:
@@ -120,5 +120,5 @@ class IgnoreList:
         return self._patterns.copy()
     
     def reload(self) -> None:
-        """Reload ignore patterns from the .pjpdignore file"""
+        """Reload ignore patterns from the pjpdignore file"""
         self.load_patterns() 

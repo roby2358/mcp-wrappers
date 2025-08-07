@@ -80,7 +80,8 @@ class TestListProjectsTool:
         assert result["result"]["total_tasks"] == 5
         assert result["result"]["total_todo"] == 3
         assert result["result"]["total_done"] == 2
-        assert result["result"]["project_directory"] == str(temp_projects_dir)
+        # The project_directory should be the current working directory when no path is provided
+        assert result["result"]["project_directory"] == str(Path.cwd())
         assert len(result["result"]["projects"]) == 2
         
         # Verify projects manager was called correctly
@@ -110,7 +111,8 @@ class TestListProjectsTool:
         assert result["result"]["total_tasks"] == 0
         assert result["result"]["total_todo"] == 0
         assert result["result"]["total_done"] == 0
-        assert result["result"]["project_directory"] == str(temp_projects_dir)
+        # The project_directory should be the current working directory when no path is provided
+        assert result["result"]["project_directory"] == str(Path.cwd())
         assert result["result"]["projects"] == []
         
         # Verify projects manager was called correctly
@@ -147,7 +149,11 @@ class TestListProjectsTool:
         
         # Verify the result
         assert result["success"] is True
-        assert result["result"]["project_directory"] == str(temp_projects_dir)
+        # The project_directory should be the normalized path (without pjpd suffix)
+        # Normalize path separators for cross-platform compatibility
+        expected_path = str(Path("/custom/projects/path")).replace('\\', '/')
+        actual_path = str(Path(result["result"]["project_directory"])).replace('\\', '/')
+        assert actual_path == expected_path
         
         # Verify projects manager was called with the custom path
         mock_projects_manager.set_projects_dir.assert_called_once()

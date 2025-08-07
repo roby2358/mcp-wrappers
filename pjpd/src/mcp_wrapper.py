@@ -23,6 +23,33 @@ from validation import (
     ListEpicsRequest, AddEpicRequest, UpdateEpicRequest, MarkEpicDoneRequest
 )
 
+# Utility ----------------------------------------------------------------------
+
+def _normalize_projects_directory(path: "Path | str") -> Path:
+    """Normalize a projects directory by stripping a trailing ``pjpd`` component.
+
+    The projects manager expects callers to supply the *parent* directory and
+    creates/uses a ``pjpd`` sub-directory internally.  However, many command-line
+    invocations (and some legacy code) still pass the full path including the
+    ``/pjpd`` component.  This helper detects that scenario and returns the
+    parent directory.  If the final path component is *not* exactly
+    ``pjpd`` (case-insensitive) the path is returned unchanged.
+
+    Examples
+    --------
+    >>> _normalize_projects_directory(Path('/home/user/projects'))
+    PosixPath('/home/user/projects')
+    >>> _normalize_projects_directory(Path('/home/user/projects/pjpd'))
+    PosixPath('/home/user/projects')
+    """
+    p = Path(path)
+    # Resolve any trailing slashes but **do not** resolve symlinks or the full
+    # real path – we only care about the final name component.
+    if p.name.lower() == "pjpd":
+        return p.parent
+    return p
+
+
 # Constants
 NO_PROJECTS_RESPONSE = {
     "projects": [],
@@ -52,17 +79,20 @@ mcp = FastMCP("projectmcp")
 
 # Create configuration and projects manager instances
 config = Config()
-projects_manager = Projects(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
-ideas_manager = Ideas(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
+
+# Initialize with current working directory as the project directory
+# All managers will handle /pjpd subdirectory internally
+project_dir = Path.cwd()
+projects_manager = Projects(project_dir)
+ideas_manager = Ideas(project_dir)
 # Epics manager parallels ideas_manager but operates on epics.txt
-epics_manager = Epics(Path(config(Config.PROJECTS_DIRECTORY, "~/projects")))
+epics_manager = Epics(project_dir)
 
 # Strict typing helpers -----------------------------------------------------
 
 # Note: TypedDict definitions moved to validation.py as Pydantic models
 
 # MCP Tools and prompts -----------------------------------------------------
-
 
 def mcp_success(result: Any) -> Dict[str, Any]:
     """Return a successful MCP response with the given result."""
@@ -107,19 +137,24 @@ async def pjpd_list_projects(path: str = None) -> Dict[str, Any]:
         # Validate input using Pydantic
         request = ListProjectsRequest(path=path)
         
-        # Set the projects directory if a path is provided, otherwise use config
+        # Set the project directory - if a path is provided, use it; otherwise use current working directory
         if request.path:
-            # Update all managers to point at the *same* projects directory so
-            # `ideas.txt` and `epics.txt` live alongside project task files.
-            new_dir = Path(request.path)
-            projects_manager.set_projects_dir(new_dir)
-            ideas_manager.set_directory(new_dir)
-            epics_manager.set_directory(new_dir)
+            # Normalize the path by removing pjpd suffix if present
+            project_dir = str(_normalize_projects_directory(request.path))
+        else:
+            # Use current working directory as the project directory when no path is provided
+            project_dir = str(Path.cwd())
+        
+        # Update all managers to point at the same project directory
+        # All managers get the project directory (without /pjpd), they add /pjpd internally
+        projects_manager.set_projects_dir(project_dir)
+        ideas_manager.set_directory(project_dir)
+        epics_manager.set_directory(project_dir)
         
         overview = projects_manager.get_overview()
         
-        # Add the current project directory to the response
-        overview["project_directory"] = str(projects_manager.projects_dir)
+        # Add the current project directory to the response (the parent directory, not the pjpd subdirectory)
+        overview["project_directory"] = str(project_dir)
         
         if overview["total_projects"] == 0:
             return mcp_success(overview)

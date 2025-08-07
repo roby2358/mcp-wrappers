@@ -167,7 +167,7 @@ Build a unified platform for web and mobile development.
 
 ### Ignore File Support
 
-Create a `.pjpdignore` file in your projects directory to exclude specific files:
+Create a `pjpdignore` file in your projects directory under `pjpd/` to exclude specific files:
 
 ```
 # Ignore backup files

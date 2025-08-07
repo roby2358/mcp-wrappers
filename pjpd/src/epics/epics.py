@@ -48,7 +48,7 @@ class Epics:
         if not self.directory.is_dir():
             raise FileNotFoundError(f"Path exists but is not a directory: {self.directory}")
             
-        self.epics_file = self.directory / "epics.txt"
+        self.epics_file = self.directory / "pjpd" / "epics.txt"
         self.text_records = TextRecords(self.directory)
         # Invalidate cache so data is re-loaded on next access
         self._epics = None

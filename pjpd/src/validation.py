@@ -111,7 +111,7 @@ class ListTasksRequest(BaseModel):
     project: Optional[str] = Field(None, description="Filter tasks by a specific project name")
     priority: Optional[int] = Field(None, ge=0, le=9999, description="Filter tasks by priority level (returns all tasks >= this priority)")
     status: Optional[str] = Field(None, description="Filter tasks by status (ToDo or Done)")
-    max_results: Optional[int] = Field(None, gt=0, le=1000, description="Maximum number of tasks to return")
+    max_results: Optional[int] = Field(None, gt=1, le=1000, description="Maximum number of tasks to return")
     
     @field_validator('status')
     @classmethod
@@ -134,12 +134,12 @@ class MarkDoneRequest(BaseModel):
 
 class NextStepsRequest(BaseModel):
     """Request model for getting next steps."""
-    max_results: int = Field(default=5, gt=0, le=100, description="Maximum number of suggestions to return")
+    max_results: int = Field(default=5, gt=1, le=100, description="Maximum number of suggestions to return")
 
 
 class ListIdeasRequest(BaseModel):
     """Request model for listing ideas."""
-    max_results: Optional[int] = Field(None, gt=0, le=1000, description="Maximum number of results to return")
+    max_results: Optional[int] = Field(None, gt=1, le=1000, description="Maximum number of results to return")
 
 
 class AddIdeaRequest(BaseModel):
@@ -178,7 +178,7 @@ class RemoveIdeaRequest(BaseModel):
 
 class ListEpicsRequest(BaseModel):
     """Request model for listing epics."""
-    max_results: Optional[int] = Field(None, gt=0, le=1000, description="Maximum number of results to return")
+    max_results: Optional[int] = Field(None, gt=1, le=1000, description="Maximum number of results to return")
 
 
 class AddEpicRequest(BaseModel):

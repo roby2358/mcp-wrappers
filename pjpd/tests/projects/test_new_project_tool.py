@@ -42,7 +42,7 @@ class TestNewProjectTool:
         # Setup mock project
         mock_project = MagicMock()
         mock_project.name = "test-project"
-        mock_project.file_path = temp_projects_dir / "test-project.txt"
+        mock_project.file_path = temp_projects_dir / "pjpd" / "test-project.txt"
         
         # Setup projects manager mock
         mock_projects_manager.create_project.return_value = mock_project
@@ -53,7 +53,7 @@ class TestNewProjectTool:
         # Verify the result
         assert result["success"] is True
         assert result["result"]["project_name"] == "test-project"
-        assert result["result"]["file_path"] == str(temp_projects_dir / "test-project.txt")
+        assert result["result"]["file_path"] == str(temp_projects_dir / "pjpd" / "test-project.txt")
         assert "created successfully" in result["result"]["message"]
         
         # Verify projects manager was called correctly
@@ -64,7 +64,7 @@ class TestNewProjectTool:
         # Setup mock project
         mock_project = MagicMock()
         mock_project.name = "my-project"
-        mock_project.file_path = temp_projects_dir / "my-project.txt"
+        mock_project.file_path = temp_projects_dir / "pjpd" / "my-project.txt"
         
         # Setup projects manager mock
         mock_projects_manager.create_project.return_value = mock_project
@@ -84,7 +84,7 @@ class TestNewProjectTool:
         # Setup mock project
         mock_project = MagicMock()
         mock_project.name = "test-project"
-        mock_project.file_path = temp_projects_dir / "test-project.txt"
+        mock_project.file_path = temp_projects_dir / "pjpd" / "test-project.txt"
         
         # Setup projects manager mock
         mock_projects_manager.create_project.return_value = mock_project

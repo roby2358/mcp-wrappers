@@ -29,8 +29,8 @@ class TestProjectCreationAndSaving:
         # Create a new project
         project = projects.create_project("test-project")
         
-        # Verify the file was created
-        expected_file = temp_projects_dir / "test-project.txt"
+        # Verify the file was created in the pjpd subdirectory
+        expected_file = temp_projects_dir / "pjpd" / "test-project.txt"
         assert expected_file.exists()
         assert project.file_path == expected_file
         
@@ -50,8 +50,8 @@ class TestProjectCreationAndSaving:
         # Add a task to the existing project
         task = projects.add_task("test-project", "Test task", 5)
         
-        # Verify the project file was created
-        expected_file = temp_projects_dir / "test-project.txt"
+        # Verify the project file was created in the pjpd subdirectory
+        expected_file = temp_projects_dir / "pjpd" / "test-project.txt"
         assert expected_file.exists()
         
         # Verify the task was added
@@ -72,7 +72,7 @@ class TestProjectCreationAndSaving:
         task = projects.add_task("test-project", "Test task", 10)
         
         # Verify the file contains the task
-        project_file = temp_projects_dir / "test-project.txt"
+        project_file = temp_projects_dir / "pjpd" / "test-project.txt"
         content = project_file.read_text(encoding="utf-8")
         
         # Check that the task format is correct
@@ -89,7 +89,7 @@ class TestProjectCreationAndSaving:
         task = projects.add_task("test-project", "Test task", 100)
         
         # Read the file content
-        project_file = temp_projects_dir / "test-project.txt"
+        project_file = temp_projects_dir / "pjpd" / "test-project.txt"
         content = project_file.read_text(encoding="utf-8")
         
         # Split into lines and check the order
@@ -116,7 +116,7 @@ class TestProjectCreationAndSaving:
         task2 = projects.add_task("test-project", "Second task", 10)
         
         # Read the file content
-        project_file = temp_projects_dir / "test-project.txt"
+        project_file = temp_projects_dir / "pjpd" / "test-project.txt"
         content = project_file.read_text(encoding="utf-8")
         
         # Should contain both tasks separated by ---
@@ -136,7 +136,7 @@ class TestProjectCreationAndSaving:
         project = projects.create_project("empty-project")
         
         # Verify the file exists but is empty
-        project_file = temp_projects_dir / "empty-project.txt"
+        project_file = temp_projects_dir / "pjpd" / "empty-project.txt"
         assert project_file.exists()
         
         # The file should be empty (no tasks)
@@ -150,7 +150,7 @@ class TestProjectCreationAndSaving:
         # Create a project with special characters
         project = projects.create_project("My Project! @#$%")
         
-        # Verify the file was created with sanitized name
-        expected_file = temp_projects_dir / "my_project!_@#$%.txt"
+        # Verify the file was created with sanitized name in the pjpd subdirectory
+        expected_file = temp_projects_dir / "pjpd" / "my_project!_@#$%.txt"
         assert expected_file.exists()
         assert project.file_path == expected_file 
