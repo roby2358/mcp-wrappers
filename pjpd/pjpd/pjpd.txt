@@ -3,22 +3,27 @@ Status: ToDo
 ID: ignore-wvi4
 Exclude ideas.txt and epics.txt from project list
 ---
-Priority:   80
-Status: ToDo
-ID: reorganize-2kch
-Create pjpd directory and move project files (ideas.txt, epics.txt, projects) into it for better organization
----
 Priority:   70
 Status: ToDo
-ID: rename-ig-ybwv
-Change .pjpdignore to pjpdignore (remove the dot prefix) and move it to the pjpd directory along with other project files
+ID: config-6prr
+Add a set project directory feature so we don't have to list projects every time
 ---
-Priority:    8
+Priority:   20
 Status: ToDo
 ID: batch-k8jd
 Add batch operations for tasks: accept lists of tasks for add, update, and mark done operations
 ---
-Priority:    5
+Priority:   15
 Status: ToDo
-ID: config-6prr
-Add a set project directory feature so we don't have to list projects every time
+ID: opt-path-8svi
+Make the path parameter optional in pjpd_list_projects so it can be called without parameters
+---
+Priority:    0
+Status: Done
+ID: rename-ig-ybwv
+Change .pjpdignore to pjpdignore (remove the dot prefix) and move it to the pjpd directory along with other project files
+---
+Priority:    0
+Status: Done
+ID: reorganize-2kch
+Create pjpd directory and move project files (ideas.txt, epics.txt, projects) into it for better organization
