@@ -1,3 +1,8 @@
+Priority:  100
+Status: ToDo
+ID: ignore-wvi4
+Exclude ideas.txt and epics.txt from project list
+---
 Priority:   80
 Status: ToDo
 ID: reorganize-2kch
