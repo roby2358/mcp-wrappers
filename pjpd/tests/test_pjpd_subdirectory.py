@@ -23,24 +23,24 @@ class TestPjpdSubdirectory:
         assert normalized == path
     
     def test_normalize_projects_directory_with_suffix(self):
-        """Test that paths with pjpd suffix have it removed"""
+        """Paths ending with a pjpd segment should be preserved"""
         path = Path("/home/user/projects/pjpd")
         normalized = _normalize_projects_directory(path)
-        assert normalized == Path("/home/user/projects")
+        assert normalized == path
         
         path = Path("C:\\work\\projects\\pjpd")
         normalized = _normalize_projects_directory(path)
-        assert normalized == Path("C:\\work\\projects")
+        assert normalized == path
     
     def test_normalize_projects_directory_with_trailing_slash(self):
-        """Test that paths with trailing slash are handled correctly"""
+        """Paths with trailing slash are normalised but preserved"""
         path = Path("/home/user/projects/pjpd/")
         normalized = _normalize_projects_directory(path)
-        assert normalized == Path("/home/user/projects")
+        assert normalized == Path("/home/user/projects/pjpd")
         
         path = Path("C:\\work\\projects\\pjpd\\")
         normalized = _normalize_projects_directory(path)
-        assert normalized == Path("C:\\work\\projects")
+        assert normalized == Path("C:\\work\\projects\\pjpd")
     
     def test_normalize_projects_directory_partial_match(self):
         """Test that partial matches don't trigger removal"""

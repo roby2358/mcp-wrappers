@@ -80,8 +80,8 @@ class TestListProjectsTool:
         assert result["result"]["total_tasks"] == 5
         assert result["result"]["total_todo"] == 3
         assert result["result"]["total_done"] == 2
-        # The project_directory should be the current working directory when no path is provided
-        assert result["result"]["project_directory"] == str(Path.cwd())
+        # The project_directory should equal the manager's current directory when no path is provided
+        assert result["result"]["project_directory"] == str(mock_projects_manager.projects_dir)
         assert len(result["result"]["projects"]) == 2
         
         # Verify projects manager was called correctly
@@ -111,8 +111,8 @@ class TestListProjectsTool:
         assert result["result"]["total_tasks"] == 0
         assert result["result"]["total_todo"] == 0
         assert result["result"]["total_done"] == 0
-        # The project_directory should be the current working directory when no path is provided
-        assert result["result"]["project_directory"] == str(Path.cwd())
+        # The project_directory should equal the manager's current directory when no path is provided
+        assert result["result"]["project_directory"] == str(mock_projects_manager.projects_dir)
         assert result["result"]["projects"] == []
         
         # Verify projects manager was called correctly

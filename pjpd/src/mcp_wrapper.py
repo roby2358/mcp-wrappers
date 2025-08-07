@@ -25,29 +25,15 @@ from validation import (
 
 # Utility ----------------------------------------------------------------------
 
-def _normalize_projects_directory(path: "Path | str") -> Path:
-    """Normalize a projects directory by stripping a trailing ``pjpd`` component.
 
-    The projects manager expects callers to supply the *parent* directory and
-    creates/uses a ``pjpd`` sub-directory internally.  However, many command-line
-    invocations (and some legacy code) still pass the full path including the
-    ``/pjpd`` component.  This helper detects that scenario and returns the
-    parent directory.  If the final path component is *not* exactly
-    ``pjpd`` (case-insensitive) the path is returned unchanged.
-
-    Examples
-    --------
-    >>> _normalize_projects_directory(Path('/home/user/projects'))
-    PosixPath('/home/user/projects')
-    >>> _normalize_projects_directory(Path('/home/user/projects/pjpd'))
-    PosixPath('/home/user/projects')
+def _normalize_projects_directory(path: Path) -> Path:
     """
-    p = Path(path)
-    # Resolve any trailing slashes but **do not** resolve symlinks or the full
-    # real path – we only care about the final name component.
-    if p.name.lower() == "pjpd":
-        return p.parent
-    return p
+    Normalize a directory path while preserving all its components.
+
+    1. Expands user shortcuts (``~``) via ``Path.expanduser``.
+    2. Collapses redundant separators/trailing slashes using ``pathlib.Path``.
+    """
+    return Path(path).expanduser()
 
 
 # Constants
@@ -80,9 +66,13 @@ mcp = FastMCP("projectmcp")
 # Create configuration and projects manager instances
 config = Config()
 
-# Initialize with current working directory as the project directory
-# All managers will handle /pjpd subdirectory internally
-project_dir = Path.cwd()
+# Initialise with the configured default projects directory ("~/projects")
+# This path is normalised via _normalize_projects_directory so that "~" is
+# expanded but the trailing segment, if any, is preserved.
+_default_dir = config(Config.PROJECTS_DIRECTORY, "~/projects")
+project_dir = _normalize_projects_directory(Path(_default_dir))
+
+# All managers will handle the /pjpd sub-directory internally
 projects_manager = Projects(project_dir)
 ideas_manager = Ideas(project_dir)
 # Epics manager parallels ideas_manager but operates on epics.txt
@@ -134,30 +124,24 @@ async def pjpd_list_projects(path: str = None) -> Dict[str, Any]:
     todo/done status, project details, and the current project directory.
     """
     try:
-        # Validate input using Pydantic
         request = ListProjectsRequest(path=path)
         
-        # Set the project directory - if a path is provided, use it; otherwise use current working directory
-        if request.path:
-            # Normalize the path by removing pjpd suffix if present
-            project_dir = str(_normalize_projects_directory(request.path))
+        # Decide whether we need to change the current projects directory.
+        if request.path is not None:
+            # A new directory was supplied – switch managers to this location.
+            project_dir = Path(request.path).expanduser()
+            projects_manager.set_projects_dir(project_dir)
+            ideas_manager.set_directory(project_dir)
+            epics_manager.set_directory(project_dir)
         else:
-            # Use current working directory as the project directory when no path is provided
-            project_dir = str(Path.cwd())
-        
-        # Update all managers to point at the same project directory
-        # All managers get the project directory (without /pjpd), they add /pjpd internally
-        projects_manager.set_projects_dir(project_dir)
-        ideas_manager.set_directory(project_dir)
-        epics_manager.set_directory(project_dir)
+            # No directory supplied – keep whatever directory the managers are
+            # already using.
+            project_dir = projects_manager.projects_dir
         
         overview = projects_manager.get_overview()
         
-        # Add the current project directory to the response (the parent directory, not the pjpd subdirectory)
+        # Add the **parent** project directory (not the pjpd subdirectory) to the response
         overview["project_directory"] = str(project_dir)
-        
-        if overview["total_projects"] == 0:
-            return mcp_success(overview)
         
         return mcp_success(overview)
         
@@ -175,7 +159,6 @@ async def pjpd_new_project(project: str) -> Dict[str, Any]:
         Standard MCP response indicating success or failure.
     """
     try:
-        # Validate input using Pydantic
         request = NewProjectRequest(project=project)
         
         created_project = projects_manager.create_project(request.project)
@@ -204,19 +187,19 @@ async def pjpd_add_task(project: str, description: str, tag: str, priority: int 
         Standard MCP response with task details or error message.
     """
     try:
-        # Validate input using Pydantic
         request = AddTaskRequest(project=project, description=description, priority=priority, tag=tag)
         
         task = projects_manager.add_task(request.project, request.description, request.priority, request.tag)
         
-        if task:
-            return mcp_success({
-                **task.to_dict(),
-                "project": request.project,
-                "message": f"Task added to project '{request.project}' successfully"
-            })
-        else:
+        if not task:
             return mcp_failure(f"Failed to add task to project '{request.project}'")
+        
+        return mcp_success({
+            **task.to_dict(),
+            "project": request.project,
+            "message": f"Task added to project '{request.project}' successfully"
+        })
+            
         
     except Exception as e:
         return mcp_failure(f"Error adding task: {str(e)}")
@@ -238,21 +221,20 @@ async def pjpd_update_task(project: str, task_id: str, description: str = None,
         Standard MCP response with updated task details or error message.
     """
     try:
-        # Validate input using Pydantic
         request = UpdateTaskRequest(project=project, task_id=task_id, description=description, priority=priority, status=status)
         
         updated_task = projects_manager.update_task(
             request.project, request.task_id, request.description, request.priority, request.status
         )
         
-        if updated_task:
-            return mcp_success({
-                **updated_task.to_dict(),
-                "project": request.project,
-                "message": f"Task '{request.task_id}' updated successfully in project '{request.project}'"
-            })
-        else:
+        if not updated_task:
             return mcp_failure(f"Task '{request.task_id}' not found in project '{request.project}'")
+        
+        return mcp_success({
+            **updated_task.to_dict(),
+            "project": request.project,
+            "message": f"Task '{request.task_id}' updated successfully in project '{request.project}'"
+        })
         
     except Exception as e:
         return mcp_failure(f"Error updating task: {str(e)}")
@@ -278,7 +260,6 @@ async def pjpd_list_tasks(
     """
 
     try:
-        # Validate input using Pydantic
         request = ListTasksRequest(project=project, priority=priority, status=status, max_results=max_results)
         
         status_str: str | None
@@ -339,7 +320,6 @@ async def pjpd_mark_done(project: str, task_id: str) -> Dict[str, Any]:
         Standard MCP response with updated task details or error message.
     """
     try:
-        # Validate input using Pydantic
         request = MarkDoneRequest(project=project, task_id=task_id)
         
         updated_task = projects_manager.update_task(
@@ -370,7 +350,6 @@ async def pjpd_next_steps(max_results: int = 5) -> Dict[str, Any]:
         Standard MCP response with list of high-priority tasks to work on next.
     """
     try:
-        # Validate input using Pydantic
         request = NextStepsRequest(max_results=max_results)
         
         next_tasks = projects_manager.get_next_steps(request.max_results)
@@ -439,7 +418,6 @@ async def pjpd_list_ideas(max_results: int = None) -> Dict[str, Any]:
         Standard MCP response with list of ideas sorted by score (highest first).
     """
     try:
-        # Validate input using Pydantic
         request = ListIdeasRequest(max_results=max_results)
         
         ideas = ideas_manager.list_ideas(max_results=request.max_results)
@@ -467,7 +445,6 @@ async def pjpd_add_idea(score: int, description: str, tag: str) -> Dict[str, Any
         Standard MCP response with created idea details or error message.
     """
     try:
-        # Validate input using Pydantic
         request = AddIdeaRequest(score=score, description=description, tag=tag)
         
         idea = ideas_manager.add_idea(request.description, request.score, request.tag)
@@ -494,7 +471,6 @@ async def pjpd_update_idea(idea_id: str, score: int = None, description: str = N
         Standard MCP response with updated idea details or error message.
     """
     try:
-        # Validate input using Pydantic
         request = UpdateIdeaRequest(idea_id=idea_id, score=score, description=description)
         
         updated = ideas_manager.update_idea(request.idea_id, request.description, request.score)
@@ -527,18 +503,17 @@ async def pjpd_remove_idea(idea_id: str) -> Dict[str, Any]:
         Standard MCP response indicating success or failure.
     """
     try:
-        # Validate input using Pydantic
         request = RemoveIdeaRequest(idea_id=idea_id)
         
         removed = ideas_manager.remove_idea(request.idea_id)
         
-        if removed:
-            return mcp_success({
-                "idea_id": request.idea_id,
-                "message": f"Idea '{request.idea_id}' removed successfully"
-            })
-        else:
+        if not removed:
             return mcp_failure(f"Idea '{request.idea_id}' not found")
+
+        return mcp_success({
+            "idea_id": request.idea_id,
+            "message": f"Idea '{request.idea_id}' removed successfully"
+        })
         
     except Exception as e:
         return mcp_failure(f"Error removing idea: {str(e)}")
@@ -560,7 +535,6 @@ async def pjpd_list_epics(max_results: int = None) -> Dict[str, Any]:
         Standard MCP response with list of epics sorted by score (highest first).
     """
     try:
-        # Validate input using Pydantic
         request = ListEpicsRequest(max_results=max_results)
         
         epics = epics_manager.list_epics(max_results=request.max_results)
@@ -590,7 +564,6 @@ async def pjpd_add_epic(score: int, description: str, tag: str, ideas: str = "",
         Standard MCP response with created epic details or error message.
     """
     try:
-        # Validate input using Pydantic
         request = AddEpicRequest(score=score, description=description, tag=tag, ideas=ideas, projects=projects)
         
         epic = epics_manager.add_epic(
@@ -631,7 +604,6 @@ async def pjpd_update_epic(
         Standard MCP response with updated epic details or error message.
     """
     try:
-        # Validate input using Pydantic
         request = UpdateEpicRequest(epic_id=epic_id, score=score, description=description, ideas=ideas, projects=projects)
         
         updated = epics_manager.update_epic(
@@ -670,7 +642,6 @@ async def pjpd_mark_epic_done(epic_id: str) -> Dict[str, Any]:
         Standard MCP response indicating success or failure.
     """
     try:
-        # Validate input using Pydantic
         request = MarkEpicDoneRequest(epic_id=epic_id)
         
         marked_done = epics_manager.mark_epic_done(request.epic_id)
