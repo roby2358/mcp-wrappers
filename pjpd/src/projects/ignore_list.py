@@ -29,7 +29,7 @@ class IgnoreList:
         
         Args:
             filename: The filename to match against
-            pattern: The pattern to match (supports * and ? wildcards)
+            pattern: The pattern to match (supports * wildcard)
             
         Returns:
             True if filename matches pattern, False otherwise
@@ -37,7 +37,6 @@ class IgnoreList:
         # Convert pattern to regex
         regex_pattern = pattern.replace('.', r'\.')  # Escape dots
         regex_pattern = regex_pattern.replace('*', '.*')  # * becomes .*
-        regex_pattern = regex_pattern.replace('?', '.')   # ? becomes .
         regex_pattern = f'^{regex_pattern}$'  # Anchor to start and end
         
         try:

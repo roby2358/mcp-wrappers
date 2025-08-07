@@ -23,11 +23,13 @@ This specification outlines the design, structure, and operational requirements 
 ### Task Record Format
 
 * Each task **MUST** be delimited by a separator line consisting of exactly three hyphens (`---`) on a line by itself
-* Each task **MUST** contain exactly four lines in this order:
+* Each task **MUST** contain **at least three** property lines followed by a free-form description.  
+  The system writes the properties in this recommended order:
+
     1. `Priority: {integer}`
     2. `Status: {ToDo|Done}`
     3. `ID: {tag}-{4-character-random-string}`
-    4. Task description (may span multiple lines)
+
 * **Note**: The tag is extracted from the ID for internal use but is not stored separately
 * Task IDs **MUST** be in the format `<tag>-XXXX` where:
     * `<tag>` is a 1-12 character string provided at creation
@@ -43,19 +45,16 @@ This specification outlines the design, structure, and operational requirements 
 ### Example Task Format
 ```
 ID: bug-AB12
-Tag: bug
 Priority:    1
 Status: ToDo
 Add functionality to encapsulate the cardinal graham meters.
 ---
 ID: doc-3456
-Tag: doc
 Priority:   10
 Status: Done
 Update documentation for the new API endpoints.
 ---
 ID: refactor-cDeF
-Tag: refactor
 Priority:  100
 Status: ToDo
 Refactor the error handling in the main loop for 
@@ -67,10 +66,12 @@ better readability.
 *See also: [Epic Record Format](#epic-record-format-new) for grouping ideas and projects into higher-level workstreams.*
 
 * Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
-* Each idea **MUST** contain **three or more** lines in this order:
+* Each idea **MUST** contain **at least two** property lines followed by a free-form description.  
+  The system writes the properties in this recommended order:
+
     1. `Score: {integer}`
     2. `ID: {tag}-{4-character-random-string}`
-    3. Idea description (may span multiple lines)
+
 * **Note**: The tag is extracted from the ID for internal use but is not stored separately
 * Idea IDs **MUST** be in the format `<tag>-XXXX` where:
     * `<tag>` is a 1-12 character string provided at creation
@@ -86,12 +87,10 @@ better readability.
 
 ```
 Score:   75
-Tag: ai
 ID: ai-ABCD
 Implement experimental AI-assisted code review workflow.
 ---
 Score:    5
-Tag: ui
 ID: ui-KLMN
 Investigate alternative color palette for dark mode.
 ---
@@ -119,7 +118,7 @@ Investigate alternative color palette for dark mode.
 
 ### File Organization
 
-* When a user provides a project directory path that ends with `.../pjpd`, the system **MUST** remove the `pjpd` suffix before performing list_projects operations
+* When a user provides a project directory path that ends with `.../pjpd`, the system **MUST** treat that directory as the projects root **without** removing the suffix. Project, idea, and epic files will be read directly from that directory.
 * Each project **MUST** be stored as a separate `.txt` file in the projects directory
 * Project files **MUST** be named using the project name with `.txt` extension (e.g., `schedule-mcp.txt`)
 * Project names **MUST** be converted to lowercase and all disallowed characters replaced with underscores for filenames
