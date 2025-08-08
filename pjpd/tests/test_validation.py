@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from src.validation import (
     NewProjectRequest, AddTaskRequest, UpdateTaskRequest, ListTasksRequest,
     MarkDoneRequest, NextStepsRequest, AddIdeaRequest, UpdateIdeaRequest,
-    RemoveIdeaRequest, AddEpicRequest, UpdateEpicRequest, MarkEpicDoneRequest
+    MarkIdeaDoneRequest, AddEpicRequest, UpdateEpicRequest, MarkEpicDoneRequest
 )
 
 
@@ -244,18 +244,18 @@ class TestUpdateIdeaRequest:
             )
 
 
-class TestRemoveIdeaRequest:
-    """Test RemoveIdeaRequest validation."""
+class TestMarkIdeaDoneRequest:
+    """Test MarkIdeaDoneRequest validation."""
     
-    def test_valid_remove_idea_request(self):
-        """Test that valid remove idea requests are accepted."""
-        request = RemoveIdeaRequest(idea_id="idea-5f6g")
+    def test_valid_mark_idea_done_request(self):
+        """Test that valid mark idea done requests are accepted."""
+        request = MarkIdeaDoneRequest(idea_id="idea-5f6g")
         assert request.idea_id == "idea-5f6g"
     
     def test_invalid_idea_id_format(self):
         """Test that invalid idea ID formats are rejected."""
         with pytest.raises(ValidationError):
-            RemoveIdeaRequest(idea_id="invalid-id")
+            MarkIdeaDoneRequest(idea_id="invalid-id")
 
 
 class TestAddEpicRequest:

@@ -141,6 +141,34 @@ class Ideas:
             self._save_ideas()
         return removed
 
+    def mark_idea_done(self, idea_id: str) -> bool:
+        """Mark an idea as done by setting its score to 0 and
+        prepending "(Done)" to the first line of its description.
+
+        Returns True if the idea was found and updated, False otherwise.
+        """
+        for idea in self.ideas:
+            if idea.id == idea_id:
+                # Set score to 0
+                idea.score = 0
+
+                # Prepend "(Done)" to the first line of the description
+                description_text = idea.description or ""
+                first_and_rest = description_text.split("\n", 1)
+                first_line = first_and_rest[0]
+                remaining_text = first_and_rest[1] if len(first_and_rest) > 1 else ""
+
+                if not first_line.startswith("(Done)"):
+                    first_line = f"(Done) {first_line}" if first_line else "(Done)"
+
+                idea.description = (
+                    first_line if not remaining_text else f"{first_line}\n{remaining_text}"
+                )
+
+                self._save_ideas()
+                return True
+        return False
+
     def list_ideas(self, max_results: Optional[int] = None) -> List[Dict[str, Any]]:
         """Return ideas as plain dictionaries (sorted by score descending)."""
         ideas_sorted = sorted(self.ideas, key=lambda i: i.score, reverse=True)

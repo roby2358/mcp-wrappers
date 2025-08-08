@@ -19,7 +19,7 @@ from validation import (
     TaskDict,
     ListProjectsRequest, NewProjectRequest, AddTaskRequest, UpdateTaskRequest,
     ListTasksRequest, MarkDoneRequest, NextStepsRequest,
-    ListIdeasRequest, AddIdeaRequest, UpdateIdeaRequest, RemoveIdeaRequest,
+    ListIdeasRequest, AddIdeaRequest, UpdateIdeaRequest, MarkIdeaDoneRequest,
     ListEpicsRequest, AddEpicRequest, UpdateEpicRequest, MarkEpicDoneRequest
 )
 
@@ -493,30 +493,29 @@ async def pjpd_update_idea(idea_id: str, score: int = None, description: str = N
 
 
 @mcp.tool()
-async def pjpd_remove_idea(idea_id: str) -> Dict[str, Any]:
-    """Remove an idea completely.
-    
+async def pjpd_mark_idea_done(idea_id: str) -> Dict[str, Any]:
+    """Mark an idea as done by setting score to 0 and prefixing description with '(Done)'.
+
     Args:
         idea_id: Tag-based idea ID (format: `<tag>-XXXX`).
-    
+
     Returns:
         Standard MCP response indicating success or failure.
     """
     try:
-        request = RemoveIdeaRequest(idea_id=idea_id)
-        
-        removed = ideas_manager.remove_idea(request.idea_id)
-        
-        if not removed:
+        request = MarkIdeaDoneRequest(idea_id=idea_id)
+
+        updated = ideas_manager.mark_idea_done(request.idea_id)
+
+        if not updated:
             return mcp_failure(f"Idea '{request.idea_id}' not found")
 
         return mcp_success({
             "idea_id": request.idea_id,
-            "message": f"Idea '{request.idea_id}' removed successfully"
+            "message": f"Idea '{request.idea_id}' marked as done (score set to 0, description prefixed)"
         })
-        
     except Exception as e:
-        return mcp_failure(f"Error removing idea: {str(e)}")
+        return mcp_failure(f"Error marking idea as done: {str(e)}")
 
 
 # --------------------------------------------------------------------------

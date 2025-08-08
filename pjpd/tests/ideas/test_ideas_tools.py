@@ -12,7 +12,7 @@ from src.mcp_wrapper import (
     pjpd_list_ideas,
     pjpd_add_idea,
     pjpd_update_idea,
-    pjpd_remove_idea,
+    pjpd_mark_idea_done,
     mcp_success,
     mcp_failure
 )
@@ -134,34 +134,37 @@ class TestIdeasTools:
         assert result["success"] is False
         assert "Error updating idea" in result["error"]
 
-    async def test_remove_idea_success(self, mock_ideas_manager):
-        """Test successful removal of an idea."""
-        mock_ideas_manager.remove_idea.return_value = True
+    async def test_mark_idea_done_success(self, mock_ideas_manager):
+        """Test successfully marking an idea as done."""
+        # Prepare existing idea and mock behavior
+        mock_idea = Idea(id="idea-a2c4", tag="idea", score=50, description="Some idea")
+        mock_ideas_manager.ideas = [mock_idea]
+        mock_ideas_manager.mark_idea_done.return_value = True
 
-        result = await pjpd_remove_idea(idea_id="idea-a2c4")
+        result = await pjpd_mark_idea_done(idea_id="idea-a2c4")
 
         assert result["success"] is True
         assert result["result"]["idea_id"] == "idea-a2c4"
-        assert "removed successfully" in result["result"]["message"]
-        mock_ideas_manager.remove_idea.assert_called_once_with("idea-a2c4")
+        assert "marked as done" in result["result"]["message"]
+        mock_ideas_manager.mark_idea_done.assert_called_once_with("idea-a2c4")
 
-    async def test_remove_idea_not_found(self, mock_ideas_manager):
-        """Test removing an idea that doesn't exist."""
-        mock_ideas_manager.remove_idea.return_value = False
+    async def test_mark_idea_done_not_found(self, mock_ideas_manager):
+        """Test marking an idea as done that doesn't exist."""
+        mock_ideas_manager.mark_idea_done.return_value = False
 
-        result = await pjpd_remove_idea(idea_id="idea-9999")
+        result = await pjpd_mark_idea_done(idea_id="idea-9999")
 
         assert result["success"] is False
         assert "not found" in result["error"]
 
-    async def test_remove_idea_error(self, mock_ideas_manager):
-        """Test error handling in remove_idea."""
-        mock_ideas_manager.remove_idea.side_effect = Exception("Test error")
+    async def test_mark_idea_done_error(self, mock_ideas_manager):
+        """Test error handling in mark_idea_done."""
+        mock_ideas_manager.mark_idea_done.side_effect = Exception("Test error")
 
-        result = await pjpd_remove_idea(idea_id="idea-1234")
+        result = await pjpd_mark_idea_done(idea_id="idea-1234")
 
         assert result["success"] is False
-        assert "Error removing idea" in result["error"]
+        assert "Error marking idea as done" in result["error"]
 
 
 class TestMCPResponseHelpers:

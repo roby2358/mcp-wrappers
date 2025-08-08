@@ -166,8 +166,8 @@ class UpdateIdeaRequest(BaseModel):
         return validate_id_format(v, "Idea ID")
 
 
-class RemoveIdeaRequest(BaseModel):
-    """Request model for removing an idea."""
+class MarkIdeaDoneRequest(BaseModel):
+    """Request model for marking an idea as done."""
     idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX where XXXX is alphanumeric)")
     
     @field_validator('idea_id')
