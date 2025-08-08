@@ -1,7 +1,3 @@
-Score:   80
-ID: reorganize-bsix
-Move project files (ideas, epics, projects) into a pjpd folder for better organization
----
 Score:   75
 ID: batch-ops-md8h
 Add batch operations for tasks: accept lists of tasks for add, update, and mark done operations
@@ -37,3 +33,7 @@ Quick Capture Workflow - One-command task creation with smart defaults. Reduces 
 Score:   10
 ID: timestamps-54bz
 Add timestamps to tasks and ideas for tracking creation and modification dates
+---
+Score:    0
+ID: reorganize-bsix
+Move project files (ideas, epics, projects) into a pjpd folder for better organization
