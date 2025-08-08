@@ -3,6 +3,11 @@ Status: ToDo
 ID: ignore-wvi4
 Exclude ideas.txt and epics.txt from project list
 ---
+Priority:   90
+Status: ToDo
+ID: tools-cvmb
+Remove filtering parameters from the tools. (It just confuses the models).
+---
 Priority:   70
 Status: ToDo
 ID: config-6prr

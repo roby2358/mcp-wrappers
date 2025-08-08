@@ -23,6 +23,10 @@ ALLOWED_NAME_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQR
 # Characters permitted in sanitized filenames (spaces are replaced with underscores)
 FILENAME_SAFE_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-_@#$%!")
 
+# Filenames reserved for system-level files within the pjpd directory that should
+# never be treated as user projects.
+RESERVED_PROJECT_STEMS: set[str] = {"ideas", "epics"}
+
 class Projects:
 
     """Manages multiple projects and provides collection-level operations.
@@ -87,6 +91,12 @@ class Projects:
             
             # Apply ignore list filtering
             filtered_files = self._ignore_list.filter_files(project_files)
+
+            # Exclude reserved system files (e.g., ideas.txt, epics.txt)
+            filtered_files = [
+                path for path in filtered_files
+                if path.stem.lower() not in RESERVED_PROJECT_STEMS
+            ]
             
             for project_file in filtered_files:
                 project_name = project_file.stem  # filename without extension
@@ -130,6 +140,10 @@ class Projects:
         # Look up the sanitized name (since that's how files are stored)
         safe_name = self._sanitize_name(name)
         
+        # Treat reserved stems as ignored projects
+        if safe_name.lower() in RESERVED_PROJECT_STEMS:
+            raise ValueError(f"Project '{name}' is excluded")
+
         # Check if the sanitized name + .txt would be ignored
         if self._ignore_list.should_ignore(f"{safe_name}.txt"):
             raise ValueError(f"Project '{name}' is ignored")
@@ -151,6 +165,10 @@ class Projects:
         """
         # Sanitize the project name for filename
         safe_name = self._sanitize_name(name)
+        
+        # Disallow creating reserved project names
+        if safe_name.lower() in RESERVED_PROJECT_STEMS:
+            raise ValueError(f"Project name {name} is excluded")
         if self._ignore_list.should_ignore(f"{safe_name}.txt"):
             raise ValueError(f"Project name {name} is ignored")
         
@@ -231,8 +249,12 @@ class Projects:
         """
         self.refresh_projects()
         
-        # If a project filter is specified, validate that the project exists
+        # If a project filter is specified, validate that it's not a reserved stem
         if project_filter:
+            safe_filter = self._sanitize_name(project_filter).lower()
+            if safe_filter in RESERVED_PROJECT_STEMS:
+                raise ValueError(f"Project '{project_filter}' is excluded")
+            # Validate that the project exists
             try:
                 target_project = self.get_project(project_filter)
                 # Only process the specified project
@@ -280,7 +302,11 @@ class Projects:
             ValueError: If the project does not exist.
         """
         self.refresh_projects()
-        
+
+        safe_name = self._sanitize_name(project_name).lower()
+        if safe_name in RESERVED_PROJECT_STEMS:
+            raise ValueError(f"Project '{project_name}' is excluded")
+
         project = self.get_project(project_name)
         return project.add_task(description, priority, tag)
     
@@ -410,6 +436,10 @@ class Projects:
         Raises:
             ValueError: If the project does not exist.
         """
+        safe_name = self._sanitize_name(project_name).lower()
+        if safe_name in RESERVED_PROJECT_STEMS:
+            raise ValueError(f"Project '{project_name}' is excluded")
+
         project = self.get_project(project_name)
         
         # Get all tasks and sort by priority (higher numbers first)
