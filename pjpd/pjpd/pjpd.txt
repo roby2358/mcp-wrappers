@@ -1,8 +1,3 @@
-Priority:  100
-Status: ToDo
-ID: ignore-wvi4
-Exclude ideas.txt and epics.txt from project list
----
 Priority:   90
 Status: ToDo
 ID: tools-cvmb
@@ -22,6 +17,11 @@ Priority:   15
 Status: ToDo
 ID: opt-path-8svi
 Make the path parameter optional in pjpd_list_projects so it can be called without parameters
+---
+Priority:    0
+Status: Done
+ID: ignore-wvi4
+Exclude ideas.txt and epics.txt from project list
 ---
 Priority:    0
 Status: Done
