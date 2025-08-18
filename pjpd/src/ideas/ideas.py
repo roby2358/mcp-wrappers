@@ -26,34 +26,13 @@ class Ideas:
         self.directory = Path(directory).expanduser()
         self.ideas_file = self.directory / "pjpd" / "ideas.txt"
         self.text_records = TextRecords(self.directory)
-        self._ideas = None
+        self._ideas = []
 
     @property
     def present(self) -> bool:
         """Check if the ideas directory structure is present on disk."""
         return self.ideas_file.parent.exists() and self.ideas_file.parent.is_dir()
 
-    # ------------------------------------------------------------------
-    # Configuration helpers
-    # ------------------------------------------------------------------
-    def set_directory(self, directory: Path | str) -> None:
-        """Update the directory containing *ideas.txt*.
-
-        The directory will be created automatically if it doesn't exist.
-        Changing the projects directory at runtime allows the Ideas manager to
-        follow the current *Projects* location configured by the user (for
-        example via the *path* parameter to the *list_projects* tool).
-        """
-        self.directory = Path(directory).expanduser()
-        self.ideas_file = self.directory / "pjpd" / "ideas.txt"
-        self.text_records = TextRecords(self.directory)
-        
-        # Reset state for new directory
-        self._ideas = None
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
     def _load_ideas(self) -> None:
         """Load ideas from `ideas.txt` (lazily)."""
         if not self.present:
@@ -92,20 +71,28 @@ class Ideas:
 
         self.text_records.write_atomic(self.ideas_file, content)
 
-    # ------------------------------------------------------------------
-    # Public properties
-    # ------------------------------------------------------------------
     @property
     def ideas(self) -> List[Idea]:
         """Return *all* ideas, loading them on-demand."""
-        if self._ideas is None:
-            self._load_ideas()
-        # self._ideas is now non-None by construction
-        return self._ideas  # type: ignore[return-value]
+        self._load_ideas()
 
-    # ------------------------------------------------------------------
-    # Public operations – mirrors Project API for symmetry
-    # ------------------------------------------------------------------
+        return self._ideas
+
+    def set_directory(self, directory: Path | str) -> None:
+        """Update the directory containing *ideas.txt*.
+
+        The directory will be created automatically if it doesn't exist.
+        Changing the projects directory at runtime allows the Ideas manager to
+        follow the current *Projects* location configured by the user (for
+        example via the *path* parameter to the *list_projects* tool).
+        """
+        self.directory = Path(directory).expanduser()
+        self.ideas_file = self.directory / "pjpd" / "ideas.txt"
+        self.text_records = TextRecords(self.directory)
+        
+        # Reset state for new directory
+        self._ideas = None
+
     def add_idea(self, description: str, score: int, tag: str = "idea") -> Idea:
         """Create and persist a new idea record."""
         idea = Idea(
