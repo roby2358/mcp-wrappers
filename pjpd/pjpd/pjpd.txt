@@ -1,12 +1,32 @@
+Priority: 95
+Status: ToDo
+ID: startup-sfas
+Fix:It throws an error on startup if ~/project doesn't exist
+---
+Priority:   92
+Status: ToDo
+ID: config-6prr
+Add a set project directory feature so we don't have to list projects every time
+---
 Priority:   90
 Status: ToDo
 ID: tools-cvmb
 Remove filtering parameters from the tools. (It just confuses the models).
 ---
-Priority:   70
+Priority:   90
 Status: ToDo
-ID: config-6prr
-Add a set project directory feature so we don't have to list projects every time
+ID: urldecode-vf3f
+fix url decoding in the project path
+---
+Priority:   90
+Status: ToDo
+ID: no-create-98yq
+remove project creation on adding a task
+---
+Priority:   88
+Status: ToDo
+ID: defer-dir-yfvk
+defer creating pjpd subdirectory until as long as possible
 ---
 Priority:   20
 Status: ToDo

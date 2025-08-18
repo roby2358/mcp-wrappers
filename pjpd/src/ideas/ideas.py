@@ -23,8 +23,15 @@ class Ideas:
     """Manage a collection of :pyclass:`ideas.idea.Idea` records."""
 
     def __init__(self, directory: Path | str):
-        self.set_directory(directory)
-        self._ideas: Optional[List[Idea]] = None
+        self.directory = Path(directory).expanduser()
+        self.ideas_file = self.directory / "pjpd" / "ideas.txt"
+        self.text_records = TextRecords(self.directory)
+        self._ideas = None
+
+    @property
+    def present(self) -> bool:
+        """Check if the ideas directory structure is present on disk."""
+        return self.ideas_file.parent.exists() and self.ideas_file.parent.is_dir()
 
     # ------------------------------------------------------------------
     # Configuration helpers
@@ -32,27 +39,16 @@ class Ideas:
     def set_directory(self, directory: Path | str) -> None:
         """Update the directory containing *ideas.txt*.
 
-        The directory must exist or an exception will be raised.
+        The directory will be created automatically if it doesn't exist.
         Changing the projects directory at runtime allows the Ideas manager to
         follow the current *Projects* location configured by the user (for
         example via the *path* parameter to the *list_projects* tool).
-        
-        Raises:
-            FileNotFoundError: If the specified directory doesn't exist.
         """
         self.directory = Path(directory).expanduser()
-        
-        # Check if directory exists and raise exception if it doesn't
-        if not self.directory.exists():
-            raise FileNotFoundError(f"Ideas directory does not exist: {self.directory}")
-        
-        if not self.directory.is_dir():
-            raise FileNotFoundError(f"Path exists but is not a directory: {self.directory}")
-            
         self.ideas_file = self.directory / "pjpd" / "ideas.txt"
-        # Re-initialise TextRecords so it points at the new directory
         self.text_records = TextRecords(self.directory)
-        # Drop any cached data so it will be lazily re-loaded next access
+        
+        # Reset state for new directory
         self._ideas = None
 
     # ------------------------------------------------------------------
@@ -60,6 +56,10 @@ class Ideas:
     # ------------------------------------------------------------------
     def _load_ideas(self) -> None:
         """Load ideas from `ideas.txt` (lazily)."""
+        if not self.present:
+            self._ideas = []
+            return
+            
         if not self.ideas_file.exists():
             self._ideas = []
             return
@@ -82,6 +82,9 @@ class Ideas:
         """Persist current in-memory ideas list to disk (sorted)."""
         if self._ideas is None:
             return  # Nothing to save
+
+        # Ensure directory exists before saving
+        self.ideas_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Sort by score (desc) before serialisation – spec requirement
         sorted_ideas = sorted(self._ideas, key=lambda i: i.score, reverse=True)

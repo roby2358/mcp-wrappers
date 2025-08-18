@@ -27,13 +27,13 @@ class TextRecords:
         # Debug logging for path resolution
         logger.info(f"TextRecords path: {self.path}")
         logger.info(f"Path exists: {self.path.exists()}")
-        
-        # Throw an exception if the path does not exist (cross-os, linux, Win 11, osx)
-        if not Path(path_str).exists():
-            raise FileNotFoundError(f"Path does not exist: {path_str}")
     
     def discover_files(self) -> List[Path]:
         """Discover all .txt files in the path recursively"""
+        if not self.path.exists():
+            logger.info(f"Path does not exist: {self.path}, returning empty list")
+            return []
+            
         txt_files = list(self.path.rglob("*.txt"))
         logger.info(f"Found {len(txt_files)} .txt files")
         return txt_files
@@ -41,6 +41,10 @@ class TextRecords:
     def parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
         """Parse a single file and extract records separated by ---"""
         records = []
+        
+        if not file_path.exists():
+            logger.info(f"File does not exist: {file_path}, returning empty list")
+            return records
         
         try:
             with open(file_path, 'r', encoding='utf-8') as f:

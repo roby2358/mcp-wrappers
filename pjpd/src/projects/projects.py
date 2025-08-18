@@ -11,7 +11,7 @@ from typing import Dict, List, Any, Optional
 from collections import defaultdict
 
 from .project import Project, Task
-from .ignore_list import IgnoreList
+from .ignore_list import IgnoreList, NoIgnoreList
 
 logger = logging.getLogger(__name__)
 
@@ -43,46 +43,29 @@ class Projects:
             projects_dir: Path to the directory containing project *.txt files. If
                 the directory does not yet exist it will be created automatically.
         """
-        self.set_projects_dir(projects_dir)
- 
-
-    def set_projects_dir(self, projects_dir: Path | str) -> None:
-        """Update the projects directory.
-
-        The directory must exist or an exception will be raised.
-        The in-memory cache will be cleared to ensure a fresh reload the next time
-        projects are accessed.
-
-        Args:
-            projects_dir: Path to the project directory (without /pjpd).
-            
-        Raises:
-            FileNotFoundError: If the specified projects directory doesn't exist.
-        """
         self.projects_dir = Path(projects_dir).expanduser()
-
-        # Check if directory exists and raise exception if it doesn't
-        if not self.projects_dir.exists():
-            raise FileNotFoundError(f"Projects directory does not exist: {self.projects_dir}")
-        
-        if not self.projects_dir.is_dir():
-            raise FileNotFoundError(f"Path exists but is not a directory: {self.projects_dir}")
-
         self.projects_subdir = self.projects_dir / "pjpd"
-
-        if not self.projects_subdir.exists():
-            self.projects_subdir.mkdir(parents=True, exist_ok=True)
-        
-        self.refresh_projects()
-        
+        self._ignore_list = NoIgnoreList()
+        self._projects = {}
+ 
+    
+    @property
+    def present(self) -> bool:
+        """Check if the projects directory structure is present on disk."""
+        return self.projects_subdir.exists() and self.projects_subdir.is_dir()
+    
     def refresh_projects(self) -> None:
         """Refresh the projects list from disk.
         
         This method reloads all project files from the projects directory,
         applying any ignore list filters, and updates the in-memory cache.
         """
-        self._ignore_list = IgnoreList(self.projects_subdir)
+        if not self.present:
+            self._ignore_list = NoIgnoreList()
+            self._projects = {}
+            return
         
+        self._ignore_list = IgnoreList(self.projects_subdir)
         self._projects = {}
             
         try:
@@ -108,6 +91,38 @@ class Projects:
         except Exception as e:
             logger.error(f"Error loading projects: {e}")
             self._projects = {}
+
+    def set_projects_dir(self, projects_dir: Path | str) -> None:
+        """Update the projects directory.
+
+        No projects or ignore list will return if the directory doesn't exist.
+        The in-memory cache will be cleared to ensure a fresh reload the next time
+        projects are accessed.
+
+        Args:
+            projects_dir: Path to the project directory (without /pjpd).
+        """
+        self.projects_dir = Path(projects_dir).expanduser()
+        self.projects_subdir = self.projects_dir / "pjpd"
+
+        # the next refresh_projects will fill out the projects cache
+    
+    def _ensure_projects(self) -> bool:
+        """Ensure the projects system is initialized. Creates directories if needed.
+        
+        Returns:
+            True if we create directories, False if they already existed.
+        """
+        if self.present:
+            return False
+        
+        self.projects_dir.mkdir(parents=True, exist_ok=True)
+        self.projects_subdir.mkdir(parents=True, exist_ok=True)
+
+        # Brand new projects system, so no ignore list or projects yet
+        self._ignore_list = NoIgnoreList()
+        self._projects = {}
+        return True
     
     @property
     def projects(self) -> Dict[str, Project]:
@@ -118,6 +133,48 @@ class Projects:
         """
         self.refresh_projects()
         return self._projects
+    
+    def _sanitize_name(self, name: str) -> str:
+        """Sanitize and validate a project name for use as a filename.
+        
+        Converts the name to lowercase, replaces disallowed characters with
+        underscores, reduces runs of underscores to a single underscore, and
+        ensures the result is a valid filename. Also validates that the name
+        is not reserved and would not be ignored.
+        
+        Args:
+            name: The original project name to sanitize.
+            
+        Returns:
+            A sanitized filename-safe version of the name.
+            
+        Raises:
+            ValueError: If the name is empty/invalid, reserved, or would be ignored.
+        """
+        # Store original name for error messages
+        original_name = name
+        
+        # Normalise to lower-case for consistency and easier look-ups
+        name = name.lower()
+
+        # Replace all disallowed characters with underscores
+        transformed = [ch if ch in FILENAME_SAFE_CHARS else "_" for ch in name]
+        name = re.sub(r"_+", "_", "".join(transformed))
+
+        # Strip leading / trailing underscores or dots to avoid hidden / invalid
+        # filenames on some filesystems.
+        name = name.strip("._")
+
+        if not name:
+            raise ValueError(f"Project name cannot be empty or invalid: {original_name}")
+        
+        if name.lower() in RESERVED_PROJECT_STEMS:
+            raise ValueError(f"Project name '{original_name}' is excluded")
+
+        if self._ignore_list.should_ignore(f"{name}.txt"):
+            raise ValueError(f"Project name {name} is ignored")
+        
+        return name
     
     def get_project(self, name: str) -> Project:
         """Retrieve a project by its sanitised name.
@@ -139,20 +196,13 @@ class Projects:
 
         # Look up the sanitized name (since that's how files are stored)
         safe_name = self._sanitize_name(name)
-        
-        # Treat reserved stems as ignored projects
-        if safe_name.lower() in RESERVED_PROJECT_STEMS:
-            raise ValueError(f"Project '{name}' is excluded")
-
-        # Check if the sanitized name + .txt would be ignored
-        if self._ignore_list.should_ignore(f"{safe_name}.txt"):
-            raise ValueError(f"Project '{name}' is ignored")
-        
         project = self.projects.get(safe_name)
-        if project is not None:
-            return project
+
+        if project is None:
+            raise ValueError(f"Project '{name}' does not exist")
+
+        return project
             
-        raise ValueError(f"Project '{name}' does not exist")
     
     def create_project(self, name: str) -> Project:
         """Create a new project.
@@ -163,15 +213,12 @@ class Projects:
         Returns:
             The newly created Project instance.
         """
+        # Ensure projects are initialized before creating
+        self._ensure_projects()
+        self.refresh_projects()
+        
         # Sanitize the project name for filename
         safe_name = self._sanitize_name(name)
-        
-        # Disallow creating reserved project names
-        if safe_name.lower() in RESERVED_PROJECT_STEMS:
-            raise ValueError(f"Project name {name} is excluded")
-        if self._ignore_list.should_ignore(f"{safe_name}.txt"):
-            raise ValueError(f"Project name {name} is ignored")
-        
         file_path = self.projects_subdir / f"{safe_name}.txt"
         
         if not file_path.exists():
@@ -181,35 +228,6 @@ class Projects:
         self.projects[safe_name] = project
         
         return project
-    
-    def _sanitize_name(self, name: str) -> str:
-        """Sanitize a project name for use as a filename.
-        
-        Converts the name to lowercase, replaces disallowed characters with
-        underscores, reduces runs of underscores to a single underscore, and
-        ensures the result is a valid filename.
-        
-        Args:
-            name: The original project name to sanitize.
-            
-        Returns:
-            A sanitized filename-safe version of the name.
-        """
-        # Normalise to lower-case for consistency and easier look-ups
-        name = name.lower()
-
-        # Replace all disallowed characters with underscores
-        transformed = [ch if ch in FILENAME_SAFE_CHARS else "_" for ch in name]
-        name = re.sub(r"_+", "_", "".join(transformed))
-
-        # Strip leading / trailing underscores or dots to avoid hidden / invalid
-        # filenames on some filesystems.
-        name = name.strip("._")
-
-        if not name:
-            raise ValueError(f"Project name cannot be empty or invalid: {name}")
-        
-        return name
     
     def list_projects(self) -> List[Dict[str, Any]]:
         """List all projects with their task counts.
@@ -299,8 +317,11 @@ class Projects:
             The created Task instance, or None if the operation failed.
             
         Raises:
-            ValueError: If the project does not exist.
+            ValueError: If the projects system is not present or if the project does not exist.
         """
+        if not self.present:
+            raise ValueError("Projects are not present. Create your project first.")
+
         self.refresh_projects()
 
         safe_name = self._sanitize_name(project_name).lower()
@@ -420,35 +441,6 @@ class Projects:
         
         # Return the top tasks up to the limit
         return todo_tasks[:limit]
-    
-    def sort_project(self, project_name: str) -> bool:
-        """Re-sort tasks within a project by priority.
-        
-        Sorts all tasks in the specified project by priority (highest first)
-        and saves the sorted order to disk.
-        
-        Args:
-            project_name: Name of the project to sort.
-            
-        Returns:
-            True if the project was sorted successfully.
-            
-        Raises:
-            ValueError: If the project does not exist.
-        """
-        safe_name = self._sanitize_name(project_name).lower()
-        if safe_name in RESERVED_PROJECT_STEMS:
-            raise ValueError(f"Project '{project_name}' is excluded")
-
-        project = self.get_project(project_name)
-        
-        # Get all tasks and sort by priority (higher numbers first)
-        tasks = project.tasks
-        tasks.sort(key=lambda t: t.priority, reverse=True)
-        
-        # Save the sorted tasks
-        project._save_tasks()
-        return True
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get detailed statistics about all projects.

@@ -120,4 +120,20 @@ class IgnoreList:
     
     def reload(self) -> None:
         """Reload ignore patterns from the pjpdignore file"""
-        self.load_patterns() 
+        self.load_patterns()
+
+
+class NoIgnoreList:
+    """No-op implementation of IgnoreList for when the projects system is not ready."""
+    
+    def filter_files(self, files: List[Path]) -> List[Path]:
+        """Return all files unfiltered when not ready."""
+        # Access .name on each file to match IgnoreList behavior
+        # This will raise AttributeError if files contain None
+        for file_path in files:
+            _ = file_path.name  # Access .name to trigger AttributeError if file_path is None
+        return files
+    
+    def should_ignore(self, filename: str) -> bool:
+        """Never ignore files when not ready."""
+        return False 

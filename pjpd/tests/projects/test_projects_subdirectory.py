@@ -12,21 +12,27 @@ class TestProjectsSubdirectory:
     """Test cases for Projects class subdirectory functionality"""
     
     def test_projects_subdirectory_creation(self, tmp_path):
-        """Test that pjpd subdirectory is created when it doesn't exist"""
+        """Test that pjpd subdirectory is created when needed"""
         # Create a projects directory without pjpd subdirectory
         projects_dir = tmp_path / "projects"
         projects_dir.mkdir()
         
-        # Create Projects instance - should create pjpd subdirectory
+        # Create Projects instance - should NOT create pjpd subdirectory yet
         projects = Projects(projects_dir)
         
-        # Verify pjpd subdirectory was created
+        # Verify pjpd subdirectory was NOT created yet (lazy initialization)
         pjpd_dir = projects_dir / "pjpd"
-        assert pjpd_dir.exists()
-        assert pjpd_dir.is_dir()
+        assert not pjpd_dir.exists()
         
         # Verify projects_subdir property is set correctly
         assert projects.projects_subdir == pjpd_dir
+        
+        # Now create a project to trigger directory creation
+        projects.create_project("test-project")
+        
+        # Verify pjpd subdirectory was created
+        assert pjpd_dir.exists()
+        assert pjpd_dir.is_dir()
     
     def test_projects_subdirectory_exists(self, tmp_path):
         """Test that existing pjpd subdirectory is used correctly"""
@@ -90,6 +96,9 @@ class TestProjectsSubdirectory:
         
         projects = Projects(projects_dir)
         
+        # First create a project to ensure the subdirectory exists
+        projects.create_project("dummy-project")
+        
         # Create some project files in the subdirectory
         (projects.projects_subdir / "project1.txt").write_text("")
         (projects.projects_subdir / "project2.txt").write_text("")
@@ -102,28 +111,31 @@ class TestProjectsSubdirectory:
         # Refresh projects
         projects.refresh_projects()
         
-        # Should only load non-ignored projects
+        # Should only load non-ignored projects (plus our dummy project)
         assert "project1" in projects.projects
         assert "project2" in projects.projects
         assert "backup_project" not in projects.projects
-        assert len(projects.projects) == 2
+        assert "dummy-project" in projects.projects
+        assert len(projects.projects) == 3
     
     def test_projects_subdirectory_parent_directory_validation(self, tmp_path):
-        """Test that Projects validates parent directory exists"""
+        """Test that Projects handles non-existent directory gracefully"""
         # Try to create Projects with non-existent directory
         non_existent_dir = tmp_path / "nonexistent"
         
-        with pytest.raises(FileNotFoundError, match="Projects directory does not exist"):
-            Projects(non_existent_dir)
+        # Should not raise an error, just not be present
+        projects = Projects(non_existent_dir)
+        assert not projects.present
     
     def test_projects_subdirectory_parent_not_directory(self, tmp_path):
-        """Test that Projects validates parent path is a directory"""
+        """Test that Projects handles file path gracefully"""
         # Create a file instead of directory
         file_path = tmp_path / "not_a_directory"
         file_path.write_text("this is a file")
         
-        with pytest.raises(FileNotFoundError, match="Path exists but is not a directory"):
-            Projects(file_path)
+        # Should not raise an error, just not be present
+        projects = Projects(file_path)
+        assert not projects.present
     
     def test_projects_subdirectory_set_projects_dir(self, tmp_path):
         """Test that set_projects_dir updates subdirectory correctly"""
@@ -144,11 +156,19 @@ class TestProjectsSubdirectory:
         # Verify subdirectory was updated
         new_subdir = projects_dir2 / "pjpd"
         assert projects.projects_subdir == new_subdir
+        
+        # The new subdirectory should not exist yet (lazy initialization)
+        assert not new_subdir.exists()
+        
+        # Create a project to trigger directory creation
+        projects.create_project("test-project")
+        
+        # Now the subdirectory should exist
         assert new_subdir.exists()
         assert new_subdir.is_dir()
         
-        # Verify original subdirectory is unchanged
-        assert original_subdir.exists()
+        # Verify original subdirectory is unchanged (it was never created due to lazy initialization)
+        assert not original_subdir.exists()
     
     def test_projects_subdirectory_refresh_clears_cache(self, tmp_path):
         """Test that refresh_projects clears and reloads from subdirectory"""

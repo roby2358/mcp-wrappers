@@ -22,8 +22,15 @@ class Epics:
     """Manage a collection of :pyclass:`epics.epic.Epic` records."""
 
     def __init__(self, directory: Path | str):
-        self.set_directory(directory)
-        self._epics: Optional[List[Epic]] = None
+        self.directory = Path(directory).expanduser()
+        self.epics_file = self.directory / "pjpd" / "epics.txt"
+        self.text_records = TextRecords(self.directory)
+        self._epics = None
+
+    @property
+    def present(self) -> bool:
+        """Check if the epics directory structure is present on disk."""
+        return self.epics_file.parent.exists() and self.epics_file.parent.is_dir()
 
     # ------------------------------------------------------------------
     # Configuration helpers
@@ -31,26 +38,16 @@ class Epics:
     def set_directory(self, directory: Path | str) -> None:
         """Update the directory containing *epics.txt*.
 
-        The directory must exist or an exception will be raised.
+        The directory will be created automatically if it doesn't exist.
         Keeping the Epics manager in sync with the active *Projects* directory
         ensures the `epics.txt` file is created beside project task files – not
         in a stale default location (e.g. `~/projects`).
-        
-        Raises:
-            FileNotFoundError: If the specified directory doesn't exist.
         """
         self.directory = Path(directory).expanduser()
-        
-        # Check if directory exists and raise exception if it doesn't
-        if not self.directory.exists():
-            raise FileNotFoundError(f"Epics directory does not exist: {self.directory}")
-        
-        if not self.directory.is_dir():
-            raise FileNotFoundError(f"Path exists but is not a directory: {self.directory}")
-            
         self.epics_file = self.directory / "pjpd" / "epics.txt"
         self.text_records = TextRecords(self.directory)
-        # Invalidate cache so data is re-loaded on next access
+        
+        # Reset state for new directory
         self._epics = None
 
     # ------------------------------------------------------------------
@@ -58,6 +55,10 @@ class Epics:
     # ------------------------------------------------------------------
     def _load_epics(self) -> None:
         """Load epics from `epics.txt` (lazily)."""
+        if not self.present:
+            self._epics = []
+            return
+            
         if not self.epics_file.exists():
             self._epics = []
             return
@@ -80,6 +81,9 @@ class Epics:
         """Persist current in-memory epics list to disk (sorted)."""
         if self._epics is None:
             return  # Nothing to save
+
+        # Ensure directory exists before saving
+        self.epics_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Sort by score (desc) before serialisation – spec requirement
         sorted_epics = sorted(self._epics, key=lambda e: e.score, reverse=True)
