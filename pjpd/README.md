@@ -67,6 +67,52 @@ Using an MCP client (like Claude Desktop), you can now:
 - List and filter tasks, ideas, and epics
 - Mark tasks as complete
 - Get next steps recommendations
+## How to Use ProjectMCP with Language Model Clients
+
+ProjectMCP is an MCP (Model Context Protocol) server that provides AI assistants with powerful project management capabilities. When integrated with language model client frameworks like Cursor, Claude Desktop, or other MCP-compatible clients, you can interact with your project management system through natural language.
+
+### Important Note About Project Listing
+
+When asking the AI to list projects, models often get the path wrong by defaulting to `~/projects` or other incorrect paths. To ensure accurate results, use a two-phase approach:
+
+1. **First ask**: "What is the current working directory?"
+2. **Then ask**: "List the projects in `<full path>`" (using the exact path from step 1)
+
+This ensures the AI uses the correct path for your ProjectMCP setup and avoids confusion from incorrect default paths.
+
+### Common Operations You Can Ask the AI to Perform
+
+**Project Management:**
+- "Show me all my projects and their task counts"
+- "Create a new project called 'website-redesign'"
+- "What are my current projects?"
+
+**Task Management:**
+- "Add a new task to my 'website-redesign' project: 'Design homepage mockup' with tag 'design' and priority 3"
+- "Show me all high-priority tasks (priority >= 3)"
+- "List all pending tasks in the 'marketing' project"
+- "Mark task 'dev-001' as completed"
+- "Update task 'design-002' to have priority 4 and status 'Done'"
+- "What should I work on next?" (gets high-priority task recommendations)
+- "Show me statistics for all my projects"
+
+**Idea Management:**
+- "Add a new idea: 'Implement dark mode' with score 8 and tag 'ui'"
+- "List my top 10 ideas"
+- "Update idea 'ui-001' to have score 9"
+
+**Epic Management:**
+- "Create a new epic 'User Experience Improvements' with score 7 and tag 'ux'"
+- "Show me all my epics"
+- "Link idea 'ui-001' to epic 'ux-001'"
+- "Mark epic 'ux-001' as completed"
+
+**General Queries:**
+- "Give me an overview of my project management system"
+- "What's my current workload across all projects?"
+- "Help me organize my tasks by priority"
+
+The AI assistant will use the appropriate MCP tools behind the scenes to fulfill these requests, making project management feel natural and conversational.
 
 ## Configuration
 
