@@ -86,7 +86,7 @@ Add this configuration to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "z3solver": {
+    "z3_solver": {
       "command": "npx",
       "args": ["-y", "yuwakisa-z3solver-mcp"]
     }
@@ -99,7 +99,7 @@ Add this configuration to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "z3solver": {
+    "z3_solver": {
       "command": "node",
       "args": ["/path/to/mcp-wrappers/z3solver/build/index.js"]
     }
