@@ -1,0 +1,39 @@
+{
+  "name": "yuwakisa-z3solver-mcp",
+  "version": "0.1.0",
+  "description": "MCP server providing Z3 SMT solver capabilities",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "z3solver-mcp": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node build/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "z3",
+    "smt",
+    "solver",
+    "constraint-solving"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "z3-solver": "^4.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
