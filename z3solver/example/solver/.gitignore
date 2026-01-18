@@ -1,0 +1,10 @@
+# Dependencies
+node_modules/
+
+# Public folder (contents get copied into dist/ during build)
+public/
+
+# Editor
+.idea/
+*.swp
+.DS_Store
