@@ -60,7 +60,7 @@ A lightweight, local-first vector database for semantic search over plain text d
 
 **Use case:** Local document search and knowledge management through natural language queries.
 
-### 5. ProjectMCP (`pjpd/`)
+### 5. PJPD (`pjpd/`)
 A lightweight, local-first project management system built on plain `.txt` files.
 
 **Features:**
@@ -74,6 +74,19 @@ A lightweight, local-first project management system built on plain `.txt` files
 
 **Use case:** Local project management and task tracking through AI assistants.
 
+### 6. Z3Solver (`z3solver/`)
+An MCP server that provides SMT (Satisfiability Modulo Theories) constraint solving capabilities using the Z3 theorem prover.
+
+**Features:**
+- Z3 solver integration with WASM bindings
+- Full SMT-LIB2 format support
+- Unsat core extraction for debugging unsatisfiable constraints
+- Model generation for satisfiable problems
+- Zero installation via npx
+- Configurable timeout for solver execution
+
+**Use case:** Solving complex constraint satisfaction problems including scheduling, logic puzzles, configuration problems, and planning tasks through AI assistants.
+
 ## Quick Start
 
 Each wrapper has its own installation and setup instructions. See the individual README.md files in each wrapper directory:
@@ -83,6 +96,7 @@ Each wrapper has its own installation and setup instructions. See the individual
 - [`atproto/README.md`](atproto/README.md) - Bluesky social media integration
 - [`vecbook/README.md`](vecbook/README.md) - Local vector document search
 - [`pjpd/README.md`](pjpd/README.md) - Local project management
+- [`z3solver/README.md`](z3solver/README.md) - SMT constraint solving with Z3
 
 ## Usage Examples
 
@@ -123,6 +137,13 @@ Once configured, you can manage projects and tasks:
 - "Mark task 'AB-CDEF-GH' as complete"
 - "What are the next steps I should work on?"
 
+### Z3Solver
+Once configured, you can solve constraint problems:
+- "I have 4 people who need to be assigned to 2 teams. Alice and Bob can't be on the same team. Find a valid assignment."
+- "Solve this Sudoku puzzle: [puzzle description]"
+- "Can you schedule 5 meetings with these time constraints?"
+- "Find a configuration where all these compatibility rules are satisfied"
+
 ## Development
 
 ### Project Structure
@@ -132,7 +153,8 @@ mcp-wrappers/
 ├── shell/               # Shell execution wrappers
 ├── atproto/             # Bluesky/atproto social media wrapper
 ├── vecbook/             # Local vector document search
-└── pjpd/                # Local project management system
+├── pjpd/                # Local project management system
+└── z3solver/            # SMT constraint solving with Z3
 ```
 
 ### Adding New Wrappers
