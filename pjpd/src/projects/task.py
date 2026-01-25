@@ -112,7 +112,7 @@ class Task:
                     # Fallback to old format for backward compatibility
                     state["task_id"] = RecordID.generate()
                     state["tag"] = "legacy"
-                logger.warning(f"Generated missing task ID for malformed record: {state["task_id"]}")
+                logger.warning(f"Generated missing task ID for malformed record: {state['task_id']}")
 
             # Extract tag from ID if it follows the new format
             if "-" in state["task_id"] and len(state["task_id"].split("-")[0]) <= 12:
