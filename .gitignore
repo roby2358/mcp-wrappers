@@ -1,6 +1,7 @@
 /.idea/
 **/.idea/
 **/venv/
+**/.venv/
 *.iml
 **/node_modules/
 **/dist/
@@ -10,4 +11,3 @@
 /pjpd/.cursor/
 /.claude/
 /pjpd-wsl/
-/pjpd/.venv/
