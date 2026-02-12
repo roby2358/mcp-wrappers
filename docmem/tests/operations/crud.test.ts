@@ -8,7 +8,7 @@ describe('crud operations', () => {
   beforeEach(async () => { await clearTestDb(); });
 
   it('appends a child node', async () => {
-    await createDocmem('root0001', '', 'root', 'a', 'b');
+    await createDocmem('root0001');
     const res = await append('root0001', 'Child text', 'message', 'user', 'alice');
     expect(res.success).toBe(true);
     const node = res.result as any;
@@ -18,17 +18,17 @@ describe('crud operations', () => {
   });
 
   it('appends sequential children with incrementing order', async () => {
-    await createDocmem('root0001', '', 'root', 'a', 'b');
+    await createDocmem('root0001');
     await append('root0001', 'First', 'msg', 'u', 'a');
     const res = await append('root0001', 'Second', 'msg', 'u', 'a');
     expect((res.result as any).order_value).toBe(2.0);
   });
 
   it('finds a node by id', async () => {
-    await createDocmem('root0001', 'hello', 'root', 'a', 'b');
-    const res = await find('root0001');
-    expect(res.success).toBe(true);
-    expect((res.result as any).content).toBe('hello');
+    await createDocmem('root0001');
+    await append('root0001', 'hello', 'msg', 'u', 'a');
+    const children = await find('root0001');
+    expect(children.success).toBe(true);
   });
 
   it('returns error for missing node', async () => {
@@ -37,7 +37,7 @@ describe('crud operations', () => {
   });
 
   it('deletes a node and its descendants', async () => {
-    await createDocmem('root0001', '', 'root', 'a', 'b');
+    await createDocmem('root0001');
     const child = await append('root0001', 'Child', 'msg', 'u', 'a');
     const childId = (child.result as any).id;
     await append(childId, 'Grandchild', 'msg', 'u', 'a');
@@ -50,34 +50,29 @@ describe('crud operations', () => {
     expect(findRes.success).toBe(false);
   });
 
-  it('updates content with correct hash', async () => {
-    await createDocmem('root0001', 'original', 'root', 'a', 'b');
-    const node = (await find('root0001')).result as any;
-    const res = await updateContent('root0001', 'updated', node.hash);
+  it('updates content', async () => {
+    await createDocmem('root0001');
+    const child = await append('root0001', 'original', 'msg', 'u', 'a');
+    const childId = (child.result as any).id;
+    const res = await updateContent(childId, 'updated');
     expect(res.success).toBe(true);
     expect((res.result as any).content).toBe('updated');
   });
 
-  it('rejects update with wrong hash', async () => {
-    await createDocmem('root0001', 'original', 'root', 'a', 'b');
-    const res = await updateContent('root0001', 'updated', 'wronghash');
-    expect(res.success).toBe(false);
-    expect(res.error).toContain('Hash mismatch');
-  });
-
   it('rejects update on readonly node', async () => {
-    await createDocmem('root0001', '', 'root', 'a', 'b');
+    await createDocmem('root0001');
     const child = await append('root0001', 'readonly text', 'msg', 'u', 'a', 1);
     const node = (child.result as any);
-    const res = await updateContent(node.id, 'new text', node.hash);
+    const res = await updateContent(node.id, 'new text');
     expect(res.success).toBe(false);
     expect(res.error).toContain('readonly');
   });
 
-  it('updates context with correct hash', async () => {
-    await createDocmem('root0001', '', 'root', 'a', 'b');
-    const node = (await find('root0001')).result as any;
-    const res = await updateContext('root0001', 'root', 'newname', 'newval', node.hash);
+  it('updates context', async () => {
+    await createDocmem('root0001');
+    const child = await append('root0001', 'text', 'msg', 'u', 'a');
+    const childId = (child.result as any).id;
+    const res = await updateContext(childId, 'root', 'newname', 'newval');
     expect(res.success).toBe(true);
     expect((res.result as any).context_name).toBe('newname');
   });

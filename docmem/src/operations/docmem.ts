@@ -14,18 +14,7 @@ function formatNodeMeta(node: NodeRow): string {
 
 export async function createDocmem(
   rootId: string | undefined,
-  content: string | undefined,
-  contextType: string,
-  contextName: string,
-  contextValue: string,
 ): Promise<ToolResponse> {
-  if (!contextType && contextType !== '' || contextName === undefined || contextValue === undefined) {
-    return fail('All context fields (context_type, context_name, context_value) are required.');
-  }
-  if (contextType.length > 24 || contextName.length > 24 || contextValue.length > 24) {
-    return fail('Context fields must be 0 to 24 characters.');
-  }
-
   const id = rootId ?? generateId();
 
   const existing = await findNodeById(id);
@@ -33,21 +22,20 @@ export async function createDocmem(
     return fail(`A node with id '${id}' already exists. Choose a different root_id or omit it to auto-generate.`);
   }
 
-  const nodeContent = content ?? '';
   const now = new Date().toISOString();
-  const hash = computeHash(null, contextType, contextName, contextValue, nodeContent, 1.0);
+  const hash = computeHash(null, '', '', '', '', 1.0);
 
   const node: NodeRow = {
     id,
     parent_id: null,
-    content: nodeContent,
+    content: '',
     order_value: 1.0,
-    token_count: countTokens(nodeContent),
+    token_count: countTokens(''),
     created_at: now,
     updated_at: now,
-    context_type: contextType,
-    context_name: contextName,
-    context_value: contextValue,
+    context_type: '',
+    context_name: '',
+    context_value: '',
     readonly: 0,
     hash,
   };

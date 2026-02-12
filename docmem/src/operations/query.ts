@@ -121,10 +121,13 @@ export async function getRoot(nodeId: string): Promise<ToolResponse> {
   }
 
   const ancestors = await getAncestors(nodeId);
-  // The root is the ancestor with null parent_id
-  const root = ancestors.find(a => a.parent_id === null);
-  if (!root) {
-    return fail(`Could not find root for node '${nodeId}'. The ancestor chain may be broken.`);
-  }
-  return ok(root);
+  // Reverse to get root-first order (getAncestors returns node-first)
+  const rootFirst = [...ancestors].reverse();
+
+  const lines = rootFirst.map((a, i) => {
+    const indent = '  '.repeat(i);
+    return `${indent}- ${formatNodeMeta(a)}`;
+  });
+
+  return ok(lines.join('\n'));
 }

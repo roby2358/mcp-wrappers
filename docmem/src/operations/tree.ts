@@ -98,14 +98,10 @@ export async function moveNode(
   sourceId: string,
   targetId: string,
   position: 'child' | 'before' | 'after',
-  expectedHash: string,
 ): Promise<ToolResponse> {
   const source = await findNodeById(sourceId);
   if (!source) {
     return fail(`Source node '${sourceId}' not found. Verify the ID using find() or structure().`);
-  }
-  if (source.hash !== expectedHash) {
-    return fail(`Hash mismatch on node '${sourceId}': expected '${expectedHash}' but current is '${source.hash}'. Re-read the node with find() to get the current hash before retrying.`);
   }
   const target = await findNodeById(targetId);
   if (!target) {
@@ -168,50 +164,61 @@ export async function moveNode(
   return ok(updated);
 }
 
-export async function summarize(
-  nodeIds: string[],
-  content: string,
+export async function addSummary(
   contextType: string,
   contextName: string,
   contextValue: string,
+  content: string,
+  startNodeId: string,
+  endNodeId: string,
 ): Promise<ToolResponse> {
   const ctxErr = validateContext(contextType, contextName, contextValue);
   if (ctxErr) return fail(ctxErr);
 
-  if (!nodeIds || nodeIds.length === 0) {
-    return fail('At least one node_id is required for summarization.');
+  // Find start and end nodes
+  const startNode = await findNodeById(startNodeId);
+  if (!startNode) {
+    return fail(`Start node '${startNodeId}' not found. Verify the ID using find() or structure().`);
+  }
+  const endNode = await findNodeById(endNodeId);
+  if (!endNode) {
+    return fail(`End node '${endNodeId}' not found. Verify the ID using find() or structure().`);
   }
 
-  // Validate all nodes exist, share the same parent, and are leaves
-  const nodes: NodeRow[] = [];
-  for (const nid of nodeIds) {
-    const node = await findNodeById(nid);
-    if (!node) {
-      return fail(`Node '${nid}' not found. Verify the ID using find() or structure().`);
-    }
-    nodes.push(node);
-  }
-
-  const parentId = nodes[0].parent_id;
-  if (!parentId) {
+  // Validate they share the same parent
+  if (!startNode.parent_id) {
     return fail('Cannot summarize root nodes. Nodes must have a parent.');
   }
-  for (const node of nodes) {
-    if (node.parent_id !== parentId) {
-      return fail(`All nodes must share the same parent. Node '${node.id}' has parent '${node.parent_id}' but expected '${parentId}'.`);
-    }
+  if (startNode.parent_id !== endNode.parent_id) {
+    return fail(`Start and end nodes must share the same parent. Start '${startNodeId}' has parent '${startNode.parent_id}' but end '${endNodeId}' has parent '${endNode.parent_id}'.`);
   }
 
-  // Check all are leaves
-  for (const node of nodes) {
+  const parentId = startNode.parent_id;
+
+  // Get all siblings and find the range
+  const siblings = await getSiblings(parentId);
+  const startOrder = Math.min(startNode.order_value, endNode.order_value);
+  const endOrder = Math.max(startNode.order_value, endNode.order_value);
+
+  // Collect all siblings in the inclusive range
+  const rangeNodes = siblings.filter(
+    s => s.order_value >= startOrder && s.order_value <= endOrder
+  );
+
+  if (rangeNodes.length === 0) {
+    return fail('No nodes found in the specified range.');
+  }
+
+  // Validate all nodes in range are leaves
+  for (const node of rangeNodes) {
     const children = await getChildren(node.id);
     if (children.length > 0) {
       return fail(`Node '${node.id}' has children and cannot be summarized. Only leaf nodes can be summarized.`);
     }
   }
 
-  // Order the summary at the midpoint between first and last nodes
-  const orders = nodes.map(n => n.order_value).sort((a, b) => a - b);
+  // Order the summary at the midpoint between first and last nodes in range
+  const orders = rangeNodes.map(n => n.order_value).sort((a, b) => a - b);
   const summaryOrder = (orders[0] + orders[orders.length - 1]) / 2;
 
   const summaryId = generateId();
@@ -235,14 +242,14 @@ export async function summarize(
 
   await insertNode(summaryNode);
 
-  // Reparent nodes to summary with optimistic locking
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
+  // Reparent all nodes in range to the summary node
+  for (let i = 0; i < rangeNodes.length; i++) {
+    const node = rangeNodes[i];
     const freshNode = await findNodeById(node.id);
     if (!freshNode || freshNode.hash !== node.hash) {
       // Rollback: set parent back to original for any already-reparented nodes
       for (let j = 0; j < i; j++) {
-        const rn = nodes[j];
+        const rn = rangeNodes[j];
         const newHash = computeHash(parentId, rn.context_type, rn.context_name, rn.context_value, rn.content, rn.order_value);
         await updateNode(rn.id, { parent_id: parentId, updated_at: now, hash: newHash });
       }

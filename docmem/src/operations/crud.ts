@@ -85,7 +85,6 @@ export async function deleteNode(id: string): Promise<ToolResponse> {
 export async function updateContent(
   id: string,
   content: string,
-  expectedHash: string,
 ): Promise<ToolResponse> {
   const node = await findNodeById(id);
   if (!node) {
@@ -93,9 +92,6 @@ export async function updateContent(
   }
   if (node.readonly === 1) {
     return fail(`Node '${id}' is readonly. Create a note node as a sibling instead using insert_after().`);
-  }
-  if (node.hash !== expectedHash) {
-    return fail(`Hash mismatch on node '${id}': expected '${expectedHash}' but current is '${node.hash}'. Re-read the node with find() to get the current hash before retrying.`);
   }
 
   const now = new Date().toISOString();
@@ -117,7 +113,6 @@ export async function updateContext(
   contextType: string,
   contextName: string,
   contextValue: string,
-  expectedHash: string,
 ): Promise<ToolResponse> {
   const ctxErr = validateContext(contextType, contextName, contextValue);
   if (ctxErr) return fail(ctxErr);
@@ -128,9 +123,6 @@ export async function updateContext(
   }
   if (node.readonly === 1) {
     return fail(`Node '${id}' is readonly. Create a note node as a sibling instead using insert_after().`);
-  }
-  if (node.hash !== expectedHash) {
-    return fail(`Hash mismatch on node '${id}': expected '${expectedHash}' but current is '${node.hash}'. Re-read the node with find() to get the current hash before retrying.`);
   }
 
   const now = new Date().toISOString();

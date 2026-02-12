@@ -3,102 +3,174 @@ import { createDocmem, listDocmems } from '../operations/docmem.js';
 import { append, find, deleteNode, updateContent, updateContext } from '../operations/crud.js';
 import { insertBefore, insertAfter } from '../operations/insert.js';
 import { serialize, expandToLength, structure, getRoot, queryNodes } from '../operations/query.js';
-import { copyNode, moveNode, summarize } from '../operations/tree.js';
-import { importToml, exportToml } from '../operations/toml.js';
+import { copyNode, moveNode, addSummary } from '../operations/tree.js';
 
-export async function handleTool(name: string, args: Record<string, unknown>): Promise<ToolResponse> {
+type Mode = 'append-child' | 'before' | 'after';
+
+function mapMode(mode: Mode): 'child' | 'before' | 'after' {
+  return mode === 'append-child' ? 'child' : mode;
+}
+
+function formatResult(toolName: string, action: string): string {
+  return `result> ${toolName} ${action}`;
+}
+
+function formatQuery(toolName: string, data: string): string {
+  return `result> ${toolName}:\n${data}`;
+}
+
+function formatError(error: string): string {
+  return `error> ${error}`;
+}
+
+export async function handleTool(name: string, args: Record<string, unknown>): Promise<string> {
+  try {
+    return await dispatch(name, args);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return formatError(message);
+  }
+}
+
+async function dispatch(name: string, args: Record<string, unknown>): Promise<string> {
   switch (name) {
-    case 'create_docmem':
-      return createDocmem(
-        args.root_id as string | undefined,
-        args.content as string | undefined,
-        args.context_type as string,
-        args.context_name as string,
-        args.context_value as string,
-      );
-    case 'list_docmems':
-      return listDocmems();
-    case 'append':
-      return append(
-        args.parent_id as string,
-        args.content as string,
-        args.context_type as string,
-        args.context_name as string,
-        args.context_value as string,
-        args.readonly as number | undefined,
-      );
-    case 'insert_before':
-      return insertBefore(
-        args.target_id as string,
-        args.content as string,
-        args.context_type as string,
-        args.context_name as string,
-        args.context_value as string,
-        args.readonly as number | undefined,
-      );
-    case 'insert_after':
-      return insertAfter(
-        args.target_id as string,
-        args.content as string,
-        args.context_type as string,
-        args.context_name as string,
-        args.context_value as string,
-        args.readonly as number | undefined,
-      );
-    case 'find':
-      return find(args.id as string);
-    case 'delete_node':
-      return deleteNode(args.id as string);
-    case 'update_content':
-      return updateContent(
+    case 'docmem_create': {
+      const res = await createDocmem(args.root_id as string | undefined);
+      if (!res.success) return formatError(res.error);
+      const node = res.result as any;
+      return formatResult('docmem_create', `created docmem: ${node.id}`);
+    }
+
+    case 'docmem_get_all_roots': {
+      const res = await listDocmems();
+      if (!res.success) return formatError(res.error);
+      return formatQuery('docmem_get_all_roots', res.result as string);
+    }
+
+    case 'docmem_create_node': {
+      const mode = args.mode as Mode;
+      const targetId = args.target_id as string;
+      const content = args.content as string;
+      const ctxType = args.context_type as string;
+      const ctxName = args.context_name as string;
+      const ctxValue = args.context_value as string;
+      const readonly = args.readonly as number | undefined;
+
+      let res: ToolResponse;
+      if (mode === 'append-child') {
+        res = await append(targetId, content, ctxType, ctxName, ctxValue, readonly);
+      } else if (mode === 'before') {
+        res = await insertBefore(targetId, content, ctxType, ctxName, ctxValue, readonly);
+      } else {
+        res = await insertAfter(targetId, content, ctxType, ctxName, ctxValue, readonly);
+      }
+
+      if (!res.success) return formatError(res.error);
+      const node = res.result as any;
+      return formatResult('docmem_create_node', `${mode}: ${node.id}`);
+    }
+
+    case 'docmem_find': {
+      const res = await find(args.id as string);
+      if (!res.success) return formatError(res.error);
+      return formatQuery('docmem_find', JSON.stringify(res.result, null, 2));
+    }
+
+    case 'docmem_delete': {
+      const res = await deleteNode(args.id as string);
+      if (!res.success) return formatError(res.error);
+      return formatResult('docmem_delete', `deleted node: ${args.id}`);
+    }
+
+    case 'docmem_update_content': {
+      const res = await updateContent(args.id as string, args.content as string);
+      if (!res.success) return formatError(res.error);
+      return formatResult('docmem_update_content', `updated node: ${args.id}`);
+    }
+
+    case 'docmem_update_context': {
+      const res = await updateContext(
         args.id as string,
-        args.content as string,
-        args.expected_hash as string,
-      );
-    case 'update_context':
-      return updateContext(
-        args.id as string,
         args.context_type as string,
         args.context_name as string,
         args.context_value as string,
-        args.expected_hash as string,
       );
-    case 'copy_node':
-      return copyNode(
+      if (!res.success) return formatError(res.error);
+      return formatResult('docmem_update_context', `updated node: ${args.id}`);
+    }
+
+    case 'docmem_copy_node': {
+      const mode = args.mode as Mode;
+      const res = await copyNode(
         args.source_id as string,
         args.target_id as string,
-        args.position as 'child' | 'before' | 'after',
+        mapMode(mode),
       );
-    case 'move_node':
-      return moveNode(
+      if (!res.success) return formatError(res.error);
+      const node = res.result as any;
+      return formatResult('docmem_copy_node', `${mode}: ${node.id}`);
+    }
+
+    case 'docmem_move_node': {
+      const mode = args.mode as Mode;
+      const res = await moveNode(
         args.source_id as string,
         args.target_id as string,
-        args.position as 'child' | 'before' | 'after',
-        args.expected_hash as string,
+        mapMode(mode),
       );
-    case 'summarize':
-      return summarize(
-        args.node_ids as string[],
-        args.content as string,
+      if (!res.success) return formatError(res.error);
+      return formatResult('docmem_move_node', String(mode));
+    }
+
+    case 'docmem_add_summary': {
+      const res = await addSummary(
         args.context_type as string,
         args.context_name as string,
         args.context_value as string,
+        args.content as string,
+        args.start_node_id as string,
+        args.end_node_id as string,
       );
-    case 'serialize':
-      return serialize(args.node_id as string);
-    case 'expand_to_length':
-      return expandToLength(args.node_id as string, args.token_budget as number);
-    case 'structure':
-      return structure(args.node_id as string);
-    case 'get_root':
-      return getRoot(args.node_id as string);
-    case 'query_nodes':
-      return queryNodes(args.sql as string);
-    case 'import_toml':
-      return importToml(args.toml as string);
-    case 'export_toml':
-      return exportToml(args.node_id as string);
+      if (!res.success) return formatError(res.error);
+      const node = res.result as any;
+      return formatResult('docmem_add_summary', `added summary node: ${node.id}`);
+    }
+
+    case 'docmem_serialize': {
+      const res = await serialize(args.node_id as string);
+      if (!res.success) return formatError(res.error);
+      return formatQuery('docmem_serialize', res.result as string);
+    }
+
+    case 'docmem_expand_to_length': {
+      const tokenBudget = parseInt(args.max_tokens as string, 10);
+      if (isNaN(tokenBudget)) {
+        return formatError('max_tokens must be a valid number string. Example: "1000".');
+      }
+      const res = await expandToLength(args.node_id as string, tokenBudget);
+      if (!res.success) return formatError(res.error);
+      return formatQuery('docmem_expand_to_length', JSON.stringify(res.result, null, 2));
+    }
+
+    case 'docmem_structure': {
+      const res = await structure(args.node_id as string);
+      if (!res.success) return formatError(res.error);
+      return formatQuery('docmem_structure', res.result as string);
+    }
+
+    case 'docmem_get_root': {
+      const res = await getRoot(args.node_id as string);
+      if (!res.success) return formatError(res.error);
+      return formatQuery('docmem_get_root', res.result as string);
+    }
+
+    case 'docmem_query_nodes': {
+      const res = await queryNodes(args.sql as string);
+      if (!res.success) return formatError(res.error);
+      return formatQuery('docmem_query_nodes', JSON.stringify(res.result, null, 2));
+    }
+
     default:
-      return { success: false, result: '', error: `Unknown tool: '${name}'. Use list_tools to see available tools.` };
+      return formatError(`Unknown tool: '${name}'. Available tools have the 'docmem_' prefix.`);
   }
 }
