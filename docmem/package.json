@@ -1,0 +1,41 @@
+{
+  "name": "yuwakisa-docmem-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for hierarchical document memory with tree-structured nodes",
+  "main": "build/index.js",
+  "type": "module",
+  "bin": {
+    "docmem-mcp": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node build/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "mcp",
+    "docmem",
+    "memory",
+    "tree",
+    "document"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "duckdb": "^1.3.0",
+    "smol-toml": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
