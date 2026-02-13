@@ -9,12 +9,7 @@ export const tools = [
       },
     },
   },
-  {
-    name: 'docmem_get_all_roots',
-    description: 'List all docmem root nodes with their metadata.',
-    inputSchema: { type: 'object' as const, properties: {} },
-  },
-  {
+{
     name: 'docmem_create_node',
     description: 'Create a new node relative to a target. Mode "append-child" adds as last child; "before"/"after" insert as siblings.',
     inputSchema: {
@@ -144,18 +139,7 @@ export const tools = [
       required: ['node_id', 'max_tokens'],
     },
   },
-  {
-    name: 'docmem_structure',
-    description: 'Return the indented tree structure from a node without content.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        node_id: { type: 'string', description: 'ID of the starting node.' },
-      },
-      required: ['node_id'],
-    },
-  },
-  {
+{
     name: 'docmem_get_root',
     description: 'Walk up the parent chain to find the root node. Returns the indented ancestor path from root down to the given node.',
     inputSchema: {

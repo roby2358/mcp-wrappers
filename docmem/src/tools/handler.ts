@@ -1,8 +1,8 @@
 import { ToolResponse } from '../domain/types.js';
-import { createDocmem, listDocmems } from '../operations/docmem.js';
+import { createDocmem } from '../operations/docmem.js';
 import { append, find, deleteNode, updateContent, updateContext } from '../operations/crud.js';
 import { insertBefore, insertAfter } from '../operations/insert.js';
-import { serialize, expandToLength, structure, getRoot, queryNodes } from '../operations/query.js';
+import { serialize, expandToLength, getRoot, queryNodes } from '../operations/query.js';
 import { copyNode, moveNode, addSummary } from '../operations/tree.js';
 
 type Mode = 'append-child' | 'before' | 'after';
@@ -39,12 +39,6 @@ async function dispatch(name: string, args: Record<string, unknown>): Promise<st
       if (!res.success) return formatError(res.error);
       const node = res.result as any;
       return formatResult('docmem_create', `created docmem: ${node.id}`);
-    }
-
-    case 'docmem_get_all_roots': {
-      const res = await listDocmems();
-      if (!res.success) return formatError(res.error);
-      return formatQuery('docmem_get_all_roots', res.result as string);
     }
 
     case 'docmem_create_node': {
@@ -150,12 +144,6 @@ async function dispatch(name: string, args: Record<string, unknown>): Promise<st
       const res = await expandToLength(args.node_id as string, tokenBudget);
       if (!res.success) return formatError(res.error);
       return formatQuery('docmem_expand_to_length', JSON.stringify(res.result, null, 2));
-    }
-
-    case 'docmem_structure': {
-      const res = await structure(args.node_id as string);
-      if (!res.success) return formatError(res.error);
-      return formatQuery('docmem_structure', res.result as string);
     }
 
     case 'docmem_get_root': {
