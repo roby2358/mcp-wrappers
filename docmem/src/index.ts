@@ -14,8 +14,9 @@ import { initSchema } from './db/schema.js';
 import { tools } from './tools/registry.js';
 import { handleTool } from './tools/handler.js';
 import { startHttpServer } from './http/server.js';
-import { getRootNodes } from './db/queries.js';
+import { getRootNodes, findNodeById } from './db/queries.js';
 import { structure } from './operations/query.js';
+import { listDocmems } from './operations/docmem.js';
 
 const server = new Server(
   { name: 'docmem', version: '0.1.0' },
@@ -34,27 +35,58 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
   const roots = await getRootNodes();
   return {
-    resources: roots.map((r) => ({
-      uri: `docmem://${r.id}/structure`,
-      name: r.id,
-      mimeType: 'text/plain',
-    })),
+    resources: [
+      {
+        uri: 'docmem:///roots_all',
+        name: 'all nodes',
+        mimeType: 'text/plain',
+      },
+      ...roots.flatMap((r) => [
+        {
+          uri: `docmem:///structure/${r.id}`,
+          name: `${r.id} structure`,
+          mimeType: 'text/plain',
+        },
+        {
+          uri: `docmem:///node/${r.id}`,
+          name: `${r.id} node`,
+          mimeType: 'application/json',
+        },
+      ]),
+    ],
   };
 });
 
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const uri = request.params.uri;
-  const match = uri.match(/^docmem:\/\/([^/]+)\/structure$/);
+
+  if (uri === 'docmem:///roots_all') {
+    const res = await listDocmems();
+    return {
+      contents: [{ uri, mimeType: 'text/plain', text: (res.result as string) ?? '' }],
+    };
+  }
+
+  const match = uri.match(/^docmem:\/\/\/(structure|node)\/(.+)$/);
   if (!match) {
-    throw new Error(`Invalid resource URI: '${uri}'. Expected format: docmem://{rootId}/structure`);
+    throw new Error(`Invalid resource URI: '${uri}'. Expected: docmem:///structure/{id}, docmem:///node/{id}, or docmem:///roots_all`);
   }
-  const rootId = match[1];
-  const res = await structure(rootId);
-  if (!res.success) {
-    throw new Error(res.error);
+
+  const [, type, nodeId] = match;
+
+  if (type === 'structure') {
+    const res = await structure(nodeId);
+    if (!res.success) throw new Error(res.error);
+    return {
+      contents: [{ uri, mimeType: 'text/plain', text: res.result as string }],
+    };
   }
+
+  // type === 'node'
+  const node = await findNodeById(nodeId);
+  if (!node) throw new Error(`Node '${nodeId}' not found.`);
   return {
-    contents: [{ uri, mimeType: 'text/plain', text: res.result as string }],
+    contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(node, null, 2) }],
   };
 });
 

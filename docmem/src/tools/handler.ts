@@ -1,6 +1,6 @@
 import { ToolResponse } from '../domain/types.js';
 import { createDocmem } from '../operations/docmem.js';
-import { append, find, deleteNode, updateContent, updateContext } from '../operations/crud.js';
+import { append, deleteNode, updateContent, updateContext } from '../operations/crud.js';
 import { insertBefore, insertAfter } from '../operations/insert.js';
 import { serialize, expandToLength, getRoot, queryNodes } from '../operations/query.js';
 import { copyNode, moveNode, addSummary } from '../operations/tree.js';
@@ -62,12 +62,6 @@ async function dispatch(name: string, args: Record<string, unknown>): Promise<st
       if (!res.success) return formatError(res.error);
       const node = res.result as any;
       return formatResult('docmem_create_node', `${mode}: ${node.id}`);
-    }
-
-    case 'docmem_find': {
-      const res = await find(args.id as string);
-      if (!res.success) return formatError(res.error);
-      return formatQuery('docmem_find', JSON.stringify(res.result, null, 2));
     }
 
     case 'docmem_delete': {

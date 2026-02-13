@@ -27,17 +27,6 @@ export const tools = [
     },
   },
   {
-    name: 'docmem_find',
-    description: 'Retrieve a node by its ID. Returns the full node or an error if not found.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        id: { type: 'string', description: 'The node ID to look up.' },
-      },
-      required: ['id'],
-    },
-  },
-  {
     name: 'docmem_delete',
     description: 'Delete a node and all its descendants. Returns the count of deleted nodes.',
     inputSchema: {
