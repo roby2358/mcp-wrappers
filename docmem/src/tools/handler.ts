@@ -143,7 +143,7 @@ async function dispatch(name: string, args: Record<string, unknown>): Promise<st
       }
       const res = await expandToLength(args.node_id as string, tokenBudget);
       if (!res.success) return formatError(res.error);
-      return formatQuery('docmem_expand_to_length', JSON.stringify(res.result, null, 2));
+      return formatQuery('docmem_expand_to_length', res.result as string);
     }
 
     case 'docmem_get_root': {

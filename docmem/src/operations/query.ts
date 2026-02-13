@@ -67,12 +67,14 @@ export async function expandToLength(nodeId: string, tokenBudget: number): Promi
     includedSet.add(node.id);
   }
 
-  // Phase 3: Preorder DFS render
-  const result: NodeRow[] = [];
+  // Phase 3: Preorder DFS render as text
+  const blocks: string[] = [];
 
   async function dfs(node: NodeRow): Promise<void> {
     if (!includedSet.has(node.id)) return;
-    result.push(node);
+    const meta = formatNodeMeta(node);
+    const content = node.content.trim();
+    blocks.push(content.length > 0 ? `${meta}\n${content}` : meta);
     const children = await getChildren(node.id);
     for (const child of children) {
       await dfs(child);
@@ -80,7 +82,7 @@ export async function expandToLength(nodeId: string, tokenBudget: number): Promi
   }
 
   await dfs(root);
-  return ok(result);
+  return ok(blocks.join('\n\n'));
 }
 
 export async function structure(nodeId: string): Promise<ToolResponse> {
@@ -94,6 +96,33 @@ export async function structure(nodeId: string): Promise<ToolResponse> {
   async function dfs(node: NodeRow, depth: number): Promise<void> {
     const indent = '  '.repeat(depth);
     lines.push(`${indent}- ${formatNodeMeta(node)}`);
+    const children = await getChildren(node.id);
+    for (const child of children) {
+      await dfs(child, depth + 1);
+    }
+  }
+
+  await dfs(root, 0);
+  return ok(lines.join('\n'));
+}
+
+export async function nested(nodeId: string): Promise<ToolResponse> {
+  const root = await findNodeById(nodeId);
+  if (!root) {
+    return fail(`Node '${nodeId}' not found. Verify the ID using find() or list_docmems().`);
+  }
+
+  const lines: string[] = [];
+
+  async function dfs(node: NodeRow, depth: number): Promise<void> {
+    const indent = '  '.repeat(depth);
+    const contentIndent = '  '.repeat(depth + 1);
+    lines.push(`${indent}- ${formatNodeMeta(node)}`);
+    if (node.content.trim().length > 0) {
+      for (const line of node.content.split('\n')) {
+        lines.push(`${contentIndent}${line}`);
+      }
+    }
     const children = await getChildren(node.id);
     for (const child of children) {
       await dfs(child, depth + 1);

@@ -41,7 +41,11 @@ describe('query operations', () => {
       await append('root0001', 'Also short', 'msg', 'u', 'a');
       const res = await expandToLength('root0001', 100);
       expect(res.success).toBe(true);
-      expect((res.result as any[]).length).toBe(3); // root + 2 children
+      const text = res.result as string;
+      expect(text).toContain('Short');
+      expect(text).toContain('Also short');
+      // 3 blocks: root + 2 children, separated by double newlines
+      expect(text.split('\n\n').length).toBe(3);
     });
 
     it('truncates when budget is exceeded', async () => {
@@ -51,7 +55,10 @@ describe('query operations', () => {
       // Budget = 5, root is 0 tokens (empty text), first child is 10 tokens -> only root fits
       const res = await expandToLength('root0001', 5);
       expect(res.success).toBe(true);
-      expect((res.result as any[]).length).toBe(1); // just root
+      const text = res.result as string;
+      // Only root (metadata only, no content)
+      expect(text.split('\n\n').length).toBe(1);
+      expect(text).toContain('root0001');
     });
   });
 

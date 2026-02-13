@@ -77,7 +77,7 @@ function renderPersistPane() {
   });
 }
 
-const VIEW_MODES = ['expand', 'structure', 'serialize'];
+const VIEW_MODES = ['expand', 'structure', 'nested', 'serialize'];
 
 function createLink(text, isActive, onClick) {
   const a = document.createElement('a');
@@ -153,12 +153,7 @@ async function saveToml() {
 }
 
 async function saveExpanded() {
-  await exportData(
-    '/api/export-expanded',
-    state.selectedRoot + '-expanded.json',
-    'application/json',
-    (d) => JSON.stringify(d, null, 2)
-  );
+  await exportData('/api/export-expanded', state.selectedRoot + '-expanded.txt', 'text/plain');
 }
 
 async function saveSerialized() {

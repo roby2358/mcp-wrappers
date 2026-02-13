@@ -159,26 +159,65 @@ Persist view replaces the option bar and content pane:
 
 ## Example .tomnl docmem
 [three-stooges]
-parent-node-id=
 context="root:purpose:document"
 content=""
 
 [pmpwzyny]
-parent-node-id=three-stooges
+parent-node-id="three-stooges"
 context="stooge:name:moe"
 content="Moe Howard - The leader of the group"
 
 [x6qgccsn]
-parent-node-id=pmpwzyny
+parent-node-id="pmpwzyny"
 context="fun-fact:fact:1"
 content="Moe was born Moses Harry Horwitz and had a real slap technique that was legendary in comedy"
 
 [7jr8q2a8]
-parent-node-id=pmpwzyny
+parent-node-id="pmpwzyny"
 context="fun-fact:fact:2"
 content="Moe appeared in over 190 films with the Three Stooges"
 
 [u9jrzmht]
-parent-node-id=pmpwzyny
+parent-node-id="pmpwzyny"
 context="fun-fact:fact:3"
 content="Moe was the only stooge to appear in all 190 shorts of the series"
+
+[z8kfg4s3]
+parent-node-id="three-stooges"
+context="stooge:name:larry"
+content="Larry Fine - The curly-haired one"
+
+[435ueswz]
+parent-node-id="z8kfg4s3"
+context="fun-fact:fact:1"
+content="Larry Fine was born Louis Feinberg and was an accomplished violinist"
+
+[8zuxwshn]
+parent-node-id="z8kfg4s3"
+context="fun-fact:fact:2"
+content="Larry's signature curly hair was natural, not a wig or perm"
+
+[6uhf9xf5]
+parent-node-id="z8kfg4s3"
+context="fun-fact:fact:3"
+content="Larry had a high-pitched voice that became iconic for his comedic timing"
+
+[9xs9gemx]
+parent-node-id="three-stooges"
+context="stooge:name:curly"
+content="Curly Howard - The bald one with the high voice"
+
+[x2yvmu8j]
+parent-node-id="9xs9gemx"
+context="fun-fact:fact:1"
+content="Curly was born Jerome Lester Horwitz and was Moe's younger brother"
+
+[f8x3htcr]
+parent-node-id="9xs9gemx"
+context="fun-fact:fact:2"
+content="Curly's famous 'Nyuk nyuk' laugh and eye-poke became his trademark moves"
+
+[qjdhh3kr]
+parent-node-id="9xs9gemx"
+context="fun-fact:fact:3"
+content="Curly shaved his head bald for the act, making him instantly recognizable"

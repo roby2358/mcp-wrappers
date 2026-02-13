@@ -10,7 +10,9 @@
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
       "Bash(npm test:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(node -e:*)",
+      "Bash(npx tsx:*)"
     ]
   }
 }

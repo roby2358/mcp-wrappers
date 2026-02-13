@@ -44,8 +44,9 @@ export async function importToml(toml: string): Promise<ToolResponse> {
     }
     const section = value as Record<string, unknown>;
 
-    if (typeof section['parent-node-id'] !== 'string') {
-      return fail(`Section '${id}' is missing 'parent-node-id' field (use empty string for root nodes).`);
+    const rawParent = section['parent-node-id'];
+    if (rawParent !== undefined && typeof rawParent !== 'string') {
+      return fail(`Section '${id}' has invalid 'parent-node-id' field (must be a string or omitted for root nodes).`);
     }
     if (typeof section.context !== 'string') {
       return fail(`Section '${id}' is missing 'context' field (format: "type:name:value").`);
@@ -59,7 +60,7 @@ export async function importToml(toml: string): Promise<ToolResponse> {
       return fail(`Section '${id}' has invalid context format '${section.context}'. Expected "type:name:value" with exactly two colons.`);
     }
 
-    const parentId = section['parent-node-id'] as string;
+    const parentId = (rawParent as string | undefined) ?? '';
     if (idSet.has(id)) {
       return fail(`Duplicate section ID '${id}'. Each node must have a unique ID.`);
     }

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listDocmems } from '../operations/docmem.js';
-import { serialize, expandToLength, structure } from '../operations/query.js';
+import { serialize, expandToLength, structure, nested } from '../operations/query.js';
 import { importToml, exportToml } from '../operations/toml.js';
 import { deleteNode } from '../operations/crud.js';
 
@@ -91,9 +91,10 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       let result;
       if (mode === 'serialize') result = await serialize(rootId);
       else if (mode === 'structure') result = await structure(rootId);
+      else if (mode === 'nested') result = await nested(rootId);
       else if (mode === 'expand') result = await expandToLength(rootId, 100000);
       else {
-        json(res, 400, { success: false, error: `Unknown mode '${mode}'. Use serialize, structure, or expand.` });
+        json(res, 400, { success: false, error: `Unknown mode '${mode}'. Use serialize, structure, nested, or expand.` });
         return;
       }
       if (result.success) {
@@ -122,6 +123,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       json(res, status, body);
       return;
     }
+
 
     if (route === '/api/export-serialized' && req.method === 'POST') {
       const { status, body } = await handlePostOperation(req, (b) => serialize(b.rootId as string));
