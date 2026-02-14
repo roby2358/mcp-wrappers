@@ -150,4 +150,16 @@ export const tools = [
       required: ['sql'],
     },
   },
+  {
+    name: 'docmem_view',
+    description: 'Add or remove a docmem node view from the CLAUDE.md system prompt. Add expands the subtree into CLAUDE.md; remove takes it out.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        action: { type: 'string', enum: ['add', 'remove'], description: 'Whether to add or remove the node from CLAUDE.md.' },
+        node_id: { type: 'string', description: 'ID of the node to expand from (any node, not just roots).' },
+      },
+      required: ['action', 'node_id'],
+    },
+  },
 ];

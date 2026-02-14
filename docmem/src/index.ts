@@ -17,6 +17,7 @@ import { startHttpServer } from './http/server.js';
 import { getRootNodes, findNodeById } from './db/queries.js';
 import { structure } from './operations/query.js';
 import { listDocmems } from './operations/docmem.js';
+import { cleanupOnStartup } from './operations/claudemd.js';
 
 const server = new Server(
   { name: 'docmem', version: '0.1.0' },
@@ -92,6 +93,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
 async function main() {
   await initSchema();
+  await cleanupOnStartup();
   startHttpServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);

@@ -4,6 +4,7 @@ import { append, deleteNode, updateContent, updateContext } from '../operations/
 import { insertBefore, insertAfter } from '../operations/insert.js';
 import { serialize, expandToLength, getRoot, queryNodes } from '../operations/query.js';
 import { copyNode, moveNode, addSummary } from '../operations/tree.js';
+import { viewAdd, viewRemove } from '../operations/claudemd.js';
 
 type Mode = 'append-child' | 'before' | 'after';
 
@@ -150,6 +151,14 @@ async function dispatch(name: string, args: Record<string, unknown>): Promise<st
       const res = await queryNodes(args.sql as string);
       if (!res.success) return formatError(res.error);
       return formatQuery('docmem_query_nodes', JSON.stringify(res.result, null, 2));
+    }
+
+    case 'docmem_view': {
+      const action = args.action as string;
+      const nodeId = args.node_id as string;
+      const res = action === 'add' ? await viewAdd(nodeId) : await viewRemove(nodeId);
+      if (!res.success) return formatError(res.error);
+      return formatResult('docmem_view', res.result as string);
     }
 
     default:
