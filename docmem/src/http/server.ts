@@ -6,6 +6,7 @@ import { listDocmems } from '../operations/docmem.js';
 import { serialize, expandToLength, structure, nested } from '../operations/query.js';
 import { importToml, exportToml } from '../operations/toml.js';
 import { deleteNode } from '../operations/crud.js';
+import { viewAdd, viewRemove, getActiveList } from '../operations/claudemd.js';
 
 const PORT = 8182;
 
@@ -81,6 +82,11 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       return;
     }
 
+    if (route === '/api/view-active' && req.method === 'GET') {
+      json(res, 200, { success: true, data: getActiveList() });
+      return;
+    }
+
     if (route === '/api/view' && req.method === 'GET') {
       const rootId = parsed.searchParams.get('root');
       const mode = parsed.searchParams.get('mode');
@@ -127,6 +133,18 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
 
     if (route === '/api/export-serialized' && req.method === 'POST') {
       const { status, body } = await handlePostOperation(req, (b) => serialize(b.rootId as string));
+      json(res, status, body);
+      return;
+    }
+
+    if (route === '/api/view-add' && req.method === 'POST') {
+      const { status, body } = await handlePostOperation(req, (b) => viewAdd(b.rootId as string));
+      json(res, status, body);
+      return;
+    }
+
+    if (route === '/api/view-remove' && req.method === 'POST') {
+      const { status, body } = await handlePostOperation(req, (b) => viewRemove(b.rootId as string));
       json(res, status, body);
       return;
     }

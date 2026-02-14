@@ -40,6 +40,10 @@ async function buildSection(): Promise<string> {
   return parts.join('\n');
 }
 
+export function getActiveList(): string[] {
+  return activeList;
+}
+
 export async function cleanupOnStartup(): Promise<void> {
   const base = await readBase();
   if (base === null) return;

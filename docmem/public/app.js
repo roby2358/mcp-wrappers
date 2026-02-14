@@ -3,6 +3,7 @@ const state = {
   viewMode: 'structure',
   selectedRoot: null,
   roots: [],
+  activeViews: [],
 };
 
 const listPane = document.getElementById('list-pane');
@@ -21,7 +22,7 @@ function renderList() {
   for (const r of state.roots) {
     const div = document.createElement('div');
     div.className = 'item' + (r === state.selectedRoot ? ' selected' : '');
-    div.textContent = r;
+    div.textContent = (state.activeViews.includes(r) ? '* ' : '') + r;
     div.onclick = () => {
       state.selectedRoot = r;
       renderList();
@@ -44,6 +45,13 @@ async function fetchRoots() {
     }
   }
   renderList();
+}
+
+async function fetchActiveViews() {
+  const data = await api('/api/view-active');
+  if (data.success) {
+    state.activeViews = data.data;
+  }
 }
 
 async function renderContent() {
@@ -70,6 +78,8 @@ function renderPersistPane() {
     { label: 'save toml', action: saveToml },
     { label: 'save expanded', action: saveExpanded },
     { label: 'save serialized', action: saveSerialized },
+    { label: 'add to system prompt', action: addToSystemPrompt },
+    { label: 'remove from system prompt', action: removeFromSystemPrompt },
     { label: 'delete', action: deleteDocmem },
   ];
   actions.forEach(({ label, action }) => {
@@ -100,7 +110,7 @@ function renderOptionBar() {
       optionBar.appendChild(link);
     });
   }
-  optionBar.prepend(createLink('refresh', false, () => fetchRoots().then(() => renderContent())));
+  optionBar.prepend(createLink('refresh', false, async () => { await fetchRoots(); await fetchActiveViews(); renderList(); renderContent(); }));
 }
 
 function triggerDownload(content, filename, mimeType) {
@@ -160,6 +170,30 @@ async function saveSerialized() {
   await exportData('/api/export-serialized', state.selectedRoot + '-serialized.txt', 'text/plain');
 }
 
+async function addToSystemPrompt() {
+  if (!state.selectedRoot) return;
+  const data = await api('/api/view-add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rootId: state.selectedRoot }),
+  });
+  await fetchActiveViews();
+  renderList();
+  contentPane.textContent = data.success ? data.data : 'Error: ' + data.error;
+}
+
+async function removeFromSystemPrompt() {
+  if (!state.selectedRoot) return;
+  const data = await api('/api/view-remove', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rootId: state.selectedRoot }),
+  });
+  await fetchActiveViews();
+  renderList();
+  contentPane.textContent = data.success ? data.data : 'Error: ' + data.error;
+}
+
 async function deleteDocmem() {
   if (!state.selectedRoot) return;
   if (!confirm(`Delete docmem '${state.selectedRoot}' and all its children?`)) return;
@@ -189,7 +223,8 @@ navBar.addEventListener('click', (e) => {
 });
 
 // Init
-fetchRoots().then(() => {
+fetchRoots().then(() => fetchActiveViews()).then(() => {
+  renderList();
   renderOptionBar();
   renderContent();
 });
