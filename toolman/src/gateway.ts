@@ -373,7 +373,26 @@ export class Gateway {
       this.notifyResourcesChanged();
     }
 
-    return { success: true, result: "OK", error: "" };
+    // Build result with full descriptions of newly activated tools
+    const activated: Array<{
+      name: string;
+      description: string;
+      inputSchema: Record<string, unknown>;
+    }> = [];
+    for (const n of toolsOn) {
+      const t = this.tools.get(n)!;
+      activated.push({
+        name: t.namespacedName,
+        description: t.description,
+        inputSchema: t.inputSchema,
+      });
+    }
+
+    const result = activated.length
+      ? JSON.stringify({ activated })
+      : "OK";
+
+    return { success: true, result, error: "" };
   }
 
   private notifyResourcesChanged(): void {
