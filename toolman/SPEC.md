@@ -46,7 +46,7 @@ The configuration MUST define:
 - Items not mentioned in any list MUST retain their current state.
 - If all four lists are empty, `toolman_activate` MUST return an error guiding the model to specify at least one name.
 - Toolman MUST validate all names against the cache before applying changes. If any name is unknown, it MUST return an error listing the bad names and suggesting corrections. No partial application — all names MUST be valid or no changes are applied.
-- On success, `toolman_activate` MUST return a short confirmation message.
+- On success, if tools were activated, `toolman_activate` MUST return the full description and input schema of each newly activated tool. This compensates for clients that do not re-fetch tool descriptions after activation, ensuring the model has the complete signature in conversation context. If no tools were activated (only deactivations or resource changes), it MUST return a short confirmation message.
 
 ### Dynamic Tool Description
 
