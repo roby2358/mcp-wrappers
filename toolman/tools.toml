@@ -1,4 +1,4 @@
-active_toolsets = ["hello*", "bj*"]
+active_toolsets = []
 
 [[servers]]
 namespace = "hello"

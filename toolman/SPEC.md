@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Toolman is an MCP server that acts as a gateway to multiple upstream MCP servers. It aggregates tools, resources, and prompts from upstream servers and presents them to the downstream model through a single MCP connection. The model can dynamically activate and deactivate tools and resources, keeping the visible surface small and relevant to the current task.
+Toolman is an MCP server that acts as a gateway to multiple upstream MCP servers. It aggregates tools, resources, and prompts from upstream servers and presents them to the downstream model through a single MCP connection. The model can dynamically activate and deactivate tools and resources. Active tools are presented with full descriptions and schemas; inactive tools appear as lightweight stubs, keeping the context footprint small while remaining callable.
 
 ## Configuration
 
@@ -13,10 +13,10 @@ Toolman MUST read its configuration from a TOML file named `tools.toml` located 
 The configuration MUST define:
 
 - A list of upstream servers, each with:
-  - **namespace**: A prefix string prepended (with `_` separator) to all tool, resource, and prompt names from that server. MAY be empty, in which case upstream names are used as-is.
-    - Tool example: namespace `pjpd` + tool `list_projects` produces `pjpd_list_projects`
-    - Resource example: namespace `pjpd` + resource `projects://list` produces `pjpd_projects://list`
-    - Prompt example: namespace `pjpd` + prompt `summarize` produces `pjpd_summarize`
+  - **namespace**: A prefix string used to namespace all tool, resource, and prompt names from that server. All proxied names follow the format `toolman_<namespace>_<name>`. If namespace is empty, names are prefixed with `toolman_` only.
+    - Tool example: namespace `pjpd` + tool `list_projects` produces `toolman_pjpd_list_projects`
+    - Resource example: namespace `pjpd` + resource `projects://list` produces `toolman_pjpd_projects://list`
+    - Prompt example: namespace `pjpd` + prompt `summarize` produces `toolman_pjpd_summarize`
   - **command**: A single shell string to spawn the server subprocess. Stdio transport only in v1.
 - An **active_toolsets** list of wildcard patterns matched against the concatenation of namespace and name. This determines which tools and resources are active at startup.
   - Tools and resources MUST be matched independently against these patterns.
@@ -37,7 +37,7 @@ The configuration MUST define:
 
 ### Activation Tool
 
-- Toolman MUST register exactly one tool with the MCP framework: `toolman_activate`.
+- Toolman MUST register `toolman_activate` as its own built-in tool.
 - `toolman_activate` MUST accept four required parameters:
   - `tools_on`: list of strings — tool names to activate
   - `tools_off`: list of strings — tool names to deactivate
@@ -47,8 +47,6 @@ The configuration MUST define:
 - If all four lists are empty, `toolman_activate` MUST return an error guiding the model to specify at least one name.
 - Toolman MUST validate all names against the cache before applying changes. If any name is unknown, it MUST return an error listing the bad names and suggesting corrections. No partial application — all names MUST be valid or no changes are applied.
 - On success, `toolman_activate` MUST return a short confirmation message.
-- After changing tool state, toolman MUST send a `notifications/tools/list_changed` notification to the downstream client so it re-fetches the tool list.
-- After changing resource state, toolman MUST send a `notifications/resources/list_changed` notification to the downstream client so it re-fetches the resource list.
 
 ### Dynamic Tool Description
 
@@ -59,11 +57,15 @@ The configuration MUST define:
 
 ### Tool Proxying
 
-- The tool list MUST return `toolman_activate` plus full descriptions (including schemas) of all active tools with namespaced names.
-- When the model invokes an active tool, toolman MUST strip the namespace prefix and route the request to the upstream server, then relay the response directly.
+- The tool list MUST always contain all upstream tools, regardless of activation state. All proxied tools use the `toolman_<namespace>_<name>` naming convention.
+  - **Active tools** MUST be listed with their full upstream description and input schema.
+  - **Inactive tools** MUST be listed with a short stub description (e.g., "Inactive. Use toolman_activate with tools_on=[...] to enable.") and an empty input schema. This keeps inactive tools callable by the client while minimizing context usage.
+- When the model invokes a `toolman_*` tool (other than `toolman_activate`), toolman MUST strip the `toolman_<namespace>_` prefix and route the request to the corresponding upstream server, then relay the response directly.
 - Invoking an inactive tool MUST return an error with guidance to activate it first.
 - Invoking an unknown tool MUST return an error listing similar available names.
 - Buffered I/O is acceptable for v1.
+
+Note: The MCP spec defines `notifications/tools/list_changed` for dynamic tool list updates, but not all clients honor it. The static-list-with-stubs approach ensures compatibility with clients that only fetch the tool list once at session start.
 
 ### Resource Proxying
 
@@ -82,7 +84,7 @@ The configuration MUST define:
 ## Server Lifecycle
 
 - All upstream server connections and caches MUST be maintained for the lifetime of toolman, regardless of activation state.
-- If an upstream server process exits unexpectedly, toolman MUST remove its tools, resources, and prompts from both the active list and the cache. They MUST no longer appear in the activation catalog. The event SHOULD be logged. Toolman MUST send `notifications/tools/list_changed` and `notifications/resources/list_changed` notifications after removing a crashed server.
+- If an upstream server process exits unexpectedly, toolman MUST remove its tools, resources, and prompts from both the active list and the cache. They MUST no longer appear in the activation catalog or the tool list. The event SHOULD be logged. Toolman MUST send `notifications/resources/list_changed` after removing a crashed server's resources.
 - Toolman MUST NOT attempt to restart crashed servers in v1.
 - On shutdown, toolman MUST close all client sessions, terminate all spawned server subprocesses, then exit.
 
@@ -105,8 +107,8 @@ The configuration MUST define:
 
 ## Implementation Notes
 
-- Namespace prefix stripping: when routing to an upstream server, the namespace and separator are removed from the beginning of the name to recover the original upstream name.
-- Wildcard matching for active_toolsets uses glob-style patterns (e.g. `pjpd*`) against the full concatenated string of namespace + name.
+- Namespace prefix stripping: when routing to an upstream server, the `toolman_<namespace>_` prefix is removed from the beginning of the name to recover the original upstream name.
+- Wildcard matching for active_toolsets uses glob-style patterns (e.g. `toolman_pjpd*`) against the full `toolman_<namespace>_<name>` string.
 - The MCP Python SDK provides interchangeable client transports — stdio, SSE, and streamable HTTP all share the same session interface. This will simplify adding network transports in the future.
 - The activation catalog embedded in the tool description serves as a compressed index. The model always sees what is available without needing an extra round-trip to a resource or list call.
 

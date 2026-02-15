@@ -82,11 +82,13 @@ export class Gateway {
   }
 
   private applyNamespace(namespace: string, name: string): string {
-    return namespace ? `${namespace}_${name}` : name;
+    return namespace ? `toolman_${namespace}_${name}` : `toolman_${name}`;
   }
 
   private stripNamespace(namespace: string, name: string): string {
-    return namespace ? name.slice(namespace.length + 1) : name;
+    // Strip "toolman_<namespace>_" prefix
+    const prefix = namespace ? `toolman_${namespace}_` : "toolman_";
+    return name.startsWith(prefix) ? name.slice(prefix.length) : name;
   }
 
   private matchesActive(name: string): boolean {
@@ -100,13 +102,13 @@ export class Gateway {
   // --- Lifecycle ---
 
   async startup(): Promise<void> {
-    for (const sc of this.config.servers) {
-      try {
-        await this.connectServer(sc);
-      } catch (e) {
-        console.error(`Failed to connect to '${sc.namespace}':`, e);
-      }
-    }
+    await Promise.all(
+      this.config.servers.map((sc) =>
+        this.connectServer(sc).catch((e) =>
+          console.error(`Failed to connect to '${sc.namespace}':`, e),
+        ),
+      ),
+    );
   }
 
   private async connectServer(sc: ServerConfig): Promise<void> {
@@ -254,6 +256,10 @@ export class Gateway {
     return [...this.tools.values()].filter((t) => t.active);
   }
 
+  getInactiveTools(): CachedTool[] {
+    return [...this.tools.values()].filter((t) => !t.active);
+  }
+
   buildCatalog(): string {
     const lines = [
       "Activate or deactivate tools and resources. " +
@@ -363,20 +369,11 @@ export class Gateway {
       if (rt) rt.active = false;
     }
 
-    if (toolsOn.length || toolsOff.length) {
-      this.notifyToolsChanged();
-    }
     if (resourcesOn.length || resourcesOff.length) {
       this.notifyResourcesChanged();
     }
 
     return { success: true, result: "OK", error: "" };
-  }
-
-  private notifyToolsChanged(): void {
-    this.server?.notification({
-      method: "notifications/tools/list_changed",
-    });
   }
 
   private notifyResourcesChanged(): void {
@@ -550,7 +547,6 @@ export class Gateway {
       if (up.namespace === namespace) up.alive = false;
     }
     console.error(`Removed server '${namespace}' after crash`);
-    this.notifyToolsChanged();
     this.notifyResourcesChanged();
   }
 }

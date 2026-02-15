@@ -63,6 +63,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: t.description,
       inputSchema: t.inputSchema,
     })),
+    ...gateway.getInactiveTools().map((t) => ({
+      name: t.namespacedName,
+      description: `Inactive. Use toolman_activate with tools_on=["${t.namespacedName}"] to enable.`,
+      inputSchema: { type: "object" as const, properties: {} },
+    })),
   ],
 }));
 
