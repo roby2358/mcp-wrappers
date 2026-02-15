@@ -1,0 +1,5 @@
+active_toolsets = ["ts*"]
+
+[[servers]]
+namespace = "ts"
+command = "node /mnt/c/work/mcp-wrappers/toolman/test-server.mjs"
