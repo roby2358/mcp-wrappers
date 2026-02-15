@@ -65,7 +65,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     })),
     ...gateway.getInactiveTools().map((t) => ({
       name: t.namespacedName,
-      description: `Inactive. Use toolman_activate with tools_on=["${t.namespacedName}"] to enable.`,
+      description: `Enable via toolman_activate(tools_on=["${t.namespacedName}"]) to get full signature.`,
       inputSchema: { type: "object" as const, properties: {} },
     })),
   ],
