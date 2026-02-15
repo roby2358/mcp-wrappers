@@ -105,6 +105,22 @@ node /path/to/toolman/build/index.js
 
 Add toolman to your Claude Code MCP settings (`~/.claude/settings.json` or project-level `.claude/settings.json`):
 
+### From npm
+
+```json
+{
+  "mcpServers": {
+    "toolman": {
+      "command": "npx",
+      "args": ["-y", "@yuwakisa/toolman"],
+      "cwd": "/path/to/project"
+    }
+  }
+}
+```
+
+### Local development
+
 ```json
 {
   "mcpServers": {
@@ -144,6 +160,22 @@ Add to `claude_desktop_config.json`:
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+### From npm
+
+```json
+{
+  "mcpServers": {
+    "toolman": {
+      "command": "npx",
+      "args": ["-y", "@yuwakisa/toolman"],
+      "cwd": "/path/to/project"
+    }
+  }
+}
+```
+
+### Local development
 
 ```json
 {

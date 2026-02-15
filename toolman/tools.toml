@@ -1,5 +1,9 @@
-active_toolsets = ["ts*"]
+active_toolsets = ["hello*", "bj*"]
 
 [[servers]]
-namespace = "ts"
-command = "node /mnt/c/work/mcp-wrappers/toolman/test-server.mjs"
+namespace = "hello"
+command = "uv --directory /mnt/c/work/minifram run python src/mcp/hello_server.py"
+
+[[servers]]
+namespace = "bj"
+command = "uv --directory /mnt/c/work/minifram run python src/mcp/blackjack_server.py"

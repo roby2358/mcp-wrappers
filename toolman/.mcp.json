@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "toolman": {
+      "command": "node",
+      "args": ["/mnt/c/work/mcp-wrappers/toolman/build/index.js"],
+      "cwd": "/mnt/c/work/mcp-wrappers/toolman"
+    }
+  }
+}

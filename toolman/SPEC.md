@@ -47,6 +47,8 @@ The configuration MUST define:
 - If all four lists are empty, `toolman_activate` MUST return an error guiding the model to specify at least one name.
 - Toolman MUST validate all names against the cache before applying changes. If any name is unknown, it MUST return an error listing the bad names and suggesting corrections. No partial application — all names MUST be valid or no changes are applied.
 - On success, `toolman_activate` MUST return a short confirmation message.
+- After changing tool state, toolman MUST send a `notifications/tools/list_changed` notification to the downstream client so it re-fetches the tool list.
+- After changing resource state, toolman MUST send a `notifications/resources/list_changed` notification to the downstream client so it re-fetches the resource list.
 
 ### Dynamic Tool Description
 
@@ -80,7 +82,7 @@ The configuration MUST define:
 ## Server Lifecycle
 
 - All upstream server connections and caches MUST be maintained for the lifetime of toolman, regardless of activation state.
-- If an upstream server process exits unexpectedly, toolman MUST remove its tools, resources, and prompts from both the active list and the cache. They MUST no longer appear in the activation catalog. The event SHOULD be logged.
+- If an upstream server process exits unexpectedly, toolman MUST remove its tools, resources, and prompts from both the active list and the cache. They MUST no longer appear in the activation catalog. The event SHOULD be logged. Toolman MUST send `notifications/tools/list_changed` and `notifications/resources/list_changed` notifications after removing a crashed server.
 - Toolman MUST NOT attempt to restart crashed servers in v1.
 - On shutdown, toolman MUST close all client sessions, terminate all spawned server subprocesses, then exit.
 
@@ -115,4 +117,3 @@ The configuration MUST define:
 - Server auto-restart on crash
 - Activate/deactivate entire toolsets by server-level granularity
 - Resource subscriptions
-- List-changed notifications to the downstream client when activation state changes

@@ -22,6 +22,8 @@ const server = new Server(
   { capabilities: { tools: {}, resources: {}, prompts: {} } },
 );
 
+gateway.setServer(server);
+
 // --- Tools ---
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({

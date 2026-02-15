@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import type { ServerConfig, ToolmanConfig } from "./config.js";
 
 // --- Cached types ---
@@ -65,6 +66,7 @@ function globMatch(name: string, pattern: string): boolean {
 
 export class Gateway {
   private config: ToolmanConfig;
+  private server: Server | null = null;
   private upstreams: UpstreamServer[] = [];
   readonly tools = new Map<string, CachedTool>();
   readonly resources = new Map<string, CachedResource>();
@@ -73,6 +75,10 @@ export class Gateway {
 
   constructor(config: ToolmanConfig) {
     this.config = config;
+  }
+
+  setServer(server: Server): void {
+    this.server = server;
   }
 
   private applyNamespace(namespace: string, name: string): string {
@@ -357,7 +363,26 @@ export class Gateway {
       if (rt) rt.active = false;
     }
 
+    if (toolsOn.length || toolsOff.length) {
+      this.notifyToolsChanged();
+    }
+    if (resourcesOn.length || resourcesOff.length) {
+      this.notifyResourcesChanged();
+    }
+
     return { success: true, result: "OK", error: "" };
+  }
+
+  private notifyToolsChanged(): void {
+    this.server?.notification({
+      method: "notifications/tools/list_changed",
+    });
+  }
+
+  private notifyResourcesChanged(): void {
+    this.server?.notification({
+      method: "notifications/resources/list_changed",
+    });
   }
 
   // --- Proxying ---
@@ -525,5 +550,7 @@ export class Gateway {
       if (up.namespace === namespace) up.alive = false;
     }
     console.error(`Removed server '${namespace}' after crash`);
+    this.notifyToolsChanged();
+    this.notifyResourcesChanged();
   }
 }
