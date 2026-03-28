@@ -1,19 +1,19 @@
-Priority:   90
-Status: ToDo
-ID: tools-cvmb
-Remove filtering parameters from the tools. (It just confuses the models).
+Priority:    0
+Status: Done
+ID: batch-k8jd
+Add batch operations for tasks: accept lists of tasks for add, update, and mark done operations
 ---
-Priority:   90
-Status: ToDo
+Priority:    0
+Status: Done
 ID: urldecode-vf3f
 fix url decoding in the project path
 ---
-Priority:   88
-Status: ToDo
+Priority:    0
+Status: Done
 ID: defer-dir-yfvk
 defer creating pjpd subdirectory until as long as possible
 ---
-Priority:   20
-Status: ToDo
-ID: batch-k8jd
-Add batch operations for tasks: accept lists of tasks for add, update, and mark done operations
+Priority:    0
+Status: Done
+ID: tools-cvmb
+Remove filtering parameters from the tools. (It just confuses the models).

@@ -72,7 +72,7 @@ class Projects:
     # Task operations
     # ------------------------------------------------------------------
 
-    def add_task(self, description: str, priority: int = 2, tag: str = "task") -> Task:
+    def add_task(self, description: str, priority: int, tag: str) -> Task:
         """Add a task to the project.
 
         Creates the pjpd directory and tasks file if they don't exist yet.
@@ -87,9 +87,9 @@ class Projects:
     def update_task(
         self,
         task_id: str,
-        description: Optional[str] = None,
-        priority: Optional[int] = None,
-        status: Optional[str] = None,
+        description: Optional[str],
+        priority: Optional[int],
+        status: Optional[str],
     ) -> Optional[Task]:
         """Update a task by ID."""
         return self.project.update_task(task_id, description, priority, status)
@@ -97,21 +97,6 @@ class Projects:
     def mark_task_done(self, task_id: str) -> Optional[Task]:
         """Mark a task as completed."""
         return self.project.mark_done(task_id)
-
-    def get_all_tasks(
-        self,
-        priority_filter: Optional[int] = None,
-        status_filter: Optional[str] = None,
-    ) -> List[Task]:
-        """Get all tasks with optional filtering."""
-        tasks = self.project.tasks
-
-        if priority_filter is not None:
-            tasks = [t for t in tasks if t.priority >= priority_filter]
-        if status_filter is not None:
-            tasks = [t for t in tasks if t.status == status_filter]
-
-        return tasks
 
     # ------------------------------------------------------------------
     # Aggregate helpers

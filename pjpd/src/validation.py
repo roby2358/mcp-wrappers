@@ -93,13 +93,15 @@ class ListTasksRequest(BaseModel):
 
 
 class MarkDoneRequest(BaseModel):
-    """Request model for marking a task as done."""
-    task_id: str = Field(..., description="The unique tag-based task ID (format: <tag>-XXXX where XXXX is alphanumeric)")
+    """Request model for marking tasks as done."""
+    task_ids: List[str] = Field(..., min_length=1, description="List of tag-based task IDs (format: <tag>-XXXX)")
 
-    @field_validator('task_id')
+    @field_validator('task_ids')
     @classmethod
-    def validate_task_id(cls, v):
-        return validate_id_format(v, "Task ID")
+    def validate_task_ids(cls, v):
+        for tid in v:
+            validate_id_format(tid, "Task ID")
+        return v
 
 
 class ListIdeasRequest(BaseModel):
@@ -143,10 +145,12 @@ class PutIdeaRequest(BaseModel):
 
 
 class MarkIdeaDoneRequest(BaseModel):
-    """Request model for marking an idea as done."""
-    idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX where XXXX is alphanumeric)")
+    """Request model for marking ideas as done."""
+    idea_ids: List[str] = Field(..., min_length=1, description="List of tag-based idea IDs (format: <tag>-XXXX)")
 
-    @field_validator('idea_id')
+    @field_validator('idea_ids')
     @classmethod
-    def validate_idea_id(cls, v):
-        return validate_id_format(v, "Idea ID")
+    def validate_idea_ids(cls, v):
+        for iid in v:
+            validate_id_format(iid, "Idea ID")
+        return v

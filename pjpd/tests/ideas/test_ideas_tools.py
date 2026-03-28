@@ -125,30 +125,32 @@ class TestIdeasTools:
         mock_ideas_manager.ideas = [mock_idea]
         mock_ideas_manager.mark_idea_done.return_value = True
 
-        result = await pjpd_mark_idea_done(idea_id="idea-a2c4")
+        result = await pjpd_mark_idea_done(idea_ids=["idea-a2c4"])
 
         assert result["success"] is True
-        assert result["result"]["idea_id"] == "idea-a2c4"
-        assert "marked as done" in result["result"]["message"]
+        assert result["result"]["idea_ids"] == ["idea-a2c4"]
+        assert "marked" in result["result"]["message"].lower()
         mock_ideas_manager.mark_idea_done.assert_called_once_with("idea-a2c4")
 
     async def test_mark_idea_done_not_found(self, mock_ideas_manager):
         """Test marking an idea as done that doesn't exist."""
-        mock_ideas_manager.mark_idea_done.return_value = False
+        mock_ideas_manager.ideas = []
 
-        result = await pjpd_mark_idea_done(idea_id="idea-9999")
+        result = await pjpd_mark_idea_done(idea_ids=["idea-9999"])
 
         assert result["success"] is False
-        assert "not found" in result["error"]
+        assert "not found" in result["error"].lower()
 
     async def test_mark_idea_done_error(self, mock_ideas_manager):
         """Test error handling in mark_idea_done."""
+        mock_idea = Idea(id="idea-1234", tag="idea", score=50, description="Some idea")
+        mock_ideas_manager.ideas = [mock_idea]
         mock_ideas_manager.mark_idea_done.side_effect = Exception("Test error")
 
-        result = await pjpd_mark_idea_done(idea_id="idea-1234")
+        result = await pjpd_mark_idea_done(idea_ids=["idea-1234"])
 
         assert result["success"] is False
-        assert "Error marking idea as done" in result["error"]
+        assert "Error marking ideas as done" in result["error"]
 
 
 class TestMCPResponseHelpers:

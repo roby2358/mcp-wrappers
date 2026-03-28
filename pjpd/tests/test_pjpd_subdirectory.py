@@ -19,7 +19,7 @@ class TestPjpdSubdirectory:
     def test_adding_task_creates_pjpd_dir(self, tmp_path):
         """Adding a task creates the pjpd subdirectory automatically"""
         mgr = Projects(tmp_path)
-        mgr.add_task("Test task", 5)
+        mgr.add_task("Test task", 5, "task")
         assert (tmp_path / "pjpd").is_dir()
         assert (tmp_path / "pjpd" / "tasks.txt").exists()
 
@@ -53,6 +53,6 @@ class TestPjpdSubdirectory:
     def test_legacy_project_file_warning_absent(self, tmp_path):
         """No warning when no legacy file exists"""
         mgr = Projects(tmp_path)
-        mgr.add_task("Test task", 5)
+        mgr.add_task("Test task", 5, "task")
         assert mgr.legacy_project_file_warning() is None
 

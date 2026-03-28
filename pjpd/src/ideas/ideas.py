@@ -90,7 +90,7 @@ class Ideas:
         self._save_ideas()
         return idea
 
-    def update_idea(self, idea_id: str, description: Optional[str] = None, score: Optional[int] = None) -> bool:
+    def update_idea(self, idea_id: str, description: Optional[str], score: Optional[int]) -> bool:
         """Update an existing idea by ID. Returns *True* if the idea was found and updated."""
         for idea in self.ideas:
             if idea.id == idea_id:
@@ -144,7 +144,7 @@ class Ideas:
                 return True
         return False
 
-    def list_ideas(self, count: int = 20) -> List[Dict[str, Any]]:
+    def list_ideas(self, count: int) -> List[Dict[str, Any]]:
         """Return ideas as plain dictionaries (sorted by score descending)."""
         ideas_sorted = sorted(self.ideas, key=lambda i: i.score, reverse=True)
         ideas_sorted = ideas_sorted[:count]

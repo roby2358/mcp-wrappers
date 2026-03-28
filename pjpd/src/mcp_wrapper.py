@@ -135,7 +135,7 @@ async def pjpd_put_task(
             )
         else:
             updated_task = projects_manager.update_task(
-                request.id, request.description, request.priority
+                request.id, request.description, request.priority, None
             )
             if not updated_task:
                 return mcp_failure(
@@ -194,35 +194,39 @@ async def pjpd_list_tasks(
 
 
 @mcp.tool()
-async def pjpd_mark_done(task_id: str) -> Dict[str, Any]:
-    """Mark a task as completed.
+async def pjpd_mark_done(task_ids: List[str]) -> Dict[str, Any]:
+    """Mark one or more tasks as completed. All IDs must exist or nothing is changed.
 
     Args:
-        task_id: The unique tag-based task ID (format: `<tag>-XXXX`) to mark as done.
+        task_ids: List of tag-based task IDs (format: `<tag>-XXXX`) to mark as done.
 
     Returns:
         Standard MCP response with updated task details or error message.
     """
     try:
-        request = MarkDoneRequest(task_id=task_id)
-        updated_task = projects_manager.update_task(
-            request.task_id, description=None, priority=0, status="Done"
-        )
+        request = MarkDoneRequest(task_ids=task_ids)
 
-        if not updated_task:
+        missing = [tid for tid in request.task_ids if not projects_manager.get_task(tid)]
+        if missing:
             return mcp_failure(
-                f"Task '{request.task_id}' not found. Use pjpd_list_tasks(show_done=True) to see all task IDs."
+                f"Tasks not found: {missing}. No tasks were modified. "
+                f"Use pjpd_list_tasks(show_done=True) to see all task IDs."
             )
+
+        results = []
+        for tid in request.task_ids:
+            updated_task = projects_manager.update_task(tid, None, 0, "Done")
+            results.append(updated_task.to_dict())
 
         return mcp_success(
             _add_legacy_warning({
-                **updated_task.to_dict(),
+                "tasks": results,
                 "project_file": str(projects_manager.project_file),
-                "message": f"Task '{request.task_id}' marked as done",
+                "message": f"Marked {len(results)} task(s) as done",
             })
         )
     except Exception as e:
-        return mcp_failure(f"Error marking task as done: {str(e)}")
+        return mcp_failure(f"Error marking tasks as done: {str(e)}")
 
 
 @mcp.tool()
@@ -334,33 +338,39 @@ async def pjpd_put_idea(
 
 
 @mcp.tool()
-async def pjpd_mark_idea_done(idea_id: str) -> Dict[str, Any]:
-    """Mark an idea as done by setting score to 0 and prefixing description with '(Done)'.
+async def pjpd_mark_idea_done(idea_ids: List[str]) -> Dict[str, Any]:
+    """Mark one or more ideas as done (score set to 0, description prefixed with '(Done)').
+    All IDs must exist or nothing is changed.
 
     Args:
-        idea_id: Tag-based idea ID (format: `<tag>-XXXX`).
+        idea_ids: List of tag-based idea IDs (format: `<tag>-XXXX`) to mark as done.
 
     Returns:
         Standard MCP response indicating success or failure.
     """
     try:
-        request = MarkIdeaDoneRequest(idea_id=idea_id)
-        updated = ideas_manager.mark_idea_done(request.idea_id)
+        request = MarkIdeaDoneRequest(idea_ids=idea_ids)
 
-        if not updated:
+        known_ids = {idea.id for idea in ideas_manager.ideas}
+        missing = [iid for iid in request.idea_ids if iid not in known_ids]
+        if missing:
             return mcp_failure(
-                f"Idea '{request.idea_id}' not found. Use pjpd_list_ideas() to see existing idea IDs."
+                f"Ideas not found: {missing}. No ideas were modified. "
+                f"Use pjpd_list_ideas() to see existing idea IDs."
             )
+
+        for iid in request.idea_ids:
+            ideas_manager.mark_idea_done(iid)
 
         return mcp_success(
             {
-                "idea_id": request.idea_id,
+                "idea_ids": request.idea_ids,
                 "project_file": str(ideas_manager.ideas_file),
-                "message": f"Idea '{request.idea_id}' marked as done (score set to 0, description prefixed)",
+                "message": f"Marked {len(request.idea_ids)} idea(s) as done",
             }
         )
     except Exception as e:
-        return mcp_failure(f"Error marking idea as done: {str(e)}")
+        return mcp_failure(f"Error marking ideas as done: {str(e)}")
 
 
 # ---------------------------------------------------------------------------

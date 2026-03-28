@@ -48,7 +48,7 @@ class Project:
             logger.error(f"Error loading tasks for project {self.name}: {e}")
             self._tasks = []
     
-    def add_task(self, description: str, priority: int = 2, tag: str = "task") -> Task:
+    def add_task(self, description: str, priority: int, tag: str) -> Task:
         """Add a new task to this project"""
         # Generate a unique task ID using the provided tag
         task = Task(
@@ -70,8 +70,8 @@ class Project:
                 return task
         return None
     
-    def update_task(self, task_id: str, description: Optional[str] = None, 
-                   priority: Optional[int] = None, status: Optional[str] = None) -> Optional[Task]:
+    def update_task(self, task_id: str, description: Optional[str],
+                   priority: Optional[int], status: Optional[str]) -> Optional[Task]:
         """Update an existing task"""
         task = self.get_task(task_id)
         if not task:
@@ -89,7 +89,7 @@ class Project:
     
     def mark_done(self, task_id: str) -> Optional[Task]:
         """Mark a task as completed"""
-        return self.update_task(task_id, status="Done")
+        return self.update_task(task_id, description=None, priority=None, status="Done")
     
     def _save_tasks(self) -> None:
         """Save tasks to the project file"""
@@ -141,23 +141,18 @@ class Project:
             "low_priority_todo": len(low_priority_todo)
         }
     
-    def filter_tasks(self, priority: Optional[int] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Filter tasks by priority and status, returning them as dictionaries.
-        
+    def filter_tasks(self, status: Optional[str]) -> List[Dict[str, Any]]:
+        """Filter tasks by status, returning them as dictionaries.
+
         Args:
-            priority: Filter tasks by priority level (plain integer). Returns all tasks >= this priority.
-            status: Filter tasks by status ("ToDo" or "Done").
-            
+            status: Filter tasks by status ("ToDo" or "Done"). None returns all tasks.
+
         Returns:
             List of task dictionaries with id, priority, status, and description.
         """
         filtered_tasks = []
-        
+
         for task in self.tasks:
-            # Filter by priority if specified (>= priority)
-            if priority is not None and task.priority < priority:
-                continue
-                
             # Filter by status if specified (case-insensitive comparison)
             if status is not None and task.status.lower() != status.lower():
                 continue

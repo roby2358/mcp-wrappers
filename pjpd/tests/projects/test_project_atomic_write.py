@@ -25,7 +25,7 @@ def test_project_save_tasks_uses_text_records(project_file: Path) -> None:
     project = Project(name="TestProject", file_path=project_file)
 
     # Add a task to trigger _save_tasks
-    project.add_task("Test task", 5)
+    project.add_task("Test task", 5, "task")
 
     # The original path should now contain the task content
     content = project_file.read_text(encoding="utf-8")
@@ -53,7 +53,7 @@ def test_project_save_tasks_creates_file_when_nonexistent(project_file_nonexiste
     assert not project_file_nonexistent.exists()
 
     # Add a task to trigger _save_tasks
-    project.add_task("Test task", 5)
+    project.add_task("Test task", 5, "task")
 
     # The file should now exist and contain the task content
     assert project_file_nonexistent.exists()

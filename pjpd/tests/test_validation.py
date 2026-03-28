@@ -61,12 +61,20 @@ class TestMarkDoneRequest:
     """Test MarkDoneRequest validation."""
 
     def test_valid_mark_done_request(self):
-        request = MarkDoneRequest(task_id="task-a2c4")
-        assert request.task_id == "task-a2c4"
+        request = MarkDoneRequest(task_ids=["task-a2c4"])
+        assert request.task_ids == ["task-a2c4"]
+
+    def test_valid_mark_done_multiple(self):
+        request = MarkDoneRequest(task_ids=["task-a2c4", "bug-x3y5"])
+        assert len(request.task_ids) == 2
 
     def test_invalid_task_id_format(self):
         with pytest.raises(ValidationError):
-            MarkDoneRequest(task_id="invalid-id")
+            MarkDoneRequest(task_ids=["invalid-id"])
+
+    def test_empty_list_rejected(self):
+        with pytest.raises(ValidationError):
+            MarkDoneRequest(task_ids=[])
 
 
 class TestPutIdeaRequest:
@@ -111,9 +119,17 @@ class TestMarkIdeaDoneRequest:
     """Test MarkIdeaDoneRequest validation."""
 
     def test_valid_mark_idea_done_request(self):
-        request = MarkIdeaDoneRequest(idea_id="idea-5f6g")
-        assert request.idea_id == "idea-5f6g"
+        request = MarkIdeaDoneRequest(idea_ids=["idea-5f6g"])
+        assert request.idea_ids == ["idea-5f6g"]
+
+    def test_valid_mark_idea_done_multiple(self):
+        request = MarkIdeaDoneRequest(idea_ids=["idea-5f6g", "feat-a2b3"])
+        assert len(request.idea_ids) == 2
 
     def test_invalid_idea_id_format(self):
         with pytest.raises(ValidationError):
-            MarkIdeaDoneRequest(idea_id="invalid-id")
+            MarkIdeaDoneRequest(idea_ids=["invalid-id"])
+
+    def test_empty_list_rejected(self):
+        with pytest.raises(ValidationError):
+            MarkIdeaDoneRequest(idea_ids=[])
