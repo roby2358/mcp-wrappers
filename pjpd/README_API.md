@@ -4,31 +4,28 @@ This document provides the complete API reference for ProjectMCP's MCP tools and
 
 ## API Response Format
 
+All tools return a consistent response structure:
+
+```json
+{
+  "success": true,
+  "result": { ... },
+  "error": ""
+}
+```
+
+Every successful result includes a `project_file` property with the full path to the data file being operated on. Task tool results may also include a `warning` property if a legacy project file is detected (see [Legacy Warning](#legacy-project-file-warning)).
+
 > **Note**: Tag fields are used internally for ID generation but are not included in API responses. When creating new tasks, ideas, or epics, you must provide a tag, but the tag will not be returned in response data.
 
 ## MCP Tools
 
-### Project Management
-
-#### `list_projects`
-Return list of all projects with task counts.
-
-**Parameters:**
-- `path` (string, optional): Path to projects directory (default: ~/projects)
-
-#### `new_project`
-Create a new empty project file.
-
-**Parameters:**
-- `project` (string, required): Project name
-
 ### Task Management
 
 #### `add_task`
-Create a new task with parameters.
+Create a new task.
 
 **Parameters:**
-- `project` (string, required): Project name
 - `description` (string, required): Task description
 - `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
 - `priority` (integer, optional): Priority level (higher numbers = higher priority, defaults to 2)
@@ -37,7 +34,6 @@ Create a new task with parameters.
 List tasks with optional filtering.
 
 **Parameters:**
-- `project` (string, optional): Filter by specific project
 - `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
 - `status` (string, optional): Filter by status ("ToDo" or "Done")
 - `max_results` (integer, optional): Maximum number of results to return
@@ -46,7 +42,6 @@ List tasks with optional filtering.
 Update an existing task.
 
 **Parameters:**
-- `project` (string, required): The name of the project containing the task
 - `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
 - `description` (string, optional): New task description
 - `priority` (integer, optional): New priority level
@@ -56,7 +51,6 @@ Update an existing task.
 Mark a task as completed.
 
 **Parameters:**
-- `project` (string, required): The name of the project containing the task
 - `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
 
 #### `next_steps`
@@ -66,7 +60,7 @@ Determine high-priority tasks to work on next.
 - `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
 
 #### `get_statistics`
-Get comprehensive statistics about all projects.
+Get comprehensive statistics about the project.
 
 **Parameters:** None
 
@@ -79,7 +73,7 @@ List ideas with optional filtering.
 - `max_results` (integer, optional): Maximum number of results to return
 
 #### `add_idea`
-Create a new idea in ideas.txt with parameters.
+Create a new idea in ideas.txt.
 
 **Parameters:**
 - `score` (integer, required): Score value (higher numbers = higher relevance)
@@ -94,8 +88,8 @@ Update an existing idea.
 - `score` (integer, optional): New score value
 - `description` (string, optional): New idea description
 
-#### `remove_idea`
-Remove an idea completely.
+#### `mark_idea_done`
+Mark an idea as done (sets score to 0, prefixes description with "(Done)").
 
 **Parameters:**
 - `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
@@ -109,7 +103,7 @@ List epics with optional filtering.
 - `max_results` (integer, optional): Maximum number of results to return
 
 #### `add_epic`
-Create a new epic in epics.txt with parameters.
+Create a new epic in epics.txt.
 
 **Parameters:**
 - `score` (integer, required): Score value (higher numbers = higher relevance)
@@ -139,4 +133,16 @@ Mark an epic as done (sets score to 0).
 ### `intro`
 Return introductory description of the ProjectMCP system.
 
-**Parameters:** None 
+**Parameters:** None
+
+## Legacy Project File Warning
+
+If pjpd detects a file at `pjpd/<directory-name>.txt` (from the old multi-project format where each project was a separate `.txt` file), task tool responses will include:
+
+```json
+{
+  "warning": "Existing project file <filename>.txt exists"
+}
+```
+
+This helps identify directories that were previously used with the multi-project layout.

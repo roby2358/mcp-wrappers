@@ -1,19 +1,18 @@
 # ProjectMCP
 
-A lightweight, local-first project management system built on plain `.txt` files using the Model Context Protocol (MCP). ProjectMCP provides task tracking, prioritization, project overview, and idea management capabilities through a simple text-based storage format.
+A lightweight, local-first project management system built on plain `.txt` files using the Model Context Protocol (MCP). ProjectMCP manages tasks, ideas, and epics for a single project rooted at the current working directory.
 
 ## Features
 
 - **Local-first**: All data stored in plain text files on your local machine
+- **Single-project**: One project per directory, tied to the current working directory
 - **Simple format**: Tasks, ideas, and epics stored in human-readable `.txt` files
 - **Priority-based**: Higher numbers = higher priority task management
 - **Idea management**: Track and score ideas for future development
 - **Epic organization**: Group related ideas and projects into higher-level workstreams
 - **MCP integration**: Full Model Context Protocol support for AI assistant integration
-- **No dependencies**: Minimal external dependencies, just Python and text files
+- **Atomic operations**: Safe file writing with timestamped backups to prevent data corruption
 - **Cross-platform**: Works on Windows, macOS, and Linux
-- **Ignore file support**: Configure which project files to exclude
-- **Atomic operations**: Safe file writing to prevent data corruption
 
 ## Installation
 
@@ -25,18 +24,17 @@ A lightweight, local-first project management system built on plain `.txt` files
 ### Install from source
 
 ```bash
-# Install with uv
 uv sync
-.venv\Scripts\activate  # Windows
-# or
 source .venv/bin/activate  # macOS/Linux
+# or
+.venv\Scripts\activate     # Windows
 ```
 
 ## Quick Start
 
 ### Run in Claude Desktop
 
-Add this to your desktop configuration
+Add this to your desktop configuration:
 
 ```json
   "mcpServers": {
@@ -47,102 +45,69 @@ Add this to your desktop configuration
   }
 ```
 
-### 1. Start the MCP Server
+### Start the MCP Server
 
 ```bash
-# Run the server directly
 python pjpd.py
 ```
 
-The server will start and listen for MCP connections via stdio transport.
+The server starts and listens for MCP connections via stdio transport. It operates on the current working directory — all data is stored under `<cwd>/pjpd/`.
 
-### 2. Create Your First Project
+### Common Operations
 
-Using an MCP client (like Claude Desktop), you can now:
-
-- Create new projects
-- Add tasks with priorities and tags
-- Track ideas with scoring
-- Organize work into epics
-- List and filter tasks, ideas, and epics
-- Mark tasks as complete
-- Get next steps recommendations
-## How to Use ProjectMCP with Language Model Clients
-
-ProjectMCP is an MCP (Model Context Protocol) server that provides AI assistants with powerful project management capabilities. When integrated with language model client frameworks like Cursor, Claude Desktop, or other MCP-compatible clients, you can interact with your project management system through natural language.
-
-### Important Note About Project Listing
-
-When asking the AI to list projects, models often get the path wrong by defaulting to `~/projects` or other incorrect paths. To ensure accurate results, use a two-phase approach:
-
-1. **First ask**: "What is the current working directory?"
-2. **Then ask**: "List the projects in `<full path>`" (using the exact path from step 1)
-
-This ensures the AI uses the correct path for your ProjectMCP setup and avoids confusion from incorrect default paths.
-
-### Common Operations You Can Ask the AI to Perform
-
-**Project Management:**
-- "Show me all my projects and their task counts"
-- "Create a new project called 'website-redesign'"
-- "What are my current projects?"
+Using an MCP client (like Claude Desktop or Claude Code), you can:
 
 **Task Management:**
-- "Add a new task to my 'website-redesign' project: 'Design homepage mockup' with tag 'design' and priority 3"
+- "Add a task: 'Design homepage mockup' with tag 'design' and priority 3"
 - "Show me all high-priority tasks (priority >= 3)"
-- "List all pending tasks in the 'marketing' project"
-- "Mark task 'dev-001' as completed"
-- "Update task 'design-002' to have priority 4 and status 'Done'"
-- "What should I work on next?" (gets high-priority task recommendations)
-- "Show me statistics for all my projects"
+- "List all pending tasks"
+- "Mark task 'dev-a2c4' as completed"
+- "What should I work on next?"
+- "Show me project statistics"
 
 **Idea Management:**
 - "Add a new idea: 'Implement dark mode' with score 8 and tag 'ui'"
 - "List my top 10 ideas"
-- "Update idea 'ui-001' to have score 9"
+- "Update idea 'ui-a2c4' to have score 9"
 
 **Epic Management:**
 - "Create a new epic 'User Experience Improvements' with score 7 and tag 'ux'"
 - "Show me all my epics"
-- "Link idea 'ui-001' to epic 'ux-001'"
-- "Mark epic 'ux-001' as completed"
-
-**General Queries:**
-- "Give me an overview of my project management system"
-- "What's my current workload across all projects?"
-- "Help me organize my tasks by priority"
-
-The AI assistant will use the appropriate MCP tools behind the scenes to fulfill these requests, making project management feel natural and conversational.
+- "Mark epic 'ux-a2c4' as completed"
 
 ## Configuration
 
 ProjectMCP uses a TOML configuration file named `projectmcp.toml` in the project root:
 
 ```toml
-# Directory where project files are stored
-projects_directory = "~/projects"
-
 # Maximum number of results to return in list operations
 max_results = 50
 ```
 
 ### Default Settings
 
-- **Projects Directory**: `~/projects` (expanded to user's home directory)
 - **Max Results**: 50 items per query
 - **File Encoding**: UTF-8
 - **Transport**: stdio (for MCP communication)
 
 ## Data Format
 
-### Task Storage
+All data is stored under `<cwd>/pjpd/`:
 
-Tasks are stored in plain text files with the following format:
+```
+<cwd>/pjpd/
+├── tasks.txt     # All tasks
+├── ideas.txt     # All ideas
+├── epics.txt     # All epics
+└── bak/          # Timestamped backups from atomic writes
+```
+
+### Task Storage
 
 ```
 Priority:    1
 Status: ToDo
-ID: bug-AB12
+ID: bug-ab12
 Add functionality to encapsulate the cardinal graham meters.
 ---
 Priority:   10
@@ -154,40 +119,27 @@ Update documentation for the new API endpoints.
 
 ### Idea Storage
 
-Ideas are stored in `ideas.txt` files with the following format:
-
 ```
 Score:   75
-ID: ai-ABCD
+ID: ai-abcd
 Implement experimental AI-assisted code review workflow.
 ---
 Score:    5
-ID: ui-KLMN
+ID: ui-klmn
 Investigate alternative color palette for dark mode.
 ---
 ```
 
 ### Epic Storage
 
-Epics are stored in `epics.txt` files with the following format:
-
 ```
 Score:   85
-Ideas: ai-ABCD ui-KLMN
+Ideas: ai-abcd ui-klmn
 Projects: website-redesign mobile-app
-ID: platform-EFGH
+ID: platform-efgh
 Build a unified platform for web and mobile development.
 ---
 ```
-
-### File Organization
-
-- Each project is stored as a separate `.txt` file
-- Project names are converted to lowercase with underscores
-- Files are stored in the configured projects directory
-- Example: `My Project` becomes `my_project.txt`
-- Ideas are stored in `ideas.txt` in the projects directory
-- Epics are stored in `epics.txt` in the projects directory
 
 ### Record Properties
 
@@ -211,18 +163,9 @@ Build a unified platform for web and mobile development.
 - **ID**: Tag-based unique identifier (format: `<tag>-XXXX`)
 - **Description**: Multi-line epic description
 
-### Ignore File Support
+### Legacy Project File Warning
 
-Create a `pjpdignore` file in your projects directory under `pjpd/` to exclude specific files:
-
-```
-# Ignore backup files
-*.bak
-*.backup
-
-# Ignore temporary files
-temp_*
-```
+If pjpd detects a file named `pjpd/<directory-name>.txt` (from the old multi-project format), task tool responses will include a `"warning"` property alerting you to its presence. This helps with migration from the previous multi-project layout.
 
 ## API Reference
 
@@ -232,22 +175,21 @@ For complete API documentation including all MCP tools and prompts, see [README_
 
 ### Basic Workflow
 
-1. **Create a project and add tasks:**
+1. **Add tasks:**
    ```
-   new_project("website-redesign")
-   add_task("website-redesign", "Design new homepage layout", "design", 10)
-   add_task("website-redesign", "Update contact form", "form", 5)
-   add_task("website-redesign", "Test responsive design", "test", 8)
+   add_task("Design new homepage layout", "design", 10)
+   add_task("Update contact form", "form", 5)
+   add_task("Test responsive design", "test", 8)
    ```
 
 2. **List tasks by priority:**
    ```
-   list_tasks("website-redesign", priority=5)
+   list_tasks(priority=5)
    ```
 
 3. **Mark a task complete:**
    ```
-   mark_done("website-redesign", "design-AB12")
+   mark_done("design-ab12")
    ```
 
 4. **Get next steps:**
@@ -272,7 +214,7 @@ For complete API documentation including all MCP tools and prompts, see [README_
 
 1. **Create an epic:**
    ```
-   add_epic(85, "Platform unification", "platform", "ai-ABCD ui-KLMN", "website-redesign mobile-app")
+   add_epic(85, "Platform unification", "platform", "ai-abcd ui-klmn", "website-redesign mobile-app")
    ```
 
 2. **List epics:**
@@ -282,18 +224,15 @@ For complete API documentation including all MCP tools and prompts, see [README_
 
 ### Advanced Filtering
 
-```bash
-# List all high-priority tasks across all projects
+```
+# List all high-priority tasks
 list_tasks(priority=8)
 
 # List only completed tasks
 list_tasks(status="Done")
 
-# List tasks from specific project with limit
-list_tasks("my-project", max_results=10)
-
-# List high-scoring ideas
-list_ideas(max_results=10)
+# List tasks with limit
+list_tasks(max_results=10)
 ```
 
 ## Development
@@ -304,69 +243,47 @@ list_ideas(max_results=10)
 pjpd/
 ├── src/
 │   ├── mcp_wrapper.py      # Main MCP server implementation
-│   ├── config.py           # Configuration management
+│   ├── config.py            # Configuration management
+│   ├── validation.py        # Pydantic request models
 │   ├── projects/
-│   │   ├── projects.py     # Project management logic
-│   │   ├── project.py      # Individual project handling
-│   │   ├── task.py         # Task data structures
-│   │   └── ignore_list.py  # File ignore functionality
+│   │   ├── projects.py      # Single-project manager
+│   │   ├── project.py       # Project (task collection) handling
+│   │   └── task.py          # Task data structures
 │   ├── ideas/
-│   │   ├── ideas.py        # Idea management logic
-│   │   └── idea.py         # Idea data structures
+│   │   ├── ideas.py         # Idea management logic
+│   │   └── idea.py          # Idea data structures
 │   ├── epics/
-│   │   ├── epics.py        # Epic management logic
-│   │   └── epic.py         # Epic data structures
+│   │   ├── epics.py         # Epic management logic
+│   │   └── epic.py          # Epic data structures
 │   └── textrec/
-│       └── text_records.py # Text record parsing utilities
-├── tests/                  # Unit tests
+│       ├── text_records.py  # Text record parsing and atomic writes
+│       └── record_id.py     # Tag-based ID generation
+├── tests/                   # Unit tests
 ├── resources/
-│   └── intro.txt          # System introduction text
-├── pjpd.py                # Entry point
-├── projectmcp.toml        # Configuration
-└── SPEC.md               # Detailed specification
+│   └── intro.txt            # System introduction text
+├── pjpd.py                  # Entry point
+├── projectmcp.toml          # Configuration
+└── SPEC.md                  # Detailed specification
 ```
 
 ### Running Tests
 
 ```bash
-# Run all tests
-pytest -v
-
-# Run with coverage
-pytest -v --cov=src
-
-# Run specific test file
-pytest -v tests/projects/test_project_creation_and_saving.py
+pytest -v                    # Run all tests
+pytest -v --cov=src          # Run with coverage
+pytest -v tests/projects/test_project_creation_and_saving.py  # Run specific file
 ```
 
 ### Code Quality
 
 ```bash
-# Format code
-black src/ tests/
-
-# Sort imports
-isort src/ tests/
-
-# Type checking
-mypy src/
+black src/ tests/            # Format code
+isort src/ tests/            # Sort imports
+mypy src/                    # Type checking
 ```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Status
-
-ProjectMCP is currently in alpha development. The core functionality is implemented and stable, but the API may evolve as the project matures.
 
 For detailed technical specifications, see [SPEC.md](SPEC.md).

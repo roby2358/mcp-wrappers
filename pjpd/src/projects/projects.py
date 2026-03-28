@@ -1,471 +1,142 @@
 """
 Projects Management
-Manages multiple projects and provides collection-level operations
+Manages a single project backed by pjpd/tasks.txt in the working directory.
 """
 
-# Built-ins
 import logging
-import re
-from pathlib import Path
-from typing import Dict, List, Any, Optional
 from collections import defaultdict
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from .project import Project, Task
-from .ignore_list import IgnoreList, NoIgnoreList
 
 logger = logging.getLogger(__name__)
 
-# Characters permitted in project names (for validation)
-# Keep this at module level so it is computed once and easily discovered by
-# readers and other modules.
-ALLOWED_NAME_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_@#$%! ")
-
-# Characters permitted in sanitized filenames (spaces are replaced with underscores)
-FILENAME_SAFE_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-_@#$%!")
-
-# Filenames reserved for system-level files within the pjpd directory that should
-# never be treated as user projects.
-RESERVED_PROJECT_STEMS: set[str] = {"ideas", "epics"}
 
 class Projects:
+    """Manages a single project backed by ``pjpd/tasks.txt``.
 
-    """Manages multiple projects and provides collection-level operations.
-    
-    This class handles the creation, loading, and management of multiple project
-    files stored as .txt files in a designated directory. It provides methods
-    for project-level operations like listing, filtering, and statistics.
+    The *project_dir* is expected to be the current working directory.
+    All task data lives in ``<project_dir>/pjpd/tasks.txt``.
     """
-    
-    def __init__(self, projects_dir: Path | str):
-        """Create a Projects manager.
 
-        Args:
-            projects_dir: Path to the directory containing project *.txt files. If
-                the directory does not yet exist it will be created automatically.
+    def __init__(self, project_dir: Path | str):
+        self.project_dir = Path(project_dir).expanduser()
+        self.tasks_file = self.project_dir / "pjpd" / "tasks.txt"
+        self._project: Optional[Project] = None
+
+    @property
+    def project_file(self) -> Path:
+        """Full path to the project tasks file."""
+        return self.tasks_file
+
+    def legacy_project_file_warning(self) -> Optional[str]:
+        """Return a warning string if a legacy project file exists.
+
+        A legacy file is ``pjpd/<dir_name>.txt`` where *<dir_name>* is the
+        last component of *project_dir*.  Returns ``None`` when no such file
+        is found.
         """
-        self.projects_dir = Path(projects_dir).expanduser()
-        self.projects_subdir = self.projects_dir / "pjpd"
-        self._ignore_list = NoIgnoreList()
-        self._projects = {}
- 
-    
+        dir_name = self.project_dir.name
+        legacy_file = self.project_dir / "pjpd" / f"{dir_name}.txt"
+        if legacy_file.exists() and legacy_file != self.tasks_file:
+            return f"Existing project file {legacy_file.name} exists"
+        return None
+
     @property
     def present(self) -> bool:
-        """Check if the projects directory structure is present on disk."""
-        return self.projects_subdir.exists() and self.projects_subdir.is_dir()
-    
-    def refresh_projects(self) -> None:
-        """Refresh the projects list from disk.
-        
-        This method reloads all project files from the projects directory,
-        applying any ignore list filters, and updates the in-memory cache.
-        """
-        if not self.present:
-            self._ignore_list = NoIgnoreList()
-            self._projects = {}
-            return
-        
-        self._ignore_list = IgnoreList(self.projects_subdir)
-        self._projects = {}
-            
-        try:
-            # Find all .txt files in the projects directory
-            project_files = list(self.projects_subdir.glob("*.txt"))
-            
-            # Apply ignore list filtering
-            filtered_files = self._ignore_list.filter_files(project_files)
+        """Check if the pjpd directory exists on disk."""
+        return self.tasks_file.parent.exists() and self.tasks_file.parent.is_dir()
 
-            # Exclude reserved system files (e.g., ideas.txt, epics.txt)
-            filtered_files = [
-                path for path in filtered_files
-                if path.stem.lower() not in RESERVED_PROJECT_STEMS
-            ]
-            
-            for project_file in filtered_files:
-                project_name = project_file.stem  # filename without extension
-                project = Project(project_name, project_file)
-                self._projects[project_name] = project
-                
-            logger.info(f"Loaded {len(self._projects)} projects (filtered from {len(project_files)} .txt files)")
-            
-        except Exception as e:
-            logger.error(f"Error loading projects: {e}")
-            self._projects = {}
+    def _ensure_project(self) -> None:
+        """Create the pjpd directory and tasks file if they don't exist."""
+        self.tasks_file.parent.mkdir(parents=True, exist_ok=True)
+        if not self.tasks_file.exists():
+            self.tasks_file.touch()
 
-    def set_projects_dir(self, projects_dir: Path | str) -> None:
-        """Update the projects directory.
+    def _load_project(self) -> Project:
+        """Load (or reload) the project from disk."""
+        self._project = Project(name="tasks", file_path=self.tasks_file)
+        return self._project
 
-        No projects or ignore list will return if the directory doesn't exist.
-        The in-memory cache will be cleared to ensure a fresh reload the next time
-        projects are accessed.
-
-        Args:
-            projects_dir: Path to the project directory (without /pjpd).
-        """
-        self.projects_dir = Path(projects_dir).expanduser()
-        self.projects_subdir = self.projects_dir / "pjpd"
-
-        # the next refresh_projects will fill out the projects cache
-    
-    def _ensure_projects(self) -> bool:
-        """Ensure the projects system is initialized. Creates directories if needed.
-        
-        Returns:
-            True if we create directories, False if they already existed.
-        """
-        if self.present:
-            return False
-        
-        self.projects_dir.mkdir(parents=True, exist_ok=True)
-        self.projects_subdir.mkdir(parents=True, exist_ok=True)
-
-        # Brand new projects system, so no ignore list or projects yet
-        self._ignore_list = NoIgnoreList()
-        self._projects = {}
-        return True
-    
     @property
-    def projects(self) -> Dict[str, Project]:
-        """Get all projects.
-        
-        Returns:
-            Dictionary mapping project names to Project instances.
+    def project(self) -> Project:
+        """The single project instance, reloaded from disk each access."""
+        return self._load_project()
+
+    # ------------------------------------------------------------------
+    # Task operations
+    # ------------------------------------------------------------------
+
+    def add_task(self, description: str, priority: int = 2, tag: str = "task") -> Task:
+        """Add a task to the project.
+
+        Creates the pjpd directory and tasks file if they don't exist yet.
         """
-        self.refresh_projects()
-        return self._projects
-    
-    def _sanitize_name(self, name: str) -> str:
-        """Sanitize and validate a project name for use as a filename.
-        
-        Converts the name to lowercase, replaces disallowed characters with
-        underscores, reduces runs of underscores to a single underscore, and
-        ensures the result is a valid filename. Also validates that the name
-        is not reserved and would not be ignored.
-        
-        Args:
-            name: The original project name to sanitize.
-            
-        Returns:
-            A sanitized filename-safe version of the name.
-            
-        Raises:
-            ValueError: If the name is empty/invalid, reserved, or would be ignored.
-        """
-        # Store original name for error messages
-        original_name = name
-        
-        # Normalise to lower-case for consistency and easier look-ups
-        name = name.lower()
+        self._ensure_project()
+        return self.project.add_task(description, priority, tag)
 
-        # Replace all disallowed characters with underscores
-        transformed = [ch if ch in FILENAME_SAFE_CHARS else "_" for ch in name]
-        name = re.sub(r"_+", "_", "".join(transformed))
+    def get_task(self, task_id: str) -> Optional[Task]:
+        """Get a specific task by ID."""
+        return self.project.get_task(task_id)
 
-        # Strip leading / trailing underscores or dots to avoid hidden / invalid
-        # filenames on some filesystems.
-        name = name.strip("._")
+    def update_task(
+        self,
+        task_id: str,
+        description: Optional[str] = None,
+        priority: Optional[int] = None,
+        status: Optional[str] = None,
+    ) -> Optional[Task]:
+        """Update a task by ID."""
+        return self.project.update_task(task_id, description, priority, status)
 
-        if not name:
-            raise ValueError(f"Project name cannot be empty or invalid: {original_name}")
-        
-        if name.lower() in RESERVED_PROJECT_STEMS:
-            raise ValueError(f"Project name '{original_name}' is excluded")
+    def mark_task_done(self, task_id: str) -> Optional[Task]:
+        """Mark a task as completed."""
+        return self.project.mark_done(task_id)
 
-        if self._ignore_list.should_ignore(f"{name}.txt"):
-            raise ValueError(f"Project name {name} is ignored")
-        
-        return name
-    
-    def get_project(self, name: str) -> Project:
-        """Retrieve a project by its sanitised name.
+    def get_all_tasks(
+        self,
+        priority_filter: Optional[int] = None,
+        status_filter: Optional[str] = None,
+    ) -> List[Task]:
+        """Get all tasks with optional filtering."""
+        tasks = self.project.tasks
 
-        The provided name is sanitized to match how project files are stored on disk.
-        This allows consumers to pass either the original name (which could contain 
-        spaces or other characters) or the sanitized filename-friendly version.
+        if priority_filter is not None:
+            tasks = [t for t in tasks if t.priority >= priority_filter]
+        if status_filter is not None:
+            tasks = [t for t in tasks if t.status == status_filter]
 
-        Args:
-            name: The project name to look up. Will be sanitized for filename matching.
+        return tasks
 
-        Returns:
-            The Project instance.
+    # ------------------------------------------------------------------
+    # Aggregate helpers
+    # ------------------------------------------------------------------
 
-        Raises:
-            ValueError: If the project doesn't exist or if the project file is ignored.
-        """
-        self.refresh_projects()
-
-        # Look up the sanitized name (since that's how files are stored)
-        safe_name = self._sanitize_name(name)
-        project = self.projects.get(safe_name)
-
-        if project is None:
-            raise ValueError(f"Project '{name}' does not exist")
-
-        return project
-            
-    
-    def create_project(self, name: str) -> Project:
-        """Create a new project.
-        
-        Args:
-            name: The name for the new project. Will be sanitized for filename use.
-            
-        Returns:
-            The newly created Project instance.
-        """
-        # Ensure projects are initialized before creating
-        self._ensure_projects()
-        self.refresh_projects()
-        
-        # Sanitize the project name for filename
-        safe_name = self._sanitize_name(name)
-        file_path = self.projects_subdir / f"{safe_name}.txt"
-        
-        if not file_path.exists():
-            file_path.touch()
-        
-        project = Project(safe_name, file_path)
-        self.projects[safe_name] = project
-        
-        return project
-    
-    def list_projects(self) -> List[Dict[str, Any]]:
-        """List all projects with their task counts.
-        
-        Returns:
-            List of dictionaries containing project information including name,
-            file path, and task count.
-        """
-        self.refresh_projects()
-        
-        projects_info = []
-        
-        for project in self.projects.values():
-            projects_info.append({
-                "name": project.name,
-                "file_path": str(project.file_path.relative_to(self.projects_subdir)),
-                "task_count": project.get_task_count()
-            })
-        
-        return projects_info
-    
-    def get_all_tasks(self, project_filter: Optional[str] = None, 
-                      priority_filter: Optional[int] = None,
-                      status_filter: Optional[str] = None) -> List[Task]:
-        """Get all tasks across all projects with optional filtering.
-        
-        Args:
-            project_filter: Optional project name to filter tasks by. If specified,
-                only tasks from this project will be returned.
-            priority_filter: Optional minimum priority level. Only tasks with
-                priority >= this value will be returned.
-            status_filter: Optional status filter. Only tasks with this exact
-                status will be returned.
-                
-        Returns:
-            List of Task instances matching the specified filters.
-        """
-        self.refresh_projects()
-        
-        # If a project filter is specified, validate that it's not a reserved stem
-        if project_filter:
-            safe_filter = self._sanitize_name(project_filter).lower()
-            if safe_filter in RESERVED_PROJECT_STEMS:
-                raise ValueError(f"Project '{project_filter}' is excluded")
-            # Validate that the project exists
-            try:
-                target_project = self.get_project(project_filter)
-                # Only process the specified project
-                tasks = target_project.tasks
-                
-                if priority_filter is not None:
-                    tasks = [t for t in tasks if t.priority >= priority_filter]
-                    
-                if status_filter is not None:
-                    tasks = [t for t in tasks if t.status == status_filter]
-                    
-                return tasks
-            except ValueError:
-                # Project doesn't exist, return empty list
-                return []
-        
-        all_tasks = []
-        
-        for project in self.projects.values():
-            tasks = project.tasks
-            
-            if priority_filter is not None:
-                tasks = [t for t in tasks if t.priority >= priority_filter]
-                
-            if status_filter is not None:
-                tasks = [t for t in tasks if t.status == status_filter]
-                
-            all_tasks.extend(tasks)
-        
-        return all_tasks
-    
-    def add_task(self, project_name: str, description: str, priority: int = 2, tag: str = "task") -> Optional[Task]:
-        """Add a task to a project.
-        
-        Args:
-            project_name: Name of the project to add the task to.
-            description: Description of the task.
-            priority: Priority level for the task (default: 2).
-            tag: Tag string for the task (default: "task").
-            
-        Returns:
-            The created Task instance, or None if the operation failed.
-            
-        Raises:
-            ValueError: If the projects system is not present or if the project does not exist.
-        """
-        if not self.present:
-            raise ValueError("Projects are not present. Create your project first.")
-
-        self.refresh_projects()
-
-        safe_name = self._sanitize_name(project_name).lower()
-        if safe_name in RESERVED_PROJECT_STEMS:
-            raise ValueError(f"Project '{project_name}' is excluded")
-
-        project = self.get_project(project_name)
-        return project.add_task(description, priority, tag)
-    
-    def get_task(self, project_name: str, task_id: str) -> Optional[Task]:
-        """Get a specific task from a project.
-        
-        Args:
-            project_name: Name of the project containing the task.
-            task_id: Unique identifier of the task to retrieve.
-            
-        Returns:
-            The Task instance if found, None otherwise.
-            
-        Raises:
-            ValueError: If the project does not exist.
-        """
-        self.refresh_projects()
-
-        project = self.get_project(project_name)
-        return project.get_task(task_id)
-    
-    def update_task(self, project_name: str, task_id: str, 
-                   description: Optional[str] = None,
-                   priority: Optional[int] = None,
-                   status: Optional[str] = None) -> Optional[Task]:
-        """Update a task in a project.
-        
-        Args:
-            project_name: Name of the project containing the task.
-            task_id: Unique identifier of the task to update.
-            description: New description for the task (optional).
-            priority: New priority level for the task (optional).
-            status: New status for the task (optional).
-            
-        Returns:
-            The updated Task instance if found, None otherwise.
-            
-        Raises:
-            ValueError: If the project does not exist.
-        """
-        project = self.get_project(project_name)
-        return project.update_task(task_id, description, priority, status)
-    
-    def mark_task_done(self, project_name: str, task_id: str) -> Optional[Task]:
-        """Mark a task as completed.
-        
-        Args:
-            project_name: Name of the project containing the task.
-            task_id: Unique identifier of the task to mark as done.
-            
-        Returns:
-            The updated Task instance if found, None otherwise.
-            
-        Raises:
-            ValueError: If the project does not exist.
-        """
-        project = self.get_project(project_name)
-        return project.mark_done(task_id)
-    
     def get_overview(self) -> Dict[str, Any]:
-        """Get an overview of all projects.
-        
-        Returns:
-            Dictionary containing summary statistics including total projects,
-            total tasks, todo tasks, done tasks, and individual project overviews.
-        """
-        self.refresh_projects()
-        
-        total_projects = len(self.projects)
-        total_tasks = 0
-        total_todo = 0
-        total_done = 0
-        
-        project_overviews = []
-        
-        for project in self.projects.values():
-            overview = project.get_overview()
-            project_overviews.append(overview)
-            
-            total_tasks += overview["total_tasks"]
-            total_todo += overview["todo_tasks"]
-            total_done += overview["done_tasks"]
-        
-        return {
-            "total_projects": total_projects,
-            "total_tasks": total_tasks,
-            "total_todo": total_todo,
-            "total_done": total_done,
-            "projects": project_overviews
-        }
-    
+        """Get an overview of the project."""
+        overview = self.project.get_overview()
+        overview["project_file"] = str(self.tasks_file)
+        return overview
+
     def get_next_steps(self, limit: int = 5) -> List[Task]:
-        """Get high-priority tasks to work on next.
-        
-        Returns the highest priority todo tasks across all projects,
-        sorted by priority (highest first).
-        
-        Args:
-            limit: Maximum number of tasks to return (default: 5).
-            
-        Returns:
-            List of Task instances sorted by priority (highest first).
-        """
-        self.refresh_projects()
-        
-        # Get all todo tasks
+        """Get the highest-priority ToDo tasks."""
         todo_tasks = self.get_all_tasks(status_filter="ToDo")
-        
-        # Sort by priority (plain integer, higher numbers = higher priority)
         todo_tasks.sort(key=lambda t: t.priority, reverse=True)
-        
-        # Return the top tasks up to the limit
         return todo_tasks[:limit]
-    
+
     def get_statistics(self) -> Dict[str, Any]:
-        """Get detailed statistics about all projects.
-        
-        Returns:
-            Dictionary containing comprehensive statistics including total counts,
-            breakdowns by priority, status, and project.
-        """
-        self.refresh_projects()
-        
-        stats = {
-            "total_projects": len(self.projects),
-            "total_tasks": 0,
+        """Get detailed statistics about the project."""
+        tasks = self.project.tasks
+        stats: Dict[str, Any] = {
+            "total_tasks": len(tasks),
             "tasks_by_priority": defaultdict(int),
             "tasks_by_status": defaultdict(int),
-            "tasks_by_project": defaultdict(int)
+            "project_file": str(self.tasks_file),
         }
-        
-        for project in self.projects.values():
-            project_task_count = len(project.tasks)
-            stats["total_tasks"] += project_task_count
-            stats["tasks_by_project"][project.name] = project_task_count
-            
-            for task in project.tasks:
-                stats["tasks_by_priority"][task.priority] += 1
-                stats["tasks_by_status"][task.status] += 1
-        
-        return dict(stats) 
+
+        for task in tasks:
+            stats["tasks_by_priority"][task.priority] += 1
+            stats["tasks_by_status"][task.status] += 1
+
+        return dict(stats)
