@@ -17,14 +17,12 @@ from config import Config
 from ideas import Ideas
 from projects import Projects
 from validation import (
-    AddIdeaRequest,
-    AddTaskRequest,
     ListIdeasRequest,
     ListTasksRequest,
     MarkDoneRequest,
     MarkIdeaDoneRequest,
-    UpdateIdeaRequest,
-    UpdateTaskRequest,
+    PutIdeaRequest,
+    PutTaskRequest,
 )
 
 # ---------------------------------------------------------------------------
@@ -100,77 +98,54 @@ def pjpd_intro() -> str:
 
 
 @mcp.tool()
-async def pjpd_add_task(
-    description: str, tag: str, priority: int = 2
+async def pjpd_put_task(
+    description: str,
+    tag: str = None,
+    id: str = None,
+    priority: int = 2,
 ) -> Dict[str, Any]:
-    """Add a new task to the project.
+    """Create or update a task. Provide `tag` to create a new task, or `id` to update an existing one.
 
     Args:
         description: The description of the task.
-        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Required.
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Provide to create a new task.
+        id: Existing task ID (format: `<tag>-XXXX`). Provide to update an existing task.
         priority: The priority level of the task (higher numbers = higher priority). Defaults to 2.
 
     Returns:
         Standard MCP response with task details or error message.
     """
     try:
-        request = AddTaskRequest(description=description, priority=priority, tag=tag)
-        task = projects_manager.add_task(
-            request.description, request.priority, request.tag
-        )
+        request = PutTaskRequest(description=description, tag=tag, id=id, priority=priority)
 
-        if not task:
-            return mcp_failure("Failed to add task")
-
-        return mcp_success(
-            _add_legacy_warning({
-                **task.to_dict(),
-                "project_file": str(projects_manager.project_file),
-                "message": "Task added successfully",
-            })
-        )
+        if request.tag:
+            task = projects_manager.add_task(
+                request.description, request.priority, request.tag
+            )
+            if not task:
+                return mcp_failure("Failed to add task")
+            return mcp_success(
+                _add_legacy_warning({
+                    **task.to_dict(),
+                    "project_file": str(projects_manager.project_file),
+                    "message": "Task created successfully",
+                })
+            )
+        else:
+            updated_task = projects_manager.update_task(
+                request.id, request.description, request.priority
+            )
+            if not updated_task:
+                return mcp_failure(f"Task '{request.id}' not found")
+            return mcp_success(
+                _add_legacy_warning({
+                    **updated_task.to_dict(),
+                    "project_file": str(projects_manager.project_file),
+                    "message": f"Task '{request.id}' updated successfully",
+                })
+            )
     except Exception as e:
-        return mcp_failure(f"Error adding task: {str(e)}")
-
-
-@mcp.tool()
-async def pjpd_update_task(
-    task_id: str,
-    description: str = None,
-    priority: int = None,
-    status: str = "ToDo",
-) -> Dict[str, Any]:
-    """Update an existing task in the project.
-
-    Args:
-        task_id: The unique tag-based task ID (format: `<tag>-XXXX`) to update.
-        description: Optional new description for the task.
-        priority: Optional new priority level (higher numbers = higher priority).
-        status: Optional new status ("ToDo" or "Done"). Defaults to "ToDo".
-
-    Returns:
-        Standard MCP response with updated task details or error message.
-    """
-    try:
-        request = UpdateTaskRequest(
-            task_id=task_id, description=description, priority=priority, status=status
-        )
-        updated_task = projects_manager.update_task(
-            request.task_id, request.description, request.priority, request.status
-        )
-
-        if not updated_task:
-            return mcp_failure(f"Task '{request.task_id}' not found")
-
-        return mcp_success(
-            _add_legacy_warning({
-                **updated_task.to_dict(),
-                "project_file": str(projects_manager.project_file),
-                "message": f"Task '{request.task_id}' updated successfully",
-            })
-        )
-    except Exception as e:
-        return mcp_failure(f"Error updating task: {str(e)}")
+        return mcp_failure(f"Error putting task: {str(e)}")
 
 
 @mcp.tool()
@@ -303,70 +278,55 @@ async def pjpd_list_ideas(max_results: int = None) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_add_idea(score: int, description: str, tag: str) -> Dict[str, Any]:
-    """Create a new idea in ideas.txt with parameters.
+async def pjpd_put_idea(
+    score: int,
+    description: str,
+    tag: str = None,
+    id: str = None,
+) -> Dict[str, Any]:
+    """Create or update an idea. Provide `tag` to create a new idea, or `id` to update an existing one.
 
     Args:
         score: Score value (higher numbers = higher relevance).
         description: Idea description.
-        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Required.
+        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Provide to create a new idea.
+        id: Existing idea ID (format: `<tag>-XXXX`). Provide to update an existing idea.
 
     Returns:
-        Standard MCP response with created idea details or error message.
+        Standard MCP response with idea details or error message.
     """
     try:
-        request = AddIdeaRequest(score=score, description=description, tag=tag)
-        idea = ideas_manager.add_idea(request.description, request.score, request.tag)
+        request = PutIdeaRequest(score=score, description=description, tag=tag, id=id)
 
-        return mcp_success(
-            {
-                **idea.to_dict(),
-                "project_file": str(ideas_manager.ideas_file),
-                "message": f"Idea added successfully with ID '{idea.id}'",
-            }
-        )
+        if request.tag:
+            idea = ideas_manager.add_idea(request.description, request.score, request.tag)
+            return mcp_success(
+                {
+                    **idea.to_dict(),
+                    "project_file": str(ideas_manager.ideas_file),
+                    "message": f"Idea created successfully with ID '{idea.id}'",
+                }
+            )
+        else:
+            updated = ideas_manager.update_idea(
+                request.id, request.description, request.score
+            )
+            if not updated:
+                return mcp_failure(f"Idea '{request.id}' not found")
+
+            for idea in ideas_manager.ideas:
+                if idea.id == request.id:
+                    return mcp_success(
+                        {
+                            **idea.to_dict(),
+                            "project_file": str(ideas_manager.ideas_file),
+                            "message": f"Idea '{request.id}' updated successfully",
+                        }
+                    )
+
+            return mcp_failure(f"Error retrieving updated idea '{request.id}'")
     except Exception as e:
-        return mcp_failure(f"Error adding idea: {str(e)}")
-
-
-@mcp.tool()
-async def pjpd_update_idea(
-    idea_id: str, score: int = None, description: str = None
-) -> Dict[str, Any]:
-    """Update an existing idea.
-
-    Args:
-        idea_id: Tag-based idea ID (format: `<tag>-XXXX`).
-        score: Optional new score value.
-        description: Optional new idea description.
-
-    Returns:
-        Standard MCP response with updated idea details or error message.
-    """
-    try:
-        request = UpdateIdeaRequest(
-            idea_id=idea_id, score=score, description=description
-        )
-        updated = ideas_manager.update_idea(
-            request.idea_id, request.description, request.score
-        )
-
-        if not updated:
-            return mcp_failure(f"Idea '{request.idea_id}' not found")
-
-        for idea in ideas_manager.ideas:
-            if idea.id == request.idea_id:
-                return mcp_success(
-                    {
-                        **idea.to_dict(),
-                        "project_file": str(ideas_manager.ideas_file),
-                        "message": f"Idea '{request.idea_id}' updated successfully",
-                    }
-                )
-
-        return mcp_failure(f"Error retrieving updated idea '{request.idea_id}'")
-    except Exception as e:
-        return mcp_failure(f"Error updating idea: {str(e)}")
+        return mcp_failure(f"Error putting idea: {str(e)}")
 
 
 @mcp.tool()

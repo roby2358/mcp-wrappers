@@ -10,8 +10,7 @@ import shutil
 
 from src.mcp_wrapper import (
     pjpd_list_ideas,
-    pjpd_add_idea,
-    pjpd_update_idea,
+    pjpd_put_idea,
     pjpd_mark_idea_done,
     mcp_success,
     mcp_failure
@@ -37,7 +36,6 @@ class TestIdeasTools:
 
     async def test_list_ideas_success(self, mock_ideas_manager):
         """Test successful listing of ideas."""
-        # Mock ideas data
         mock_ideas = [
             {"id": "idea-1234", "score": 100, "description": "High priority idea"},
             {"id": "idea-5678", "score": 50, "description": "Medium priority idea"},
@@ -72,71 +70,57 @@ class TestIdeasTools:
         assert result["success"] is False
         assert "Error listing ideas" in result["error"]
 
-    async def test_add_idea_success(self, mock_ideas_manager):
-        """Test successful addition of an idea."""
+    async def test_put_idea_create(self, mock_ideas_manager):
+        """Test creating a new idea via put_idea with tag."""
         mock_idea = Idea(id="idea-1234", tag="idea", score=75, description="Test idea")
         mock_ideas_manager.add_idea.return_value = mock_idea
 
-        result = await pjpd_add_idea(score=75, description="Test idea", tag="idea")
+        result = await pjpd_put_idea(score=75, description="Test idea", tag="idea")
 
         assert result["success"] is True
         assert result["result"]["id"] == "idea-1234"
         assert result["result"]["score"] == 75
-        assert result["result"]["description"] == "Test idea"
-        assert "Idea added successfully" in result["result"]["message"]
+        assert "created successfully" in result["result"]["message"]
         mock_ideas_manager.add_idea.assert_called_once_with("Test idea", 75, "idea")
 
-    async def test_add_idea_error(self, mock_ideas_manager):
-        """Test error handling in add_idea."""
-        mock_ideas_manager.add_idea.side_effect = Exception("Test error")
-
-        result = await pjpd_add_idea(score=50, description="Test idea", tag="idea")
-
-        assert result["success"] is False
-        assert "Error adding idea" in result["error"]
-
-    async def test_update_idea_success(self, mock_ideas_manager):
-        """Test successful update of an idea."""
+    async def test_put_idea_update(self, mock_ideas_manager):
+        """Test updating an existing idea via put_idea with id."""
         mock_idea = Idea(id="idea-a2c4", tag="idea", score=100, description="Updated idea")
         mock_ideas_manager.update_idea.return_value = True
         mock_ideas_manager.ideas = [mock_idea]
 
-        result = await pjpd_update_idea(
-            idea_id="idea-a2c4", 
-            score=100, 
-            description="Updated idea"
+        result = await pjpd_put_idea(
+            score=100, description="Updated idea", id="idea-a2c4"
         )
 
         assert result["success"] is True
         assert result["result"]["id"] == "idea-a2c4"
         assert result["result"]["score"] == 100
-        assert result["result"]["description"] == "Updated idea"
         assert "updated successfully" in result["result"]["message"]
         mock_ideas_manager.update_idea.assert_called_once_with(
             "idea-a2c4", "Updated idea", 100
         )
 
-    async def test_update_idea_not_found(self, mock_ideas_manager):
+    async def test_put_idea_update_not_found(self, mock_ideas_manager):
         """Test updating an idea that doesn't exist."""
         mock_ideas_manager.update_idea.return_value = False
 
-        result = await pjpd_update_idea(idea_id="idea-9999", score=50)
+        result = await pjpd_put_idea(score=50, description="X", id="idea-9999")
 
         assert result["success"] is False
         assert "not found" in result["error"]
 
-    async def test_update_idea_error(self, mock_ideas_manager):
-        """Test error handling in update_idea."""
-        mock_ideas_manager.update_idea.side_effect = Exception("Test error")
+    async def test_put_idea_error(self, mock_ideas_manager):
+        """Test error handling in put_idea."""
+        mock_ideas_manager.add_idea.side_effect = Exception("Test error")
 
-        result = await pjpd_update_idea(idea_id="idea-1234", score=50)
+        result = await pjpd_put_idea(score=50, description="Test idea", tag="idea")
 
         assert result["success"] is False
-        assert "Error updating idea" in result["error"]
+        assert "Error putting idea" in result["error"]
 
     async def test_mark_idea_done_success(self, mock_ideas_manager):
         """Test successfully marking an idea as done."""
-        # Prepare existing idea and mock behavior
         mock_idea = Idea(id="idea-a2c4", tag="idea", score=50, description="Some idea")
         mock_ideas_manager.ideas = [mock_idea]
         mock_ideas_manager.mark_idea_done.return_value = True
@@ -171,19 +155,17 @@ class TestMCPResponseHelpers:
     """Test the MCP response helper functions."""
 
     def test_mcp_success(self):
-        """Test successful MCP response creation."""
         result = {"test": "data"}
         response = mcp_success(result)
-        
+
         assert response["success"] is True
         assert response["result"] == result
         assert response["error"] == ""
 
     def test_mcp_failure(self):
-        """Test failed MCP response creation."""
         error_msg = "Test error message"
         response = mcp_failure(error_msg)
-        
+
         assert response["success"] is False
         assert response["result"] == ""
-        assert response["error"] == error_msg 
+        assert response["error"] == error_msg

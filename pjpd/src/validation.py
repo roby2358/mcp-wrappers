@@ -5,7 +5,7 @@ Pydantic models for MCP tool validation.
 import re
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # Regex patterns for validation
 TAG_PATTERN = r'^[a-zA-Z0-9\-]+$'
@@ -51,36 +51,39 @@ class MCPResponseFailure(BaseModel):
 MCPResponse = Union[MCPResponseSuccess, MCPResponseFailure]
 
 
-class AddTaskRequest(BaseModel):
-    """Request model for adding a task."""
+class PutTaskRequest(BaseModel):
+    """Request model for creating or updating a task.
+
+    Exactly one of ``tag`` or ``id`` must be provided:
+    - ``tag`` (without ``id``): create a new task, generating an ID from the tag.
+    - ``id`` (without ``tag``): update an existing task by ID.
+    """
     description: str = Field(..., min_length=1, description="The description of the task")
     priority: int = Field(default=2, ge=0, le=9999, description="Priority level (0-9999, higher numbers = higher priority)")
-    tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
+    tag: Optional[str] = Field(None, min_length=1, max_length=12, description="Tag for new task (1-12 chars, alphanumeric and hyphens). Provide to create.")
+    id: Optional[str] = Field(None, description="Existing task ID (format: <tag>-XXXX). Provide to update.")
 
     @field_validator('tag')
     @classmethod
     def validate_tag(cls, v):
-        return validate_tag_format(v)
-
-
-class UpdateTaskRequest(BaseModel):
-    """Request model for updating a task."""
-    task_id: str = Field(..., description="The unique tag-based task ID (format: <tag>-XXXX where XXXX is alphanumeric)")
-    description: Optional[str] = Field(None, description="Optional new description for the task")
-    priority: Optional[int] = Field(None, ge=0, le=9999, description="Optional new priority level (0-9999)")
-    status: str = Field(default="ToDo", description="Optional new status (ToDo or Done)")
-
-    @field_validator('status')
-    @classmethod
-    def validate_status(cls, v):
-        if v not in ["ToDo", "Done"]:
-            raise ValueError("Status must be either 'ToDo' or 'Done'")
+        if v is not None:
+            return validate_tag_format(v)
         return v
 
-    @field_validator('task_id')
+    @field_validator('id')
     @classmethod
-    def validate_task_id(cls, v):
-        return validate_id_format(v, "Task ID")
+    def validate_id(cls, v):
+        if v is not None:
+            return validate_id_format(v, "Task ID")
+        return v
+
+    @model_validator(mode='after')
+    def exactly_one_of_tag_or_id(self):
+        if self.tag and self.id:
+            raise ValueError("Provide either 'tag' (to create) or 'id' (to update), not both")
+        if not self.tag and not self.id:
+            raise ValueError("Provide either 'tag' (to create) or 'id' (to update)")
+        return self
 
 
 class ListTasksRequest(BaseModel):
@@ -105,28 +108,39 @@ class ListIdeasRequest(BaseModel):
     max_results: Optional[int] = Field(None, gt=1, le=1000, description="Maximum number of results to return")
 
 
-class AddIdeaRequest(BaseModel):
-    """Request model for adding an idea."""
+class PutIdeaRequest(BaseModel):
+    """Request model for creating or updating an idea.
+
+    Exactly one of ``tag`` or ``id`` must be provided:
+    - ``tag`` (without ``id``): create a new idea, generating an ID from the tag.
+    - ``id`` (without ``tag``): update an existing idea by ID.
+    """
     score: int = Field(..., ge=0, le=9999, description="Score value (0-9999, higher numbers = higher relevance)")
     description: str = Field(..., min_length=1, description="Idea description")
-    tag: str = Field(..., min_length=1, max_length=12, description="Tag string (1-12 characters, alphanumeric and hyphens only)")
+    tag: Optional[str] = Field(None, min_length=1, max_length=12, description="Tag for new idea (1-12 chars, alphanumeric and hyphens). Provide to create.")
+    id: Optional[str] = Field(None, description="Existing idea ID (format: <tag>-XXXX). Provide to update.")
 
     @field_validator('tag')
     @classmethod
     def validate_tag(cls, v):
-        return validate_tag_format(v)
+        if v is not None:
+            return validate_tag_format(v)
+        return v
 
-
-class UpdateIdeaRequest(BaseModel):
-    """Request model for updating an idea."""
-    idea_id: str = Field(..., description="Tag-based idea ID (format: <tag>-XXXX where XXXX is alphanumeric)")
-    score: Optional[int] = Field(None, ge=0, le=9999, description="Optional new score value (0-9999)")
-    description: Optional[str] = Field(None, min_length=1, description="Optional new idea description")
-
-    @field_validator('idea_id')
+    @field_validator('id')
     @classmethod
-    def validate_idea_id(cls, v):
-        return validate_id_format(v, "Idea ID")
+    def validate_id(cls, v):
+        if v is not None:
+            return validate_id_format(v, "Idea ID")
+        return v
+
+    @model_validator(mode='after')
+    def exactly_one_of_tag_or_id(self):
+        if self.tag and self.id:
+            raise ValueError("Provide either 'tag' (to create) or 'id' (to update), not both")
+        if not self.tag and not self.id:
+            raise ValueError("Provide either 'tag' (to create) or 'id' (to update)")
+        return self
 
 
 class MarkIdeaDoneRequest(BaseModel):
@@ -137,5 +151,3 @@ class MarkIdeaDoneRequest(BaseModel):
     @classmethod
     def validate_idea_id(cls, v):
         return validate_id_format(v, "Idea ID")
-
-
