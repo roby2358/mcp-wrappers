@@ -1,34 +1,52 @@
+Score:   65
+ID: promote-eh8f
+Promote idea to task. A single pjpd_promote_idea tool that atomically creates a task from an idea (copying description, mapping score to priority) and marks the idea done. Eliminates a four-step manual workflow that the AI has to choreograph every time an idea graduates to real work.
+----
 Score:   60
-ID: web-ui-vkki
-Add a web framework to serve project status through HTTP and a web UI so people can monitor independently of the MCP tools
+ID: history-7hc6
+Weekly digest from backup history. A get_history tool that diffs current tasks/ideas state against timestamped backups in bak/ to answer "what got done this week?" and "how has the backlog changed?" No new storage needed — the data already exists in bak/, it just can't be queried yet.
+----
+Score:   55
+ID: mark-done-dh2y
+Preserve original priority when marking a task done. Currently mark_done sets priority to 0, which destroys the signal. If you later ask "show me done tasks by priority" the ranking is gone. The status field already communicates done-ness — priority shouldn't be collateral damage.
+
+Note: priority is zeroed intentionally so done tasks sink in priority-descending sorts. But list_tasks already filters done tasks out by default, so the benefit only applies when show_done=True. A cleaner fix: sort on (-status_rank, -priority) so ToDo always ranks above Done without zeroing priority. Tradeoff, not a bug.
 ----
 Score:   50
-ID: templates-qwe4
-Project Templates - Pre-defined task structures for common project types (website launch, event planning, etc.). Reduces friction for new users. Leverages the text-file approach - templates could be shared as .txt files.
+ID: blocked-qscu
+Add a Blocked status to tasks. A third state (ToDo, Blocked, Done) lets the AI flag tasks waiting on external dependencies instead of leaving them in ToDo looking actionable. One more status string, a filter tweak in list_tasks, and the description explains why it's blocked. Minimal complexity, real signal.
 ----
-Score:   35
-ID: mobile-ui-y7cv
-Create mobile-responsive dashboard design for the web UI
-----
-Score:   30
-ID: rest-api-2j6s
-Add REST API and web UI controls for basic project management operations
-----
-Score:   30
-ID: csv-export-hg3c
-Add export to CSV functionality for tasks and projects
-----
-Score:   30
-ID: archiving-afbp
-Project archiving functionality to move completed projects to an archive directory, reducing clutter while maintaining history
-----
-Score:   10
-ID: quick-cap-bfrg
-Quick Capture Workflow - One-command task creation with smart defaults. Reduces cognitive load for rapid task capture. Example: add_task("meeting notes", "follow up with client", "followup"). Might be out of scope but worth considering.
-----
-Score:   10
+Score:    0
 ID: timestamps-54bz
-Add timestamps to tasks and ideas for tracking creation and modification dates
+(Done) Add timestamps to tasks and ideas for tracking creation and modification dates
+----
+Score:    0
+ID: quick-cap-bfrg
+(Done) Quick Capture Workflow - One-command task creation with smart defaults. Reduces cognitive load for rapid task capture. Example: add_task("meeting notes", "follow up with client", "followup"). Might be out of scope but worth considering.
+----
+Score:    0
+ID: archiving-afbp
+(Done) Project archiving functionality to move completed projects to an archive directory, reducing clutter while maintaining history
+----
+Score:    0
+ID: csv-export-hg3c
+(Done) Add export to CSV functionality for tasks and projects
+----
+Score:    0
+ID: rest-api-2j6s
+(Done) Add REST API and web UI controls for basic project management operations
+----
+Score:    0
+ID: mobile-ui-y7cv
+(Done) Create mobile-responsive dashboard design for the web UI
+----
+Score:    0
+ID: templates-qwe4
+(Done) Project Templates - Pre-defined task structures for common project types (website launch, event planning, etc.). Reduces friction for new users. Leverages the text-file approach - templates could be shared as .txt files.
+----
+Score:    0
+ID: web-ui-vkki
+(Done) Add a web framework to serve project status through HTTP and a web UI so people can monitor independently of the MCP tools
 ----
 Score:    0
 ID: batch-ops-md8h

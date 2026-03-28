@@ -35,17 +35,19 @@ class TestProjectCreationAndSaving:
         assert "Test task" in content
 
     def test_task_format_is_correct(self, projects_manager):
-        """Tasks are saved as Priority, Status, ID, Description"""
+        """Tasks are saved as Priority, Status, ID, Created, Updated, Description"""
         projects_manager.add_task("Test task", 100, "task")
 
         content = projects_manager.tasks_file.read_text(encoding="utf-8")
         lines = content.strip().split('\n')
 
-        assert len(lines) >= 4
+        assert len(lines) >= 6
         assert lines[0].startswith("Priority: ")
         assert lines[1].startswith("Status: ")
         assert lines[2].startswith("ID: ")
-        assert "Test task" in lines[3]
+        assert lines[3].startswith("Created: ")
+        assert lines[4].startswith("Updated: ")
+        assert "Test task" in lines[5]
 
     def test_multiple_tasks_are_saved(self, projects_manager):
         projects_manager.add_task("First task", 5, "task")

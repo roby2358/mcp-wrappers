@@ -56,9 +56,10 @@ class Project:
             tag=tag,
             priority=priority,
             status="ToDo",
-            description=description
+            description=description,
         )
-        
+        task.stamp_created()
+
         self.tasks.append(task)
         self._save_tasks()
         return task
@@ -83,7 +84,8 @@ class Project:
             task.priority = priority
         if status is not None:
             task.status = status
-        
+
+        task.stamp_updated()
         self._save_tasks()
         return task
     

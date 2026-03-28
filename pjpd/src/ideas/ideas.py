@@ -78,14 +78,15 @@ class Ideas:
 
         return self._ideas
 
-    def add_idea(self, description: str, score: int, tag: str = "idea") -> Idea:
+    def add_idea(self, description: str, score: int, tag: str) -> Idea:
         """Create and persist a new idea record."""
         idea = Idea(
-            id=Idea.generate_idea_id(tag), 
+            id=Idea.generate_idea_id(tag),
             tag=tag,
-            score=score, 
-            description=description
+            score=score,
+            description=description,
         )
+        idea.stamp_created()
         self.ideas.append(idea)
         self._save_ideas()
         return idea
@@ -98,6 +99,7 @@ class Ideas:
                     idea.description = description
                 if score is not None:
                     idea.score = score
+                idea.stamp_updated()
                 self._save_ideas()
                 return True
         return False
@@ -140,6 +142,7 @@ class Ideas:
                     first_line if not remaining_text else f"{first_line}\n{remaining_text}"
                 )
 
+                idea.stamp_updated()
                 self._save_ideas()
                 return True
         return False

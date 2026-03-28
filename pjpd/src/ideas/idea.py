@@ -7,11 +7,18 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
 
 from textrec.record_id import RecordID
 
 logger = logging.getLogger(__name__)
+
+_ISO_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def _now_utc() -> str:
+    return datetime.now(timezone.utc).strftime(_ISO_FMT)
 
 
 @dataclass
@@ -21,18 +28,21 @@ class Idea:
     The *Idea Record Format* (see SPEC.md) requires::
 
         Score: {integer}
-        Tag: {1-12-character-string}
         ID: {tag}-{4-character-random-string}
+        Created: {ISO-8601 UTC timestamp}
+        Updated: {ISO-8601 UTC timestamp}
         Free-form description spanning multiple lines
 
-    Records are separated in files by a line containing exactly three dashes
-    (handled at a higher level by the TextRecords helper).
+    Records are separated in files by ``----`` (4 hyphens, asciidoc standard).
+    The parser also accepts 3+ hyphens for backward compatibility.
     """
 
     id: str
     tag: str
     score: int
     description: str
+    created: Optional[str] = None   # ISO-8601 UTC timestamp
+    updated: Optional[str] = None   # ISO-8601 UTC timestamp
 
     # ------------------------------------------------------------------
     # ID generation
@@ -82,6 +92,14 @@ class Idea:
             new_state = state.copy()
             new_state["tag"] = value
             return True, new_state
+        elif key == "created":
+            new_state = state.copy()
+            new_state["created"] = value
+            return True, new_state
+        elif key == "updated":
+            new_state = state.copy()
+            new_state["updated"] = value
+            return True, new_state
         return False, state
 
     # ------------------------------------------------------------------
@@ -102,6 +120,8 @@ class Idea:
                 "score": 1,  # Reasonable default when absent / malformed
                 "idea_id": "",
                 "tag": "",
+                "created": None,
+                "updated": None,
             }
             description_lines: list[str] = []
 
@@ -132,10 +152,12 @@ class Idea:
             description = "\n".join(description_lines).strip()
 
             return cls(
-                id=state["idea_id"], 
+                id=state["idea_id"],
                 tag=state["tag"],
-                score=state["score"], 
-                description=description
+                score=state["score"],
+                description=description,
+                created=state["created"],
+                updated=state["updated"],
             )
         except Exception as exc:  # pragma: no cover – broad catch mirrors Task.from_text
             logger.warning("Malformed idea record ignored: %s", exc)
@@ -144,20 +166,43 @@ class Idea:
     # --------------------------------------------------------------
     # Serialisation helpers
     # --------------------------------------------------------------
+    def stamp_created(self) -> None:
+        """Set created timestamp if not already set, and refresh updated."""
+        now = _now_utc()
+        if not self.created:
+            self.created = now
+        self.updated = now
+
+    def stamp_updated(self) -> None:
+        """Refresh updated timestamp. Sets created too if missing (legacy record)."""
+        now = _now_utc()
+        if not self.created:
+            self.created = now
+        self.updated = now
+
     def to_text(self) -> str:
         """Render the idea back to its on-disk record form."""
         lines = [
             f"Score: {self.score:4d}",
             f"ID: {self.id}",
-            self.description.strip(),
         ]
+        if self.created:
+            lines.append(f"Created: {self.created}")
+        if self.updated:
+            lines.append(f"Updated: {self.updated}")
+        lines.append(self.description.strip())
         return "\n".join(lines)
 
     def to_dict(self) -> dict:
         """Convert to a plain dictionary for API responses or tests."""
-        return {
+        d = {
             "id": self.id,
             "score": self.score,
             "description": self.description,
         }
+        if self.created:
+            d["created"] = self.created
+        if self.updated:
+            d["updated"] = self.updated
+        return d
 

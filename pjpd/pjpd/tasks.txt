@@ -1,18 +1,23 @@
 Priority:    0
 Status: Done
+ID: timestamps-q2jp
+Add Created and Updated timestamp properties to tasks and ideas. Each record gets a Created: ISO-8601 timestamp set once at creation, and an Updated: timestamp refreshed on every write. Existing records without timestamps must parse cleanly — treat missing timestamps as absent, not as errors. When an old record is updated for the first time, set Created and Updated to now. This pairs with the backup history idea: timestamps on records plus diffs across bak/ snapshots gives you a full activity picture without any new infrastructure.
+----
+Priority:    0
+Status: Done
 ID: batch-k8jd
 Add batch operations for tasks: accept lists of tasks for add, update, and mark done operations
----
+----
 Priority:    0
 Status: Done
 ID: urldecode-vf3f
 fix url decoding in the project path
----
+----
 Priority:    0
 Status: Done
 ID: defer-dir-yfvk
 defer creating pjpd subdirectory until as long as possible
----
+----
 Priority:    0
 Status: Done
 ID: tools-cvmb

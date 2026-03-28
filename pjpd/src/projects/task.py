@@ -5,11 +5,19 @@ Represents a single task in a project
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
 
 from textrec.record_id import RecordID
 
 logger = logging.getLogger(__name__)
+
+_ISO_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def _now_utc() -> str:
+    return datetime.now(timezone.utc).strftime(_ISO_FMT)
+
 
 @dataclass
 class Task:
@@ -19,6 +27,8 @@ class Task:
     priority: int  # Plain integer priority (higher numbers = higher priority)
     status: str    # "ToDo" or "Done"
     description: str
+    created: Optional[str] = None   # ISO-8601 UTC timestamp
+    updated: Optional[str] = None   # ISO-8601 UTC timestamp
 
     @staticmethod
     def generate_task_id(tag: str) -> str:
@@ -68,6 +78,16 @@ class Task:
             new_state["tag"] = value
             return True, new_state
 
+        elif key == "created":
+            new_state = state.copy()
+            new_state["created"] = value
+            return True, new_state
+
+        elif key == "updated":
+            new_state = state.copy()
+            new_state["updated"] = value
+            return True, new_state
+
         return False, state
     
     @classmethod
@@ -92,6 +112,8 @@ class Task:
                 "status": "ToDo",
                 "task_id": "",
                 "tag": "",
+                "created": None,
+                "updated": None,
             }
 
             description_lines: list[str] = []
@@ -128,27 +150,52 @@ class Task:
                 priority=state["priority"],
                 status=state["status"],
                 description=description,
+                created=state["created"],
+                updated=state["updated"],
             )
 
         except Exception as e:
             logger.warning(f"Malformed task record ignored: {e}")
             return None
     
+    def stamp_created(self) -> None:
+        """Set created timestamp if not already set, and refresh updated."""
+        now = _now_utc()
+        if not self.created:
+            self.created = now
+        self.updated = now
+
+    def stamp_updated(self) -> None:
+        """Refresh updated timestamp. Sets created too if missing (legacy record)."""
+        now = _now_utc()
+        if not self.created:
+            self.created = now
+        self.updated = now
+
     def to_text(self) -> str:
         """Convert task to text format (each property on its own line)."""
         lines = [
             f"Priority: {self.priority:4d}",
             f"Status: {self.status}",
             f"ID: {self.id}",
-            self.description.strip(),
         ]
-        return "\n".join(lines) 
-    
+        if self.created:
+            lines.append(f"Created: {self.created}")
+        if self.updated:
+            lines.append(f"Updated: {self.updated}")
+        lines.append(self.description.strip())
+        return "\n".join(lines)
+
     def to_dict(self) -> dict:
         """Convert task to dictionary format for API responses."""
-        return {
+        d = {
             "id": self.id,
             "priority": self.priority,
             "status": self.status,
             "description": self.description,
-        } 
+        }
+        if self.created:
+            d["created"] = self.created
+        if self.updated:
+            d["updated"] = self.updated
+        return d 

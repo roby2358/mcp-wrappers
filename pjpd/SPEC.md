@@ -28,6 +28,12 @@ This specification outlines the design, structure, and operational requirements 
     1. `Priority: {integer}`
     2. `Status: {ToDo|Done}`
     3. `ID: {tag}-{4-character-random-string}`
+    4. `Created: {ISO-8601 UTC timestamp}` (optional, set once at creation)
+    5. `Updated: {ISO-8601 UTC timestamp}` (optional, refreshed on every write)
+
+* Timestamps **MUST** use ISO-8601 UTC format: `YYYY-MM-DDTHH:MM:SSZ`
+* Missing timestamps **MUST** be treated as absent, not as errors (backward compatibility)
+* When a legacy record without timestamps is updated, both `Created` and `Updated` **MUST** be set to the current time
 
 * **Note**: The tag is extracted from the ID for internal use but is not stored separately
 * Task IDs **MUST** be in the format `<tag>-XXXX` where:
@@ -46,11 +52,15 @@ This specification outlines the design, structure, and operational requirements 
 Priority:    1
 Status: ToDo
 ID: bug-ab12
+Created: 2026-03-28T20:00:00Z
+Updated: 2026-03-28T20:00:00Z
 Add functionality to encapsulate the cardinal graham meters.
 ----
 Priority:   10
 Status: Done
 ID: doc-3456
+Created: 2026-03-20T14:30:00Z
+Updated: 2026-03-25T09:15:00Z
 Update documentation for the new API endpoints.
 ----
 Priority:  100
@@ -68,6 +78,10 @@ better readability.
 
     1. `Score: {integer}`
     2. `ID: {tag}-{4-character-random-string}`
+    3. `Created: {ISO-8601 UTC timestamp}` (optional, set once at creation)
+    4. `Updated: {ISO-8601 UTC timestamp}` (optional, refreshed on every write)
+
+* Idea timestamps follow the same rules as task timestamps (see above)
 
 * **Note**: The tag is extracted from the ID for internal use but is not stored separately
 * Idea IDs **MUST** be in the format `<tag>-XXXX` where:
@@ -85,6 +99,8 @@ better readability.
 ```
 Score:   75
 ID: ai-abcd
+Created: 2026-03-28T20:00:00Z
+Updated: 2026-03-28T20:00:00Z
 Implement experimental AI-assisted code review workflow.
 ----
 Score:    5
