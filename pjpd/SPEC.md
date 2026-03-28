@@ -2,7 +2,7 @@
 
 ## Overview
 
-ProjectMCP is a lightweight, local-first project management system built on plain `.txt` files using the text_records utility. It manages tasks, ideas, and epics for a single project rooted at the current working directory. All data lives under `<cwd>/pjpd/`.
+ProjectMCP is a lightweight, local-first project management system built on plain `.txt` files using the text_records utility. It manages tasks and ideas for a single project rooted at the current working directory. All data lives under `<cwd>/pjpd/`.
 
 This specification outlines the design, structure, and operational requirements of ProjectMCP. It is intended for developers contributing to the core system, as well as those building tools and extensions atop it.
 
@@ -62,8 +62,6 @@ better readability.
 
 ### Idea Record Format
 
-*See also: [Epic Record Format](#epic-record-format) for grouping ideas and projects into higher-level workstreams.*
-
 * Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
 * Each idea **MUST** contain **at least two** property lines followed by a free-form description.
   The system writes the properties in this recommended order:
@@ -95,32 +93,11 @@ Investigate alternative color palette for dark mode.
 ---
 ```
 
-### Epic Record Format
-
-* Each epic **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
-* Each epic **MUST** contain **five or more** lines in this order:
-    1. `Score: {integer}`
-    2. `Ideas: {space-delimited-list-of-idea-ids}`
-    3. `Projects: {space-delimited-list-of-project-names}`
-    4. `ID: {tag}-{4-character-random-string}`
-    5. Epic description (may span multiple lines)
-* **Note**: The tag is extracted from the ID for internal use but is not stored separately
-* Epic IDs **MUST** be in the format `<tag>-XXXX` where:
-    * `<tag>` is a 1-12 character string provided at creation
-    * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)
-* Epic tags **MUST** be 1-12 characters long and contain only alphanumeric characters and hyphens
-* Epic IDs **MUST** follow the same uniqueness rules as task and idea IDs and share the same global ID space.
-* Epics **MUST** be sorted by score when saving to disk (higher scores first).
-* `mark_epic_done` **MUST NOT** delete the record; instead it **MUST** set the epic's score to `0`.
-* Epics **MUST NOT** require referential integrity. It is acceptable if referenced idea IDs or project names do not exist.
-* Empty or malformed epic records **MUST** be ignored with a WARN-level log message.
-
 ### File Organization
 
 * The system **MUST** store all data under a `pjpd` subdirectory of the current working directory
 * Tasks **MUST** be stored in a single file: `<cwd>/pjpd/tasks.txt`
 * Ideas **MUST** be stored in: `<cwd>/pjpd/ideas.txt`
-* Epics **MUST** be stored in: `<cwd>/pjpd/epics.txt`
 * Each file **MUST** use UTF-8 encoding
 * The `pjpd` directory and `tasks.txt` file **MAY** be created automatically when adding the first task
 
@@ -212,22 +189,6 @@ Investigate alternative color palette for dark mode.
     * `description` (string, optional): New idea description
 * `mark_idea_done` – Mark an idea as done (score to 0, prefix description with "(Done)"):
     * `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
-* `list_epics` – List epics:
-    * `max_results` (integer, optional): Maximum number of results to return
-* `add_epic` – Create a new epic in epics.txt:
-    * `score` (integer, required): Score value (higher numbers = higher relevance)
-    * `description` (string, required): Epic description
-    * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
-    * `ideas` (string, optional): Space-delimited list of idea IDs
-    * `projects` (string, optional): Space-delimited list of project names
-* `update_epic` – Update an existing epic:
-    * `epic_id` (string, required): Tag-based epic ID (format: `<tag>-XXXX`)
-    * `score` (integer, optional): New score value
-    * `description` (string, optional): New epic description
-    * `ideas` (string, optional): Space-delimited list of idea IDs
-    * `projects` (string, optional): Space-delimited list of project names
-* `mark_epic_done` – Mark an epic as done (sets score to 0):
-    * `epic_id` (string, required): Tag-based epic ID (format: `<tag>-XXXX`)
 
 ---
 
@@ -247,6 +208,7 @@ Investigate alternative color palette for dark mode.
 * Missing files **MUST** be handled gracefully (empty project)
 * Malformed task or idea records **MUST** be logged and skipped
 * Invalid task or idea IDs **MUST** return clear error messages
+
 
 ---
 
@@ -280,7 +242,7 @@ Investigate alternative color palette for dark mode.
 ## Integration with TextRecords
 
 * **MUST** use the existing `text_records.py` utility for file parsing
-* **MUST** extend TextRecords parsing to handle Task, Idea, and Epic formats
+* **MUST** extend TextRecords parsing to handle Task and Idea formats
 * **MUST** maintain compatibility with the existing record separator (`---`)
 
 ---

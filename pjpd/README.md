@@ -1,15 +1,14 @@
 # ProjectMCP
 
-A lightweight, local-first project management system built on plain `.txt` files using the Model Context Protocol (MCP). ProjectMCP manages tasks, ideas, and epics for a single project rooted at the current working directory.
+A lightweight, local-first project management system built on plain `.txt` files using the Model Context Protocol (MCP). ProjectMCP manages tasks and ideas for a single project rooted at the current working directory.
 
 ## Features
 
 - **Local-first**: All data stored in plain text files on your local machine
 - **Single-project**: One project per directory, tied to the current working directory
-- **Simple format**: Tasks, ideas, and epics stored in human-readable `.txt` files
+- **Simple format**: Tasks and ideas stored in human-readable `.txt` files
 - **Priority-based**: Higher numbers = higher priority task management
 - **Idea management**: Track and score ideas for future development
-- **Epic organization**: Group related ideas and projects into higher-level workstreams
 - **MCP integration**: Full Model Context Protocol support for AI assistant integration
 - **Atomic operations**: Safe file writing with timestamped backups to prevent data corruption
 - **Cross-platform**: Works on Windows, macOS, and Linux
@@ -70,11 +69,6 @@ Using an MCP client (like Claude Desktop or Claude Code), you can:
 - "List my top 10 ideas"
 - "Update idea 'ui-a2c4' to have score 9"
 
-**Epic Management:**
-- "Create a new epic 'User Experience Improvements' with score 7 and tag 'ux'"
-- "Show me all my epics"
-- "Mark epic 'ux-a2c4' as completed"
-
 ## Configuration
 
 ProjectMCP uses a TOML configuration file named `projectmcp.toml` in the project root:
@@ -98,7 +92,6 @@ All data is stored under `<cwd>/pjpd/`:
 <cwd>/pjpd/
 ├── tasks.txt     # All tasks
 ├── ideas.txt     # All ideas
-├── epics.txt     # All epics
 └── bak/          # Timestamped backups from atomic writes
 ```
 
@@ -130,20 +123,9 @@ Investigate alternative color palette for dark mode.
 ---
 ```
 
-### Epic Storage
-
-```
-Score:   85
-Ideas: ai-abcd ui-klmn
-Projects: website-redesign mobile-app
-ID: platform-efgh
-Build a unified platform for web and mobile development.
----
-```
-
 ### Record Properties
 
-> **Note**: Tags are used internally for ID generation but are not exposed in API responses. The tag field is only used when creating new tasks, ideas, or epics.
+> **Note**: Tags are used internally for ID generation but are not exposed in API responses. The tag field is only used when creating new tasks or ideas.
 
 #### Tasks
 - **ID**: Tag-based unique identifier (format: `<tag>-XXXX`)
@@ -155,13 +137,6 @@ Build a unified platform for web and mobile development.
 - **ID**: Tag-based unique identifier (format: `<tag>-XXXX`)
 - **Score**: Integer value (higher numbers = higher relevance)
 - **Description**: Multi-line idea description
-
-#### Epics
-- **Score**: Integer value (higher numbers = higher relevance)
-- **Ideas**: Space-delimited list of idea IDs
-- **Projects**: Space-delimited list of project names
-- **ID**: Tag-based unique identifier (format: `<tag>-XXXX`)
-- **Description**: Multi-line epic description
 
 ### Legacy Project File Warning
 
@@ -210,18 +185,6 @@ For complete API documentation including all MCP tools and prompts, see [README_
    list_ideas(max_results=5)
    ```
 
-### Epic Organization
-
-1. **Create an epic:**
-   ```
-   add_epic(85, "Platform unification", "platform", "ai-abcd ui-klmn", "website-redesign mobile-app")
-   ```
-
-2. **List epics:**
-   ```
-   list_epics(max_results=3)
-   ```
-
 ### Advanced Filtering
 
 ```
@@ -252,9 +215,6 @@ pjpd/
 │   ├── ideas/
 │   │   ├── ideas.py         # Idea management logic
 │   │   └── idea.py          # Idea data structures
-│   ├── epics/
-│   │   ├── epics.py         # Epic management logic
-│   │   └── epic.py          # Epic data structures
 │   └── textrec/
 │       ├── text_records.py  # Text record parsing and atomic writes
 │       └── record_id.py     # Tag-based ID generation

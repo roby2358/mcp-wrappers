@@ -16,7 +16,7 @@ All tools return a consistent response structure:
 
 Every successful result includes a `project_file` property with the full path to the data file being operated on. Task tool results may also include a `warning` property if a legacy project file is detected (see [Legacy Warning](#legacy-project-file-warning)).
 
-> **Note**: Tag fields are used internally for ID generation but are not included in API responses. When creating new tasks, ideas, or epics, you must provide a tag, but the tag will not be returned in response data.
+> **Note**: Tag fields are used internally for ID generation but are not included in API responses. When creating new tasks or ideas, you must provide a tag, but the tag will not be returned in response data.
 
 ## MCP Tools
 
@@ -87,40 +87,6 @@ Mark an idea as done (sets score to 0, prefixes description with "(Done)").
 
 **Parameters:**
 - `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
-
-### Epic Management
-
-#### `list_epics`
-List epics with optional filtering.
-
-**Parameters:**
-- `max_results` (integer, optional): Maximum number of results to return
-
-#### `add_epic`
-Create a new epic in epics.txt.
-
-**Parameters:**
-- `score` (integer, required): Score value (higher numbers = higher relevance)
-- `description` (string, required): Epic description
-- `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
-- `ideas` (string, optional): Space-delimited list of idea IDs
-- `projects` (string, optional): Space-delimited list of project names
-
-#### `update_epic`
-Update an existing epic.
-
-**Parameters:**
-- `epic_id` (string, required): Tag-based epic ID (format: `<tag>-XXXX`)
-- `score` (integer, optional): New score value
-- `description` (string, optional): New epic description
-- `ideas` (string, optional): Space-delimited list of idea IDs
-- `projects` (string, optional): Space-delimited list of project names
-
-#### `mark_epic_done`
-Mark an epic as done (sets score to 0).
-
-**Parameters:**
-- `epic_id` (string, required): Tag-based epic ID (format: `<tag>-XXXX`)
 
 ## MCP Prompts
 

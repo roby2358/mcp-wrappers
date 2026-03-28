@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-pjpd MCP Server — single-project task, idea, and epic management.
+pjpd MCP Server — single-project task and idea management.
 
 The current working directory is the project root. All data lives under
-``<cwd>/pjpd/`` (tasks.txt, ideas.txt, epics.txt).
+``<cwd>/pjpd/`` (tasks.txt, ideas.txt).
 """
 
 import logging
@@ -14,20 +14,15 @@ from typing import Any, Dict, List
 from mcp.server.fastmcp import FastMCP
 
 from config import Config
-from epics import Epics
 from ideas import Ideas
 from projects import Projects
 from validation import (
-    AddEpicRequest,
     AddIdeaRequest,
     AddTaskRequest,
-    ListEpicsRequest,
     ListIdeasRequest,
     ListTasksRequest,
     MarkDoneRequest,
-    MarkEpicDoneRequest,
     MarkIdeaDoneRequest,
-    UpdateEpicRequest,
     UpdateIdeaRequest,
     UpdateTaskRequest,
 )
@@ -61,7 +56,6 @@ project_dir = Path.cwd()
 
 projects_manager = Projects(project_dir)
 ideas_manager = Ideas(project_dir)
-epics_manager = Epics(project_dir)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -401,158 +395,6 @@ async def pjpd_mark_idea_done(idea_id: str) -> Dict[str, Any]:
         )
     except Exception as e:
         return mcp_failure(f"Error marking idea as done: {str(e)}")
-
-
-# ---------------------------------------------------------------------------
-# Epic tools
-# ---------------------------------------------------------------------------
-
-
-@mcp.tool()
-async def pjpd_list_epics(max_results: int = None) -> Dict[str, Any]:
-    """List epics with optional filtering.
-
-    Args:
-        max_results: Maximum number of results to return.
-
-    Returns:
-        Standard MCP response with list of epics sorted by score (highest first).
-    """
-    try:
-        request = ListEpicsRequest(max_results=max_results)
-        epics = epics_manager.list_epics(max_results=request.max_results)
-
-        return mcp_success(
-            {
-                "total_epics": len(epics),
-                "epics": epics,
-                "project_file": str(epics_manager.epics_file),
-                "message": f"Retrieved {len(epics)} epics",
-            }
-        )
-    except Exception as e:
-        return mcp_failure(f"Error listing epics: {str(e)}")
-
-
-@mcp.tool()
-async def pjpd_add_epic(
-    score: int, description: str, tag: str, ideas: str = "", projects: str = ""
-) -> Dict[str, Any]:
-    """Create a new epic in epics.txt.
-
-    Args:
-        score: Score value (higher numbers = higher relevance).
-        description: Epic description.
-        tag: Tag string (1-12 characters, alphanumeric and hyphens only). Required.
-        ideas: Space-delimited list of idea IDs (optional).
-        projects: Space-delimited list of project names (optional).
-
-    Returns:
-        Standard MCP response with created epic details or error message.
-    """
-    try:
-        request = AddEpicRequest(
-            score=score, description=description, tag=tag, ideas=ideas, projects=projects
-        )
-        epic = epics_manager.add_epic(
-            description=request.description,
-            score=request.score,
-            tag=request.tag,
-            ideas=request.ideas.split() if request.ideas else [],
-            projects=request.projects.split() if request.projects else [],
-        )
-
-        return mcp_success(
-            {
-                **epic.to_dict(),
-                "project_file": str(epics_manager.epics_file),
-                "message": f"Epic added successfully with ID '{epic.id}'",
-            }
-        )
-    except Exception as e:
-        return mcp_failure(f"Error adding epic: {str(e)}")
-
-
-@mcp.tool()
-async def pjpd_update_epic(
-    epic_id: str,
-    score: int = None,
-    description: str = None,
-    ideas: str = None,
-    projects: str = None,
-) -> Dict[str, Any]:
-    """Update an existing epic.
-
-    Args:
-        epic_id: Tag-based epic ID (format: `<tag>-XXXX`).
-        score: Optional new score.
-        description: Optional new description.
-        ideas: Optional space-delimited list of idea IDs.
-        projects: Optional space-delimited list of project names.
-
-    Returns:
-        Standard MCP response with updated epic details or error message.
-    """
-    try:
-        request = UpdateEpicRequest(
-            epic_id=epic_id,
-            score=score,
-            description=description,
-            ideas=ideas,
-            projects=projects,
-        )
-        updated = epics_manager.update_epic(
-            request.epic_id,
-            description=request.description,
-            score=request.score,
-            ideas=request.ideas.split() if request.ideas is not None else None,
-            projects=request.projects.split() if request.projects is not None else None,
-        )
-
-        if not updated:
-            return mcp_failure(f"Epic '{request.epic_id}' not found")
-
-        for epic in epics_manager.epics:
-            if epic.id == request.epic_id:
-                return mcp_success(
-                    {
-                        **epic.to_dict(),
-                        "project_file": str(epics_manager.epics_file),
-                        "message": f"Epic '{request.epic_id}' updated successfully",
-                    }
-                )
-
-        return mcp_failure(f"Error retrieving updated epic '{request.epic_id}'")
-    except Exception as e:
-        return mcp_failure(f"Error updating epic: {str(e)}")
-
-
-@mcp.tool()
-async def pjpd_mark_epic_done(epic_id: str) -> Dict[str, Any]:
-    """Mark an epic as done by setting its score to 0.
-
-    Args:
-        epic_id: Tag-based epic ID (format: `<tag>-XXXX`).
-
-    Returns:
-        Standard MCP response indicating success or failure.
-    """
-    try:
-        request = MarkEpicDoneRequest(epic_id=epic_id)
-        marked_done = epics_manager.mark_epic_done(request.epic_id)
-
-        if marked_done:
-            return mcp_success(
-                {
-                    "epic_id": request.epic_id,
-                    "project_file": str(epics_manager.epics_file),
-                    "message": f"Epic '{request.epic_id}' marked as done (score set to 0)",
-                }
-            )
-        else:
-            return mcp_failure(f"Epic '{request.epic_id}' not found")
-    except Exception as e:
-        return mcp_failure(f"Error marking epic as done: {str(e)}")
 
 
 # ---------------------------------------------------------------------------

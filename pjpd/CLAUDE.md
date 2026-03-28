@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-pjpd is an MCP (Model Context Protocol) server for local project management. It manages tasks, ideas, and epics for a single project rooted at the current working directory. All data lives under `<cwd>/pjpd/` as plain text files. It runs over stdio using the FastMCP framework.
+pjpd is an MCP (Model Context Protocol) server for local project management. It manages tasks and ideas for a single project rooted at the current working directory. All data lives under `<cwd>/pjpd/` as plain text files. It runs over stdio using the FastMCP framework.
 
 ## Commands
 
@@ -24,14 +24,13 @@ python pjpd.py                       # Run the MCP server
 
 **Entry point**: `pjpd.py` → adds `src/` to `sys.path` → calls `mcp_wrapper.main()`.
 
-**`src/mcp_wrapper.py`** is the core file. It creates the FastMCP server, instantiates three managers (`Projects`, `Ideas`, `Epics`) all rooted at `Path.cwd()`, and registers all `@mcp.tool()` functions. Every tool returns `{"success": bool, "result": ..., "error": "..."}` via `mcp_success()`/`mcp_failure()` helpers. Every successful response includes a `project_file` property with the full path to the relevant data file. All tool inputs are validated through Pydantic models in `src/validation.py`.
+**`src/mcp_wrapper.py`** is the core file. It creates the FastMCP server, instantiates two managers (`Projects`, `Ideas`) both rooted at `Path.cwd()`, and registers all `@mcp.tool()` functions. Every tool returns `{"success": bool, "result": ..., "error": "..."}` via `mcp_success()`/`mcp_failure()` helpers. Every successful response includes a `project_file` property with the full path to the relevant data file. All tool inputs are validated through Pydantic models in `src/validation.py`.
 
 **Single-project model**: The cwd is the project. There is one `pjpd/tasks.txt` file — no named projects, no project parameter on task tools.
 
-**Three domain modules** follow the same pattern:
+**Two domain modules** follow the same pattern:
 - `src/projects/` — `Projects` manages a single `Project` instance backed by `pjpd/tasks.txt`. Each `Task` is lazy-loaded from the file.
 - `src/ideas/` — `Ideas` manages `Idea` records in `pjpd/ideas.txt`.
-- `src/epics/` — `Epics` manages `Epic` records in `pjpd/epics.txt`. Epics link to idea IDs and project names.
 
 **Shared infrastructure**:
 - `src/textrec/text_records.py` — Parses `---`-separated records from `.txt` files and provides `write_atomic()` (timestamped backup to `bak/` directory, then `os.replace`).
@@ -43,17 +42,16 @@ python pjpd.py                       # Run the MCP server
 <cwd>/pjpd/
 ├── tasks.txt         # All tasks for the project
 ├── ideas.txt         # All ideas
-├── epics.txt         # All epics
 └── bak/              # Timestamped backups from atomic writes
 ```
 
 ## Key Design Decisions
 
 - **CWD is the project root** — no configurable projects directory, no multi-project support.
-- **`Projects.project` property reloads from disk every access** — always reflects current file state. Ideas and Epics also reload on access.
+- **`Projects.project` property reloads from disk every access** — always reflects current file state. Ideas also reload on access.
 - **IDs use format `<tag>-XXXX`** where XXXX is 4 alphanumeric chars. Validated by regex `^[a-zA-Z0-9\-]+-[a-z2-9]{4}$`.
 - **Priority is a plain integer** (higher = more important). Tasks default to priority 2.
-- **Marking done**: Tasks get status "Done". Ideas get score 0 + "(Done)" prefix. Epics get score 0.
+- **Marking done**: Tasks get status "Done". Ideas get score 0 + "(Done)" prefix.
 - **Every tool response includes `project_file`** — the full path to the file being operated on.
 - **Legacy migration warning** — task tool responses include a `warning` property if `pjpd/<dir_name>.txt` exists (from the old multi-project layout).
 

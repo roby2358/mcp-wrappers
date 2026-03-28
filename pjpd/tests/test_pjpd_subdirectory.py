@@ -5,7 +5,6 @@ Tests for pjpd subdirectory functionality
 import pytest
 from pathlib import Path
 from src.ideas.ideas import Ideas
-from src.epics.epics import Epics
 from src.projects.projects import Projects
 
 
@@ -57,15 +56,3 @@ class TestPjpdSubdirectory:
         mgr.add_task("Test task", 5)
         assert mgr.legacy_project_file_warning() is None
 
-    def test_epics_manager_pjpd_subdirectory(self, tmp_path):
-        """Test that Epics manager looks in pjpd subdirectory"""
-        pjpd_dir = tmp_path / "pjpd"
-        pjpd_dir.mkdir()
-        epics_file = pjpd_dir / "epics.txt"
-        epics_file.write_text("Score:   75\nID: test-efgh\nTest epic\n---")
-
-        epics = Epics(tmp_path)
-
-        assert len(epics.epics) == 1
-        assert epics.epics[0].id == "test-efgh"
-        assert epics.epics[0].score == 75
