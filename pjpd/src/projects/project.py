@@ -159,7 +159,6 @@ class Project:
                 
             filtered_tasks.append({
                 "id": task.id,
-                "project": self.name,
                 "priority": task.priority,
                 "status": task.status,
                 "description": task.description,
