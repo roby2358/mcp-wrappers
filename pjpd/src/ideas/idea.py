@@ -44,6 +44,11 @@ class Idea:
     created: Optional[str] = None   # ISO-8601 UTC timestamp
     updated: Optional[str] = None   # ISO-8601 UTC timestamp
 
+    @property
+    def is_done(self) -> bool:
+        """An idea is done if its description starts with '(Done)'."""
+        return self.description.startswith("(Done)")
+
     # ------------------------------------------------------------------
     # ID generation
     # ------------------------------------------------------------------

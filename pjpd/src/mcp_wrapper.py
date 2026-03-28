@@ -173,8 +173,9 @@ async def pjpd_list_tasks(
 
         filtered = projects_manager.project.filter_tasks(status=status_str)
 
-        # Sort by priority desc, then description for deterministic output
-        filtered.sort(key=lambda t: (-t["priority"], t["description"].lower()))
+        # Sort: ToDo before Done, then priority desc, then description
+        status_rank = {"ToDo": 0, "Done": 1}
+        filtered.sort(key=lambda t: (status_rank.get(t["status"], 2), -t["priority"], t["description"].lower()))
 
         total = len(filtered)
         filtered = filtered[: request.count]
@@ -215,7 +216,7 @@ async def pjpd_mark_done(task_ids: List[str]) -> Dict[str, Any]:
 
         results = []
         for tid in request.task_ids:
-            updated_task = projects_manager.update_task(tid, None, 0, "Done")
+            updated_task = projects_manager.update_task(tid, None, None, "Done")
             results.append(updated_task.to_dict())
 
         return mcp_success(

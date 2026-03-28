@@ -43,7 +43,7 @@ This specification outlines the design, structure, and operational requirements 
 * Task IDs **MUST** be unique within the system
 * Task ID uniqueness **MAY** rely on entropy/randomness without coordination – no global registry or coordination mechanism is required
 * Tasks **MUST** be parsed in order of appearance within the file
-* Tasks **MAY** be sorted by priority when saving to disk
+* Tasks **MUST** be sorted ToDo-first then by priority descending when saving to disk
 * Empty or malformed tasks **MUST** be ignored with a WARN-level log message
 
 
@@ -90,7 +90,7 @@ better readability.
 * Idea tags **MUST** be 1-12 characters long and contain only alphanumeric characters and hyphens
 * Idea records **MUST NOT** include a `Status:` line. Ideas are considered non-actionable until promoted to a task.
 * Idea IDs **MUST** follow the same uniqueness rules as task IDs and share the same global ID space.
-* Ideas **MUST** be sorted by score when saving to disk (higher scores first).
+* Ideas **MUST** be sorted active-first then by score descending when saving to disk. An idea is considered done if its description starts with "(Done)".
 * Ideas missing an ID **MUST** be given an ID when read or written.
 * Empty or malformed idea records **MUST** be ignored with a WARN-level log message.
 
@@ -195,7 +195,7 @@ Investigate alternative color palette for dark mode.
     * `id` (string, conditional): Existing idea ID (format: `<tag>-XXXX`). Provide to update an existing idea.
 * `list_ideas` – List ideas sorted by score (highest first):
     * `count` (integer, optional): Maximum number of ideas to return (default: 20)
-* `mark_idea_done` – Mark one or more ideas as done (score to 0, prefix description with "(Done)"). All IDs must exist or nothing is changed:
+* `mark_idea_done` – Mark one or more ideas as done (prefix description with "(Done)", preserve score). All IDs must exist or nothing is changed:
     * `idea_ids` (list of strings, required): Tag-based idea IDs (format: `<tag>-XXXX`)
 
 ---

@@ -6,15 +6,15 @@ Score:   60
 ID: history-7hc6
 Weekly digest from backup history. A get_history tool that diffs current tasks/ideas state against timestamped backups in bak/ to answer "what got done this week?" and "how has the backlog changed?" No new storage needed — the data already exists in bak/, it just can't be queried yet.
 ----
-Score:   55
-ID: mark-done-dh2y
-Preserve original priority when marking a task done. Currently mark_done sets priority to 0, which destroys the signal. If you later ask "show me done tasks by priority" the ranking is gone. The status field already communicates done-ness — priority shouldn't be collateral damage.
-
-Note: priority is zeroed intentionally so done tasks sink in priority-descending sorts. But list_tasks already filters done tasks out by default, so the benefit only applies when show_done=True. A cleaner fix: sort on (-status_rank, -priority) so ToDo always ranks above Done without zeroing priority. Tradeoff, not a bug.
-----
 Score:   50
 ID: blocked-qscu
 Add a Blocked status to tasks. A third state (ToDo, Blocked, Done) lets the AI flag tasks waiting on external dependencies instead of leaving them in ToDo looking actionable. One more status string, a filter tweak in list_tasks, and the description explains why it's blocked. Minimal complexity, real signal.
+----
+Score:    0
+ID: mark-done-dh2y
+(Done) Preserve original priority when marking a task done. Currently mark_done sets priority to 0, which destroys the signal. If you later ask "show me done tasks by priority" the ranking is gone. The status field already communicates done-ness — priority shouldn't be collateral damage.
+
+Note: priority is zeroed intentionally so done tasks sink in priority-descending sorts. But list_tasks already filters done tasks out by default, so the benefit only applies when show_done=True. A cleaner fix: sort on (-status_rank, -priority) so ToDo always ranks above Done without zeroing priority. Tradeoff, not a bug.
 ----
 Score:    0
 ID: timestamps-54bz

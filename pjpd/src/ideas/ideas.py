@@ -50,8 +50,8 @@ class Ideas:
                 idea = Idea.from_text(record["text"])
                 if idea:
                     loaded.append(idea)
-            # Sort by score descending so we maintain spec requirement
-            loaded.sort(key=lambda i: i.score, reverse=True)
+            # Sort: active ideas first, then done; within each group by score desc
+            loaded.sort(key=lambda i: (i.is_done, -i.score))
             self._ideas = loaded
         except Exception as exc:
             logger.error("Error loading ideas from %s: %s", self.ideas_file, exc)
@@ -65,8 +65,8 @@ class Ideas:
         # Ensure directory exists before saving
         self.ideas_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # Sort by score (desc) before serialisation – spec requirement
-        sorted_ideas = sorted(self._ideas, key=lambda i: i.score, reverse=True)
+        # Sort: active ideas first, then done; within each group by score desc
+        sorted_ideas = sorted(self._ideas, key=lambda i: (i.is_done, -i.score))
         content = "\n----\n".join(idea.to_text() for idea in sorted_ideas)
 
         self.text_records.write_atomic(self.ideas_file, content)
@@ -126,9 +126,6 @@ class Ideas:
         """
         for idea in self.ideas:
             if idea.id == idea_id:
-                # Set score to 0
-                idea.score = 0
-
                 # Prepend "(Done)" to the first line of the description
                 description_text = idea.description or ""
                 first_and_rest = description_text.split("\n", 1)
@@ -149,6 +146,6 @@ class Ideas:
 
     def list_ideas(self, count: int) -> List[Dict[str, Any]]:
         """Return ideas as plain dictionaries (sorted by score descending)."""
-        ideas_sorted = sorted(self.ideas, key=lambda i: i.score, reverse=True)
+        ideas_sorted = sorted(self.ideas, key=lambda i: (i.is_done, -i.score))
         ideas_sorted = ideas_sorted[:count]
         return [idea.to_dict() for idea in ideas_sorted]

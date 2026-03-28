@@ -96,8 +96,9 @@ class Project:
     def _save_tasks(self) -> None:
         """Save tasks to the project file"""
         try:
-            # Sort tasks by priority (descending) before saving
-            sorted_tasks = sorted(self.tasks, key=lambda task: task.priority, reverse=True)
+            # Sort: ToDo before Done, then priority descending
+            status_rank = {"ToDo": 0, "Done": 1}
+            sorted_tasks = sorted(self.tasks, key=lambda task: (status_rank.get(task.status, 2), -task.priority))
             
             # Convert tasks to text format
             task_texts = [task.to_text() for task in sorted_tasks]
