@@ -40,7 +40,11 @@ class Projects:
         dir_name = self.project_dir.name
         legacy_file = self.project_dir / "pjpd" / f"{dir_name}.txt"
         if legacy_file.exists() and legacy_file != self.tasks_file:
-            return f"Existing project file {legacy_file.name} exists"
+            return (
+                f"Legacy project file '{legacy_file.name}' found in pjpd/. "
+                f"This is from an older multi-project layout. Tasks are now stored in pjpd/tasks.txt. "
+                f"Migrate any tasks from '{legacy_file.name}' into tasks.txt, then delete the legacy file."
+            )
         return None
 
     @property

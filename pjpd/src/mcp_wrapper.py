@@ -123,7 +123,9 @@ async def pjpd_put_task(
                 request.description, request.priority, request.tag
             )
             if not task:
-                return mcp_failure("Failed to add task")
+                return mcp_failure(
+                    "Failed to add task. Verify the pjpd/ directory exists and tasks.txt is writable."
+                )
             return mcp_success(
                 _add_legacy_warning({
                     **task.to_dict(),
@@ -136,7 +138,9 @@ async def pjpd_put_task(
                 request.id, request.description, request.priority
             )
             if not updated_task:
-                return mcp_failure(f"Task '{request.id}' not found")
+                return mcp_failure(
+                    f"Task '{request.id}' not found. Use pjpd_list_tasks() to see existing task IDs."
+                )
             return mcp_success(
                 _add_legacy_warning({
                     **updated_task.to_dict(),
@@ -206,7 +210,9 @@ async def pjpd_mark_done(task_id: str) -> Dict[str, Any]:
         )
 
         if not updated_task:
-            return mcp_failure(f"Task '{request.task_id}' not found")
+            return mcp_failure(
+                f"Task '{request.task_id}' not found. Use pjpd_list_tasks(show_done=True) to see all task IDs."
+            )
 
         return mcp_success(
             _add_legacy_warning({
@@ -306,7 +312,9 @@ async def pjpd_put_idea(
                 request.id, request.description, request.score
             )
             if not updated:
-                return mcp_failure(f"Idea '{request.id}' not found")
+                return mcp_failure(
+                    f"Idea '{request.id}' not found. Use pjpd_list_ideas() to see existing idea IDs."
+                )
 
             for idea in ideas_manager.ideas:
                 if idea.id == request.id:
@@ -318,7 +326,9 @@ async def pjpd_put_idea(
                         }
                     )
 
-            return mcp_failure(f"Error retrieving updated idea '{request.id}'")
+            return mcp_failure(
+                f"Idea '{request.id}' was updated on disk but could not be re-read. Use pjpd_list_ideas() to verify the current state."
+            )
     except Exception as e:
         return mcp_failure(f"Error putting idea: {str(e)}")
 
@@ -338,7 +348,9 @@ async def pjpd_mark_idea_done(idea_id: str) -> Dict[str, Any]:
         updated = ideas_manager.mark_idea_done(request.idea_id)
 
         if not updated:
-            return mcp_failure(f"Idea '{request.idea_id}' not found")
+            return mcp_failure(
+                f"Idea '{request.idea_id}' not found. Use pjpd_list_ideas() to see existing idea IDs."
+            )
 
         return mcp_success(
             {
