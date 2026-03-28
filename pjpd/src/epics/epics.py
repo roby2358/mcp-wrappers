@@ -33,24 +33,6 @@ class Epics:
         return self.epics_file.parent.exists() and self.epics_file.parent.is_dir()
 
     # ------------------------------------------------------------------
-    # Configuration helpers
-    # ------------------------------------------------------------------
-    def set_directory(self, directory: Path | str) -> None:
-        """Update the directory containing *epics.txt*.
-
-        The directory will be created automatically if it doesn't exist.
-        Keeping the Epics manager in sync with the active *Projects* directory
-        ensures the `epics.txt` file is created beside project task files – not
-        in a stale default location (e.g. `~/projects`).
-        """
-        self.directory = Path(directory).expanduser()
-        self.epics_file = self.directory / "pjpd" / "epics.txt"
-        self.text_records = TextRecords(self.directory)
-        
-        # Reset state for new directory
-        self._epics = None
-
-    # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
     def _load_epics(self) -> None:

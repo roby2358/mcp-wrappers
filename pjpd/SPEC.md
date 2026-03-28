@@ -2,7 +2,7 @@
 
 ## Overview
 
-ProjectMCP is a lightweight, local-first project management system built on plain `.txt` files using the text_records utility. It provides task tracking, prioritization, and project overview capabilities through an MCP interface. The system maintains projects as collections of tasks stored in human-readable format, with each project residing in its own text file.
+ProjectMCP is a lightweight, local-first project management system built on plain `.txt` files using the text_records utility. It manages tasks, ideas, and epics for a single project rooted at the current working directory. All data lives under `<cwd>/pjpd/`.
 
 This specification outlines the design, structure, and operational requirements of ProjectMCP. It is intended for developers contributing to the core system, as well as those building tools and extensions atop it.
 
@@ -13,7 +13,6 @@ This specification outlines the design, structure, and operational requirements 
 * All configuration files **MUST** be in TOML format
 * Configuration file **MUST** be named `projectmcp.toml` and located in the project root
 * Default configuration values:
-    * `projects_directory` = "~/projects"
     * `max_results` = 50
 
 ---
@@ -23,7 +22,7 @@ This specification outlines the design, structure, and operational requirements 
 ### Task Record Format
 
 * Each task **MUST** be delimited by a separator line consisting of exactly three hyphens (`---`) on a line by itself
-* Each task **MUST** contain **at least three** property lines followed by a free-form description.  
+* Each task **MUST** contain **at least three** property lines followed by a free-form description.
   The system writes the properties in this recommended order:
 
     1. `Priority: {integer}`
@@ -35,9 +34,9 @@ This specification outlines the design, structure, and operational requirements 
     * `<tag>` is a 1-12 character string provided at creation
     * `XXXX` is a 4-character random string using base32 alphabet (a-z, 2-9) excluding visually ambiguous characters (1, l, o, 0)
 * Task tags **MUST** be 1-12 characters long and contain only alphanumeric characters and hyphens
-* Task IDs **MUST** be unique within the entire system (across all projects)
+* Task IDs **MUST** be unique within the system
 * Task ID uniqueness **MAY** rely on entropy/randomness without coordination – no global registry or coordination mechanism is required
-* Tasks **MUST** be parsed in order of appearance within each file
+* Tasks **MUST** be parsed in order of appearance within the file
 * Tasks **MAY** be sorted by priority when saving to disk
 * Empty or malformed tasks **MUST** be ignored with a WARN-level log message
 
@@ -57,16 +56,16 @@ Update documentation for the new API endpoints.
 ID: refactor-cDeF
 Priority:  100
 Status: ToDo
-Refactor the error handling in the main loop for 
+Refactor the error handling in the main loop for
 better readability.
 ---
 
-### Idea Record Format (NEW)
+### Idea Record Format
 
-*See also: [Epic Record Format](#epic-record-format-new) for grouping ideas and projects into higher-level workstreams.*
+*See also: [Epic Record Format](#epic-record-format) for grouping ideas and projects into higher-level workstreams.*
 
 * Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
-* Each idea **MUST** contain **at least two** property lines followed by a free-form description.  
+* Each idea **MUST** contain **at least two** property lines followed by a free-form description.
   The system writes the properties in this recommended order:
 
     1. `Score: {integer}`
@@ -96,7 +95,7 @@ Investigate alternative color palette for dark mode.
 ---
 ```
 
-### Epic Record Format (NEW)
+### Epic Record Format
 
 * Each epic **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
 * Each epic **MUST** contain **five or more** lines in this order:
@@ -118,30 +117,17 @@ Investigate alternative color palette for dark mode.
 
 ### File Organization
 
-* When a user provides a project directory path that ends with `.../pjpd`, the system **MUST** treat that directory as the projects root **without** removing the suffix. Project, idea, and epic files will be read directly from that directory.
-* Each project **MUST** be stored as a separate `.txt` file in the projects directory
-* Project files **MUST** be named using the project name with `.txt` extension (e.g., `schedule-mcp.txt`)
-* Project names **MUST** be converted to lowercase and all disallowed characters replaced with underscores for filenames
-* Runs of multiple underscores in project names **MUST** be collapsed to a single underscore
-* The system **MUST** look for ideas, epics, and project files in a `pjpd` subdirectory under the projects directory
-* Companion files **MUST** be located at:
-  * `{projects_directory}/pjpd/ideas.txt` - Ideas file following the Idea Record Format
-  * `{projects_directory}/pjpd/epics.txt` - Epics file following the Epic Record Format
+* The system **MUST** store all data under a `pjpd` subdirectory of the current working directory
+* Tasks **MUST** be stored in a single file: `<cwd>/pjpd/tasks.txt`
+* Ideas **MUST** be stored in: `<cwd>/pjpd/ideas.txt`
+* Epics **MUST** be stored in: `<cwd>/pjpd/epics.txt`
 * Each file **MUST** use UTF-8 encoding
-* Files **MAY** be created automatically when adding the first task or idea to a new project
+* The `pjpd` directory and `tasks.txt` file **MAY** be created automatically when adding the first task
 
-### Ignore File Support
+### Legacy Project File Warning
 
-* When scanning for project files, the system **MUST** honor a `pjpdignore` file located at `{projects_directory}/pjpd/pjpdignore`
-* The `pjpdignore` file **MAY** contain a list of file patterns to ignore, one per line
-* Ignore patterns **MUST** support simple wildcard semantics:
-    * `*` matches any sequence of characters
-    * Patterns are matched against the full filename (including extension)
-    * Patterns are case-sensitive
-* Empty lines and lines starting with `#` **MUST** be treated as comments and ignored
-* Leading and trailing whitespace **MUST** be stripped from ignore patterns
-* If a `pjpdignore` file does not exist, files **MUST NOT** be ignored
-* The system **MUST** only scan the projects directory itself (no recursive traversal)
+* If a file named `pjpd/<directory-name>.txt` exists (where `<directory-name>` is the last component of the current working directory), the system **MUST** include a `warning` property in task tool responses alerting the user to its presence
+* This supports migration from the previous multi-project layout
 
 ---
 
@@ -162,17 +148,15 @@ Investigate alternative color palette for dark mode.
 
 ### Task Operations
 
-* Tasks **MUST** be identified by their project and tag-based ID (format: `<tag>-XXXX`)
+* Tasks **MUST** be identified by their tag-based ID (format: `<tag>-XXXX`)
 * Task IDs **MUST** be generated automatically when creating new tasks using the provided tag
 * Task updates **MUST** preserve the original file structure and separator format
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file
 * Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `---` separator
-* The system **MUST** be able to locate any task by ID across all project files
-* **Task Access Requirement**: All task operations **MUST** be performed through a project, id pair. The system **MUST** validate that the specified project exists before attempting to access or modify any task.
 
 ### Idea Operations
 
-* Ideas **MUST** be identified by their unique tag-based ID (format: `<tag>-XXXX`) within the `pjpd/ideas.txt` file.
+* Ideas **MUST** be identified by their unique tag-based ID (format: `<tag>-XXXX`) within `pjpd/ideas.txt`.
 * Idea IDs **MUST** be generated automatically when creating new ideas using the provided tag.
 * Idea updates **MUST** preserve the original file structure and separator format while sorted for score.
 
@@ -183,8 +167,14 @@ Investigate alternative color palette for dark mode.
 ### MCP Interface
 
 * The system **MUST** present an MCP tools interface
-* Use MCP SDK "fastmcp>=0.1.0" https://atproto.blue/en/latest/
+* Use MCP SDK "fastmcp>=0.1.0"
 * Server **MUST** support stdio transport by default
+
+### Response Format
+
+* All tools **MUST** return `{"success": bool, "result": ..., "error": "..."}`
+* All successful results **MUST** include a `project_file` property with the full path to the data file being operated on
+* Task tool results **MAY** include a `warning` property when a legacy project file is detected
 
 #### Required Prompts
 
@@ -193,36 +183,28 @@ Investigate alternative color palette for dark mode.
 
 #### Required Tools
 
-* `list_projects` – Return list of all projects with task counts:
-    * `path` (string, optional): Path to projects directory (default: ~/projects)
-* `new_project` – Create a new empty project file:
-    * `project` (string, required): Project name (becomes filename without .txt)
 * `list_tasks` – List tasks with optional filtering:
-    * `project` (string, optional): Filter by specific project
     * `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
     * `status` (string, optional): Filter by status ("ToDo" or "Done")
     * `max_results` (integer, optional): Maximum number of results to return
-* `add_task` – Create a new task with parameters:
-    * `project` (string, required): Project name (becomes filename without .txt)
+* `add_task` – Create a new task:
     * `description` (string, required): Task description
-    * `priority` (integer, required): Priority level (higher numbers = higher priority)
     * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
+    * `priority` (integer, optional): Priority level (higher numbers = higher priority, defaults to 2)
 * `update_task` – Update an existing task:
-    * `project` (string, required): The name of the project containing the task
     * `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
     * `description` (string, optional): New task description
     * `priority` (integer, optional): New priority level
     * `status` (string, optional): New status ("ToDo" or "Done")
 * `mark_done` – Mark a task as completed:
-    * `project` (string, required): The name of the project containing the task
     * `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
 * `next_steps` – Determine high-priority tasks to work on next:
     * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
-* `get_statistics` – Get comprehensive statistics about all projects:
+* `get_statistics` – Get comprehensive statistics about the project:
     * No parameters required
 * `list_ideas` – List ideas:
     * `max_results` (integer, optional): Maximum number of results to return
-* `add_idea` – Create a new idea in pjpd/ideas.txt with parameters:
+* `add_idea` – Create a new idea in pjpd/ideas.txt:
     * `score` (integer, required): Score value (higher numbers = higher relevance)
     * `description` (string, required): Idea description
     * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
@@ -230,11 +212,11 @@ Investigate alternative color palette for dark mode.
     * `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
     * `score` (integer, optional): New score value
     * `description` (string, optional): New idea description
-* `remove_idea` – Remove an idea completely:
+* `mark_idea_done` – Mark an idea as done (score to 0, prefix description with "(Done)"):
     * `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
 * `list_epics` – List epics:
     * `max_results` (integer, optional): Maximum number of results to return
-* `add_epic` – Create a new epic in epics.txt with parameters:
+* `add_epic` – Create a new epic in epics.txt:
     * `score` (integer, required): Score value (higher numbers = higher relevance)
     * `description` (string, required): Epic description
     * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
@@ -256,46 +238,38 @@ Investigate alternative color palette for dark mode.
 ### Overview Generation
 
 * System **MUST** provide project summaries including:
-    * Total tasks per project
+    * Total tasks
     * Count of tasks by priority level
     * Count of completed vs. pending tasks
-    * Projects with no pending high-priority tasks
-    * Total ideas and highest-scored ideas per project
 
 ### Next Steps Algorithm
 
 * **MUST** prioritize tasks in this order:
     1. Higher priority number tasks with Status: ToDo (e.g., priority 100 before priority 1)
     2. Tasks are sorted by priority value in descending order
-* **MUST** return tasks from multiple projects when available
-* **SHOULD** indicate which project each suggested task belongs to
+* **MUST** return up to `max_results` tasks
 
 ---
 
 ## Error Handling
 
-* Invalid project names **MUST** return appropriate error messages
-* Missing or ignored files **MUST** be handled gracefully (empty project)
+* Missing files **MUST** be handled gracefully (empty project)
 * Malformed task or idea records **MUST** be logged and skipped
-* Invalid task or ideas **MUST** return clear error messages
+* Invalid task or idea IDs **MUST** return clear error messages
 
 ---
 
 ## Startup Behavior
 
-* Projects **MUST NOT** be indexed at startup (let the user initiate via tool calls)
-* System **MUST** raise an exception and return an error if the specified projects directory doesn't exist
-* On loading a project directory, the system **MUST** look for companion files in the `pjpd` subdirectory:
-  * `{projects_directory}/pjpd/ideas.txt` - Ideas file
-  * `{projects_directory}/pjpd/epics.txt` - Epics file
-* Startup **MUST** complete successfully even if some project or idea files contain malformed records
+* The system **MUST NOT** index tasks at startup (let the user initiate via tool calls)
+* The `pjpd` directory **MUST** be created automatically when adding the first task
+* Startup **MUST** complete successfully even if data files contain malformed records
 * All logging output **MUST** be directed to stderr
 
 ---
 
 ## Performance Requirements
 
-* The system **SHOULD** handle at least 100 projects with 1000 total tasks and 1000 total ideas efficiently
 * File operations **SHOULD** complete in under 500ms for typical project sizes
 * Task and idea listing and filtering **SHOULD** return results in under 200ms
 * System **MUST NOT** cache file contents between operations (always read from disk)
@@ -309,16 +283,14 @@ Investigate alternative color palette for dark mode.
 * The system **SHOULD** provide clear error messages for common issues
 * Logging **SHOULD** be configurable (INFO level by default)
 * All logging output **MUST** be directed to stderr to avoid interfering with MCP stdio communication
-* Sample project and idea files **SHOULD** be included for testing
 
 ---
 
 ## Integration with TextRecords
 
 * **MUST** use the existing `text_records.py` utility for file parsing
-* **MUST** extend TextRecords parsing to handle both Task and Idea formats
+* **MUST** extend TextRecords parsing to handle Task, Idea, and Epic formats
 * **MUST** maintain compatibility with the existing record separator (`---`)
-* **MAY** add project-specific metadata parsing on top of the base TextRecords functionality
 
 ---
 
@@ -330,19 +302,6 @@ Investigate alternative color palette for dark mode.
 * No web interface or REST API
 * No persistent caching or database storage
 * No file watching or real-time updates
-
----
-
-## Future Extensions (Non-Binding)
-
-* Due date tracking and deadline notifications
-* Task dependencies and blocking relationships
-* Project templates and task automation
-* Time tracking and effort estimation
-* Integration with calendar systems
-* Bulk task operations (import/export)
-* Task and idea history and change tracking
-* Project archiving and cleanup tools
 
 ---
 

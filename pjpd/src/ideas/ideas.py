@@ -78,21 +78,6 @@ class Ideas:
 
         return self._ideas
 
-    def set_directory(self, directory: Path | str) -> None:
-        """Update the directory containing *ideas.txt*.
-
-        The directory will be created automatically if it doesn't exist.
-        Changing the projects directory at runtime allows the Ideas manager to
-        follow the current *Projects* location configured by the user (for
-        example via the *path* parameter to the *list_projects* tool).
-        """
-        self.directory = Path(directory).expanduser()
-        self.ideas_file = self.directory / "pjpd" / "ideas.txt"
-        self.text_records = TextRecords(self.directory)
-        
-        # Reset state for new directory
-        self._ideas = None
-
     def add_idea(self, description: str, score: int, tag: str = "idea") -> Idea:
         """Create and persist a new idea record."""
         idea = Idea(

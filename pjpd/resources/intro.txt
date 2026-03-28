@@ -1,48 +1,51 @@
 Welcome to ProjectMCP - Local Project Management Server
 
-ProjectMCP is a lightweight, local-first project management system built on plain .txt files. It provides task tracking, prioritization, and project overview capabilities through an MCP interface.
+ProjectMCP is a lightweight, local-first project management system built on plain .txt files. It manages tasks, ideas, and epics for a single project rooted at the current working directory.
 
 Key Features:
 • Task management with plain integer priority levels
-• Project organization with separate .txt files
-• Simple, human-readable task format
+• Idea tracking with scoring
+• Epic organization linking ideas and projects
+• Simple, human-readable text format
 • MCP tools for adding, listing, updating, and completing tasks
-• Project overviews and next steps recommendations
-• Comprehensive statistics and reporting
-• Ignore file support for filtering project files
+• Next steps recommendations and statistics
+
+All data is stored under <cwd>/pjpd/ as plain text files (tasks.txt, ideas.txt, epics.txt).
 
 Task Format:
-Each task is stored with a unique 10-character ID, priority level, status (ToDo/Done), and description, separated by "---" lines.
+Each task is stored with a tag-based ID, priority level, status (ToDo/Done), and description, separated by "---" lines.
 
 Priority Levels:
 • Higher numbers = higher priority (e.g., priority 100 is higher than priority 1)
 • Plain integer values stored with 4-digit formatting in files
-• Flexible priority system allowing any integer value
 
 Available MCP Tools:
 
-Core Project Management:
-• pjpd_new_project - Create a new empty project file
-• pjpd_list_projects - List all projects with task counts and overview (optional path parameter)
-
 Task Operations:
-• pjpd_add_task - Create new tasks with project, description, and priority
-• pjpd_list_tasks - List tasks with optional filtering by project, priority, status, or max_results
+• pjpd_add_task - Create new tasks with description, tag, and priority
+• pjpd_list_tasks - List tasks with optional filtering by priority, status, or max_results
 • pjpd_update_task - Update existing task description, priority, or status
 • pjpd_mark_done - Mark a task as completed
 
+Idea Operations:
+• pjpd_add_idea - Create a new idea with score, description, and tag
+• pjpd_list_ideas - List ideas sorted by score
+• pjpd_update_idea - Update an existing idea
+• pjpd_mark_idea_done - Mark an idea as done
+
+Epic Operations:
+• pjpd_add_epic - Create a new epic linking ideas and projects
+• pjpd_list_epics - List epics sorted by score
+• pjpd_update_epic - Update an existing epic
+• pjpd_mark_epic_done - Mark an epic as done
+
 Analysis and Reporting:
 • pjpd_next_steps - Determine high-priority tasks to work on next
-• pjpd_get_statistics - Get comprehensive statistics about all projects
+• pjpd_get_statistics - Get comprehensive statistics about the project
 
 System Information:
 • pjpd_intro - Return this introductory description (prompt)
 
-Configuration:
-Projects are stored as .txt files in the projects directory (~/projects by default), with each project having its own file. You can specify a custom path when using pjpd_list_projects. The system automatically creates project files when you add your first task to a new project, or you can create empty project files using the pjpd_new_project tool.
+Configuration is managed through projectmcp.toml (currently only max_results).
 
-The system supports a pjpdignore file in the projects directory under pjpd/ to filter out specific project files, and all configuration is managed through projectmcp.toml.
-
-This system modifies local files on disk. Before using any tools that create, update, or modify project files, please remind the user to back up any important data. Obtain their consent make file modifications. 
-
-Start by listing projects in the current working directory using the full path.
+This system modifies local files on disk. Before using any tools that create, update, or modify project files, please remind the user to back up any important data. Obtain their consent before making file modifications.
