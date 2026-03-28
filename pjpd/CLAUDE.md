@@ -33,7 +33,7 @@ python pjpd.py                       # Run the MCP server
 - `src/ideas/` — `Ideas` manages `Idea` records in `pjpd/ideas.txt`.
 
 **Shared infrastructure**:
-- `src/textrec/text_records.py` — Parses `---`-separated records from `.txt` files and provides `write_atomic()` (timestamped backup to `bak/` directory, then `os.replace`).
+- `src/textrec/text_records.py` — Parses `----`-separated records from `.txt` files (reads 3+ hyphens for backward compat) and provides `write_atomic()` (timestamped backup to `bak/` directory, then `os.replace`).
 - `src/textrec/record_id.py` — Generates tag-based IDs in format `<tag>-<4char>`.
 - `src/config.py` — Loads `projectmcp.toml`, callable as `config(key, default)`. Currently only has `max_results`.
 

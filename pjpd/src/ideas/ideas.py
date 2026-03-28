@@ -67,7 +67,7 @@ class Ideas:
 
         # Sort by score (desc) before serialisation – spec requirement
         sorted_ideas = sorted(self._ideas, key=lambda i: i.score, reverse=True)
-        content = "\n---\n".join(idea.to_text() for idea in sorted_ideas)
+        content = "\n----\n".join(idea.to_text() for idea in sorted_ideas)
 
         self.text_records.write_atomic(self.ideas_file, content)
 

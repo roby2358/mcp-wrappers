@@ -81,7 +81,7 @@ class Task:
             Tag: {1-12-character-string}
             ID: {tag}-{4-character-random-string}
             This is the description which may span
-            multiple lines until the record separator (---).
+            multiple lines until the record separator (----).
         """
         try:
             lines = text.strip().split('\n')

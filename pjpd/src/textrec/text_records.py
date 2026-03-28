@@ -1,19 +1,24 @@
 """
 Text Records Management
-Handles discovery and parsing of text files broken into records with --- separators
+Handles discovery and parsing of text files broken into records with ---- separators.
+Reads 3+ hyphens for backward compatibility, writes 4 hyphens (asciidoc standard).
 """
 
 import logging
 import os
+import re
 import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
 
+RECORD_SEPARATOR = "----"
+_SEPARATOR_RE = re.compile(r'^-{3,}\s*$', re.MULTILINE)
+
 logger = logging.getLogger(__name__)
 
 class TextRecords:
-    """Handles discovery and parsing of text files broken into records with --- separators"""
+    """Handles discovery and parsing of text files broken into records with ---- separators."""
     
     def __init__(self, path: Path):
         # URL decode the path if it contains % characters
@@ -39,7 +44,7 @@ class TextRecords:
         return txt_files
     
     def parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
-        """Parse a single file and extract records separated by ---"""
+        """Parse a single file and extract records (separated by 3+ hyphens on a line)."""
         records = []
         
         if not file_path.exists():
@@ -50,8 +55,8 @@ class TextRecords:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Split by --- separator and filter out empty parts
-            parts = [part.strip() for part in content.split('---') if part.strip()]
+            # Split by 3+ hyphens on a line (reads both --- and ----)
+            parts = [part.strip() for part in _SEPARATOR_RE.split(content) if part.strip()]
             
             # Convert relative path for storage
             relative_path = file_path.relative_to(self.path)

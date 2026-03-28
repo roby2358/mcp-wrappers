@@ -12,7 +12,7 @@ Key Features:
 All data is stored under <cwd>/pjpd/ as plain text files (tasks.txt, ideas.txt).
 
 Task Format:
-Each task is stored with a tag-based ID, priority level, status (ToDo/Done), and description, separated by "---" lines.
+Each task is stored with a tag-based ID, priority level, status (ToDo/Done), and description, separated by "----" lines (asciidoc style). Files using the older "---" separator are also read correctly.
 
 Priority Levels:
 • Higher numbers = higher priority (e.g., priority 100 is higher than priority 1)

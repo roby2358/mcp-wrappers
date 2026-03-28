@@ -21,7 +21,7 @@ This specification outlines the design, structure, and operational requirements 
 
 ### Task Record Format
 
-* Each task **MUST** be delimited by a separator line consisting of exactly three hyphens (`---`) on a line by itself
+* Each task **MUST** be delimited by a separator line of four hyphens (`----`) on a line by itself (asciidoc standard). For backward compatibility, the parser **MUST** accept three or more hyphens (`---`, `----`, etc.)
 * Each task **MUST** contain **at least three** property lines followed by a free-form description.
   The system writes the properties in this recommended order:
 
@@ -62,7 +62,7 @@ better readability.
 
 ### Idea Record Format
 
-* Each idea **MUST** be delimited by the same separator line of exactly three hyphens (`---`).
+* Each idea **MUST** be delimited by the same separator line of four hyphens (`----`). The parser **MUST** also accept three or more hyphens for backward compatibility.
 * Each idea **MUST** contain **at least two** property lines followed by a free-form description.
   The system writes the properties in this recommended order:
 
@@ -129,7 +129,7 @@ Investigate alternative color palette for dark mode.
 * Task IDs **MUST** be generated automatically when creating new tasks using the provided tag
 * Task updates **MUST** preserve the original file structure and separator format
 * Completed tasks **MAY** be filtered out of normal listings but **MUST** remain in the file
-* Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `---` separator
+* Task descriptions **MAY** span multiple lines but **MUST NOT** contain the `----` separator (or any line of three or more hyphens)
 
 ### Idea Operations
 
@@ -243,7 +243,7 @@ Investigate alternative color palette for dark mode.
 
 * **MUST** use the existing `text_records.py` utility for file parsing
 * **MUST** extend TextRecords parsing to handle Task and Idea formats
-* **MUST** maintain compatibility with the existing record separator (`---`)
+* **MUST** write the `----` separator (4 hyphens) and read 3+ hyphens for backward compatibility
 
 ---
 

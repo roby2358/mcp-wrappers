@@ -54,7 +54,7 @@ class TestProjectCreationAndSaving:
         content = projects_manager.tasks_file.read_text(encoding="utf-8")
         assert "First task" in content
         assert "Second task" in content
-        assert "---" in content
+        assert "----" in content
 
         assert len(projects_manager.project.tasks) == 2
 

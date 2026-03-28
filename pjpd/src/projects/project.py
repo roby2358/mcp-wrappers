@@ -100,8 +100,8 @@ class Project:
             # Convert tasks to text format
             task_texts = [task.to_text() for task in sorted_tasks]
             
-            # Join with --- separators
-            content = '\n---\n'.join(task_texts)
+            # Join with ---- separators (asciidoc standard)
+            content = '\n----\n'.join(task_texts)
             
             # Always write the content, even if empty (for empty projects)
             self.text_records.write_atomic(self.file_path, content)

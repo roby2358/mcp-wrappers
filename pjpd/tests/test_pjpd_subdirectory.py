@@ -28,7 +28,7 @@ class TestPjpdSubdirectory:
         pjpd_dir = tmp_path / "pjpd"
         pjpd_dir.mkdir()
         ideas_file = pjpd_dir / "ideas.txt"
-        ideas_file.write_text("Score:   80\nID: test-abcd\nTest idea\n---")
+        ideas_file.write_text("Score:   80\nID: test-abcd\nTest idea\n----")
 
         ideas = Ideas(tmp_path)
 
