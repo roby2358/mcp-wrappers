@@ -6,8 +6,8 @@ Key Features:
 • Task management with plain integer priority levels
 • Idea tracking with scoring
 • Simple, human-readable text format
-• MCP tools for adding, listing, updating, and completing tasks
-• Next steps recommendations and statistics
+• MCP tools for creating, listing, updating, and completing tasks and ideas
+• Project statistics
 
 All data is stored under <cwd>/pjpd/ as plain text files (tasks.txt, ideas.txt).
 
@@ -21,16 +21,14 @@ Priority Levels:
 Available MCP Tools:
 
 Task Operations:
-• pjpd_add_task - Create new tasks with description, tag, and priority
-• pjpd_list_tasks - List tasks with optional filtering by priority, status, or max_results
-• pjpd_update_task - Update existing task description, priority, or status
-• pjpd_mark_done - Mark a task as completed
+• pjpd_put_task - Create or update a task (provide tag to create, id to update)
+• pjpd_list_tasks - List tasks with optional filtering by status or count
+• pjpd_mark_done - Mark one or more tasks as completed
 
 Idea Operations:
-• pjpd_add_idea - Create a new idea with score, description, and tag
+• pjpd_put_idea - Create or update an idea (provide tag to create, id to update)
 • pjpd_list_ideas - List ideas sorted by score
-• pjpd_update_idea - Update an existing idea
-• pjpd_mark_idea_done - Mark an idea as done
+• pjpd_mark_idea_done - Mark one or more ideas as done
 
 Analysis and Reporting:
 • pjpd_get_statistics - Get comprehensive statistics about the project

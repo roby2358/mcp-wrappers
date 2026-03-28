@@ -43,22 +43,22 @@ This specification outlines the design, structure, and operational requirements 
 
 ### Example Task Format
 ```
-ID: bug-AB12
 Priority:    1
 Status: ToDo
+ID: bug-ab12
 Add functionality to encapsulate the cardinal graham meters.
----
-ID: doc-3456
+----
 Priority:   10
 Status: Done
+ID: doc-3456
 Update documentation for the new API endpoints.
----
-ID: refactor-cDeF
+----
 Priority:  100
 Status: ToDo
+ID: refactor-cdef
 Refactor the error handling in the main loop for
 better readability.
----
+----
 
 ### Idea Record Format
 
@@ -84,13 +84,13 @@ better readability.
 
 ```
 Score:   75
-ID: ai-ABCD
+ID: ai-abcd
 Implement experimental AI-assisted code review workflow.
----
+----
 Score:    5
-ID: ui-KLMN
+ID: ui-klmn
 Investigate alternative color palette for dark mode.
----
+----
 ```
 
 ### File Organization
@@ -112,7 +112,7 @@ Investigate alternative color palette for dark mode.
 
 ### Priority and Status
 
-* **Priority Levels**: Higher numbers = higher priority (e.g., priority 100 > priority 1)
+* **Priority Levels**: Higher numbers = higher priority (e.g., priority 100 > priority 1). Default priority for new tasks is 50.
 * **Priority Storage**: Stored as plain integers, formatted as 4 digits with space padding when rendered
 * **Status Values**:
     * `ToDo`: Task needs to be completed (default for new tasks)
@@ -160,35 +160,27 @@ Investigate alternative color palette for dark mode.
 
 #### Required Tools
 
+* `put_task` – Create or update a task. Provide `tag` to create, or `id` to update (exactly one required):
+    * `description` (string, required): Task description
+    * `tag` (string, conditional): Tag string (1-12 characters, alphanumeric and hyphens only). Provide to create a new task.
+    * `id` (string, conditional): Existing task ID (format: `<tag>-XXXX`). Provide to update an existing task.
+    * `priority` (integer, optional): Priority from 0 to 100 (defaults to 50). Values outside this range are allowed for exceptional cases.
 * `list_tasks` – List tasks with optional filtering (only ToDo tasks by default):
-    * `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
     * `count` (integer, optional): Maximum number of tasks to return (default: 20)
     * `show_done` (boolean, optional): Include completed tasks (default: false)
-* `add_task` – Create a new task:
-    * `description` (string, required): Task description
-    * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
-    * `priority` (integer, optional): Priority level (higher numbers = higher priority, defaults to 2)
-* `update_task` – Update an existing task:
-    * `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
-    * `description` (string, optional): New task description
-    * `priority` (integer, optional): New priority level
-    * `status` (string, optional): New status ("ToDo" or "Done")
-* `mark_done` – Mark a task as completed:
-    * `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
+* `mark_done` – Mark one or more tasks as completed. All IDs must exist or nothing is changed:
+    * `task_ids` (list of strings, required): Tag-based task IDs (format: `<tag>-XXXX`)
 * `get_statistics` – Get comprehensive statistics about the project:
     * No parameters required
-* `list_ideas` – List ideas:
-    * `max_results` (integer, optional): Maximum number of results to return
-* `add_idea` – Create a new idea in pjpd/ideas.txt:
+* `put_idea` – Create or update an idea. Provide `tag` to create, or `id` to update (exactly one required):
     * `score` (integer, required): Score value (higher numbers = higher relevance)
     * `description` (string, required): Idea description
-    * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
-* `update_idea` – Update an existing idea:
-    * `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
-    * `score` (integer, optional): New score value
-    * `description` (string, optional): New idea description
-* `mark_idea_done` – Mark an idea as done (score to 0, prefix description with "(Done)"):
-    * `idea_id` (string, required): Tag-based idea ID (format: `<tag>-XXXX`)
+    * `tag` (string, conditional): Tag string (1-12 characters, alphanumeric and hyphens only). Provide to create a new idea.
+    * `id` (string, conditional): Existing idea ID (format: `<tag>-XXXX`). Provide to update an existing idea.
+* `list_ideas` – List ideas sorted by score (highest first):
+    * `count` (integer, optional): Maximum number of ideas to return (default: 20)
+* `mark_idea_done` – Mark one or more ideas as done (score to 0, prefix description with "(Done)"). All IDs must exist or nothing is changed:
+    * `idea_ids` (list of strings, required): Tag-based idea IDs (format: `<tag>-XXXX`)
 
 ---
 
