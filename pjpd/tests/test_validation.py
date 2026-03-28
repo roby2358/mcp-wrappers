@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 from src.validation import (
     AddTaskRequest, UpdateTaskRequest, ListTasksRequest,
-    MarkDoneRequest, NextStepsRequest, AddIdeaRequest, UpdateIdeaRequest,
+    MarkDoneRequest, AddIdeaRequest, UpdateIdeaRequest,
     MarkIdeaDoneRequest, AddEpicRequest, UpdateEpicRequest, MarkEpicDoneRequest
 )
 
@@ -82,25 +82,6 @@ class TestMarkDoneRequest:
     def test_invalid_task_id_format(self):
         with pytest.raises(ValidationError):
             MarkDoneRequest(task_id="invalid-id")
-
-
-class TestNextStepsRequest:
-    """Test NextStepsRequest validation."""
-
-    def test_valid_next_steps_request(self):
-        request = NextStepsRequest(max_results=10)
-        assert request.max_results == 10
-
-    def test_default_max_results(self):
-        request = NextStepsRequest()
-        assert request.max_results == 5
-
-    def test_invalid_max_results(self):
-        with pytest.raises(ValidationError):
-            NextStepsRequest(max_results=0)
-
-        with pytest.raises(ValidationError):
-            NextStepsRequest(max_results=101)
 
 
 class TestAddIdeaRequest:

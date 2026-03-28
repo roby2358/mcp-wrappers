@@ -27,7 +27,6 @@ from validation import (
     MarkDoneRequest,
     MarkEpicDoneRequest,
     MarkIdeaDoneRequest,
-    NextStepsRequest,
     UpdateEpicRequest,
     UpdateIdeaRequest,
     UpdateTaskRequest,
@@ -183,27 +182,25 @@ async def pjpd_update_task(
 @mcp.tool()
 async def pjpd_list_tasks(
     priority: int | None = None,
-    status: str | None = None,
-    max_results: int | None = None,
+    count: int = 20,
+    show_done: bool = False,
 ) -> Dict[str, Any]:
     """List tasks with optional filtering.
 
     Args:
         priority: Filter tasks by priority level (returns all tasks >= this priority).
-        status: Filter tasks by status ("ToDo" or "Done").
-        max_results: Maximum number of tasks to return.
+        count: Maximum number of tasks to return. Defaults to 20.
+        show_done: Whether to include completed tasks. Defaults to False.
 
     Returns:
         Standard MCP response containing a list of matching tasks or an error.
     """
     try:
         request = ListTasksRequest(
-            priority=priority, status=status, max_results=max_results
+            priority=priority, count=count, show_done=show_done
         )
 
-        status_str: str | None = None
-        if request.status is not None:
-            status_str = request.status.strip().lower()
+        status_str: str | None = None if request.show_done else "todo"
 
         filtered = projects_manager.project.filter_tasks(
             priority=request.priority, status=status_str
@@ -212,21 +209,19 @@ async def pjpd_list_tasks(
         # Sort by priority desc, then description for deterministic output
         filtered.sort(key=lambda t: (-t["priority"], t["description"].lower()))
 
-        # Apply max_results
-        if request.max_results is not None and request.max_results > 0:
-            filtered = filtered[: request.max_results]
-        else:
-            max_from_config = config(Config.MAX_RESULTS, 50)
-            if max_from_config > 0:
-                filtered = filtered[:max_from_config]
+        total = len(filtered)
+        filtered = filtered[: request.count]
 
-        return mcp_success(
-            _add_legacy_warning({
-                "total_tasks": len(filtered),
-                "tasks": filtered,
-                "project_file": str(projects_manager.project_file),
-            })
-        )
+        result = _add_legacy_warning({
+            "total_tasks": len(filtered),
+            "tasks": filtered,
+            "project_file": str(projects_manager.project_file),
+        })
+
+        if total > request.count:
+            result["info"] = f"Returned {len(filtered)} of {total} total tasks"
+
+        return mcp_success(result)
     except Exception as e:
         return mcp_failure(f"Error listing tasks: {str(e)}")
 
@@ -259,44 +254,6 @@ async def pjpd_mark_done(task_id: str) -> Dict[str, Any]:
         )
     except Exception as e:
         return mcp_failure(f"Error marking task as done: {str(e)}")
-
-
-@mcp.tool()
-async def pjpd_next_steps(max_results: int = 5) -> Dict[str, Any]:
-    """Determine high-priority tasks to work on next.
-
-    Args:
-        max_results: Maximum number of suggestions to return. Defaults to 5.
-
-    Returns:
-        Standard MCP response with list of high-priority tasks to work on next.
-    """
-    try:
-        request = NextStepsRequest(max_results=max_results)
-        next_tasks = projects_manager.get_next_steps(request.max_results)
-
-        if not next_tasks:
-            return mcp_success(
-                _add_legacy_warning({
-                    "tasks": [],
-                    "total_tasks": 0,
-                    "project_file": str(projects_manager.project_file),
-                    "message": "No high-priority tasks found. All tasks are completed or no tasks exist.",
-                })
-            )
-
-        task_list = [task.to_dict() for task in next_tasks]
-
-        return mcp_success(
-            _add_legacy_warning({
-                "tasks": task_list,
-                "total_tasks": len(task_list),
-                "project_file": str(projects_manager.project_file),
-                "message": f"Found {len(task_list)} high-priority tasks to work on next",
-            })
-        )
-    except Exception as e:
-        return mcp_failure(f"Error getting next steps: {str(e)}")
 
 
 @mcp.tool()

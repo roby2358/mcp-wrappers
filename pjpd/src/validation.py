@@ -86,15 +86,8 @@ class UpdateTaskRequest(BaseModel):
 class ListTasksRequest(BaseModel):
     """Request model for listing tasks."""
     priority: Optional[int] = Field(None, ge=0, le=9999, description="Filter tasks by priority level (returns all tasks >= this priority)")
-    status: Optional[str] = Field(None, description="Filter tasks by status (ToDo or Done)")
-    max_results: Optional[int] = Field(None, gt=1, le=1000, description="Maximum number of tasks to return")
-
-    @field_validator('status')
-    @classmethod
-    def validate_status(cls, v):
-        if v is not None and v not in ["ToDo", "Done"]:
-            raise ValueError("Status must be either 'ToDo' or 'Done'")
-        return v
+    count: int = Field(default=20, ge=1, le=1000, description="Maximum number of tasks to return")
+    show_done: bool = Field(default=False, description="Whether to include completed tasks")
 
 
 class MarkDoneRequest(BaseModel):
@@ -105,11 +98,6 @@ class MarkDoneRequest(BaseModel):
     @classmethod
     def validate_task_id(cls, v):
         return validate_id_format(v, "Task ID")
-
-
-class NextStepsRequest(BaseModel):
-    """Request model for getting next steps."""
-    max_results: int = Field(default=5, gt=1, le=100, description="Maximum number of suggestions to return")
 
 
 class ListIdeasRequest(BaseModel):

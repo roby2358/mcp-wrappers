@@ -40,7 +40,6 @@ Epic Operations:
 • pjpd_mark_epic_done - Mark an epic as done
 
 Analysis and Reporting:
-• pjpd_next_steps - Determine high-priority tasks to work on next
 • pjpd_get_statistics - Get comprehensive statistics about the project
 
 System Information:

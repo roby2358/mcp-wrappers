@@ -31,12 +31,12 @@ Create a new task.
 - `priority` (integer, optional): Priority level (higher numbers = higher priority, defaults to 2)
 
 #### `list_tasks`
-List tasks with optional filtering.
+List tasks with optional filtering. By default only ToDo tasks are returned.
 
 **Parameters:**
 - `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
-- `status` (string, optional): Filter by status ("ToDo" or "Done")
-- `max_results` (integer, optional): Maximum number of results to return
+- `count` (integer, optional): Maximum number of tasks to return (default: 20)
+- `show_done` (boolean, optional): Include completed tasks (default: false)
 
 #### `update_task`
 Update an existing task.
@@ -52,12 +52,6 @@ Mark a task as completed.
 
 **Parameters:**
 - `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
-
-#### `next_steps`
-Determine high-priority tasks to work on next.
-
-**Parameters:**
-- `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
 
 #### `get_statistics`
 Get comprehensive statistics about the project.

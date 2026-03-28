@@ -119,12 +119,6 @@ class Projects:
         overview["project_file"] = str(self.tasks_file)
         return overview
 
-    def get_next_steps(self, limit: int = 5) -> List[Task]:
-        """Get the highest-priority ToDo tasks."""
-        todo_tasks = self.get_all_tasks(status_filter="ToDo")
-        todo_tasks.sort(key=lambda t: t.priority, reverse=True)
-        return todo_tasks[:limit]
-
     def get_statistics(self) -> Dict[str, Any]:
         """Get detailed statistics about the project."""
         tasks = self.project.tasks

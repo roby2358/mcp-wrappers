@@ -183,10 +183,10 @@ Investigate alternative color palette for dark mode.
 
 #### Required Tools
 
-* `list_tasks` – List tasks with optional filtering:
+* `list_tasks` – List tasks with optional filtering (only ToDo tasks by default):
     * `priority` (integer, optional): Filter by priority level (returns all tasks >= this priority)
-    * `status` (string, optional): Filter by status ("ToDo" or "Done")
-    * `max_results` (integer, optional): Maximum number of results to return
+    * `count` (integer, optional): Maximum number of tasks to return (default: 20)
+    * `show_done` (boolean, optional): Include completed tasks (default: false)
 * `add_task` – Create a new task:
     * `description` (string, required): Task description
     * `tag` (string, required): Tag string (1-12 characters, alphanumeric and hyphens only)
@@ -198,8 +198,6 @@ Investigate alternative color palette for dark mode.
     * `status` (string, optional): New status ("ToDo" or "Done")
 * `mark_done` – Mark a task as completed:
     * `task_id` (string, required): Tag-based task ID (format: `<tag>-XXXX`)
-* `next_steps` – Determine high-priority tasks to work on next:
-    * `max_results` (integer, optional): Maximum number of suggestions to return (default: 5)
 * `get_statistics` – Get comprehensive statistics about the project:
     * No parameters required
 * `list_ideas` – List ideas:
@@ -241,13 +239,6 @@ Investigate alternative color palette for dark mode.
     * Total tasks
     * Count of tasks by priority level
     * Count of completed vs. pending tasks
-
-### Next Steps Algorithm
-
-* **MUST** prioritize tasks in this order:
-    1. Higher priority number tasks with Status: ToDo (e.g., priority 100 before priority 1)
-    2. Tasks are sorted by priority value in descending order
-* **MUST** return up to `max_results` tasks
 
 ---
 

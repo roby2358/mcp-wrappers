@@ -64,3 +64,4 @@ python pjpd.py                       # Run the MCP server
 - No globals — use class instance properties
 - Keep metadata minimal
 - Keep implementations simple; ask before extending functionality
+- **Exception to "no defaults" rule**: Default parameter values are acceptable in MCP tool signatures (`@mcp.tool` functions in `mcp_wrapper.py`) so the calling model doesn't have to supply every argument. The no-defaults rule applies to internal function signatures, not the MCP API surface.

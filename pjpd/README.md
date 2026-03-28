@@ -60,9 +60,9 @@ Using an MCP client (like Claude Desktop or Claude Code), you can:
 **Task Management:**
 - "Add a task: 'Design homepage mockup' with tag 'design' and priority 3"
 - "Show me all high-priority tasks (priority >= 3)"
-- "List all pending tasks"
+- "List my tasks"
+- "Show me completed tasks too"
 - "Mark task 'dev-a2c4' as completed"
-- "What should I work on next?"
 - "Show me project statistics"
 
 **Idea Management:**
@@ -187,14 +187,14 @@ For complete API documentation including all MCP tools and prompts, see [README_
    list_tasks(priority=5)
    ```
 
-3. **Mark a task complete:**
+3. **List including completed tasks:**
    ```
-   mark_done("design-ab12")
+   list_tasks(show_done=True)
    ```
 
-4. **Get next steps:**
+4. **Mark a task complete:**
    ```
-   next_steps(max_results=3)
+   mark_done("design-ab12")
    ```
 
 ### Idea Management
@@ -228,11 +228,11 @@ For complete API documentation including all MCP tools and prompts, see [README_
 # List all high-priority tasks
 list_tasks(priority=8)
 
-# List only completed tasks
-list_tasks(status="Done")
+# Include completed tasks
+list_tasks(show_done=True)
 
-# List tasks with limit
-list_tasks(max_results=10)
+# Limit results
+list_tasks(count=10)
 ```
 
 ## Development
