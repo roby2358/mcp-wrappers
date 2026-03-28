@@ -27,7 +27,7 @@ class TestPutTaskRequest:
 
     def test_default_priority(self):
         request = PutTaskRequest(description="Do something", tag="task")
-        assert request.priority == 2
+        assert request.priority == 50
 
     def test_both_tag_and_id_rejected(self):
         with pytest.raises(ValidationError, match="not both"):

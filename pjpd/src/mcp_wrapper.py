@@ -102,15 +102,15 @@ async def pjpd_put_task(
     description: str,
     tag: str = None,
     id: str = None,
-    priority: int = 2,
+    priority: int = 50,
 ) -> Dict[str, Any]:
     """Create or update a task. Provide `tag` to create a new task, or `id` to update an existing one.
 
     Args:
-        description: The description of the task.
+        description: What needs to be done, in enough detail to act on without additional context.
         tag: Tag string (1-12 characters, alphanumeric and hyphens only). Provide to create a new task.
         id: Existing task ID (format: `<tag>-XXXX`). Provide to update an existing task.
-        priority: The priority level of the task (higher numbers = higher priority). Defaults to 2.
+        priority: Priority from 0 (negligible) to 100 (urgent). Values outside this range are allowed for exceptional cases. Defaults to 50.
 
     Returns:
         Standard MCP response with task details or error message.
@@ -150,14 +150,12 @@ async def pjpd_put_task(
 
 @mcp.tool()
 async def pjpd_list_tasks(
-    priority: int | None = None,
     count: int = 20,
     show_done: bool = False,
 ) -> Dict[str, Any]:
     """List tasks with optional filtering.
 
     Args:
-        priority: Filter tasks by priority level (returns all tasks >= this priority).
         count: Maximum number of tasks to return. Defaults to 20.
         show_done: Whether to include completed tasks. Defaults to False.
 
@@ -165,15 +163,11 @@ async def pjpd_list_tasks(
         Standard MCP response containing a list of matching tasks or an error.
     """
     try:
-        request = ListTasksRequest(
-            priority=priority, count=count, show_done=show_done
-        )
+        request = ListTasksRequest(count=count, show_done=show_done)
 
         status_str: str | None = None if request.show_done else "todo"
 
-        filtered = projects_manager.project.filter_tasks(
-            priority=request.priority, status=status_str
-        )
+        filtered = projects_manager.project.filter_tasks(status=status_str)
 
         # Sort by priority desc, then description for deterministic output
         filtered.sort(key=lambda t: (-t["priority"], t["description"].lower()))
@@ -252,18 +246,18 @@ async def pjpd_get_statistics() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pjpd_list_ideas(max_results: int = None) -> Dict[str, Any]:
-    """List ideas with optional filtering.
+async def pjpd_list_ideas(count: int = 20) -> Dict[str, Any]:
+    """List ideas sorted by score (highest first).
 
     Args:
-        max_results: Maximum number of results to return.
+        count: Maximum number of ideas to return. Defaults to 20.
 
     Returns:
         Standard MCP response with list of ideas sorted by score (highest first).
     """
     try:
-        request = ListIdeasRequest(max_results=max_results)
-        ideas = ideas_manager.list_ideas(max_results=request.max_results)
+        request = ListIdeasRequest(count=count)
+        ideas = ideas_manager.list_ideas(count=request.count)
 
         return mcp_success(
             {
@@ -287,8 +281,8 @@ async def pjpd_put_idea(
     """Create or update an idea. Provide `tag` to create a new idea, or `id` to update an existing one.
 
     Args:
-        score: Score value (higher numbers = higher relevance).
-        description: Idea description.
+        score: Relevance score from 0 (trivial) to 100 (critical). Values outside this range are allowed for exceptional cases.
+        description: What the idea entails, in enough detail for a human or model to understand its purpose and scope.
         tag: Tag string (1-12 characters, alphanumeric and hyphens only). Provide to create a new idea.
         id: Existing idea ID (format: `<tag>-XXXX`). Provide to update an existing idea.
 

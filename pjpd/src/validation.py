@@ -59,7 +59,7 @@ class PutTaskRequest(BaseModel):
     - ``id`` (without ``tag``): update an existing task by ID.
     """
     description: str = Field(..., min_length=1, description="The description of the task")
-    priority: int = Field(default=2, ge=0, le=9999, description="Priority level (0-9999, higher numbers = higher priority)")
+    priority: int = Field(default=50, ge=0, le=9999, description="Priority from 0 (negligible) to 100 (urgent). Values outside this range are allowed for exceptional cases.")
     tag: Optional[str] = Field(None, min_length=1, max_length=12, description="Tag for new task (1-12 chars, alphanumeric and hyphens). Provide to create.")
     id: Optional[str] = Field(None, description="Existing task ID (format: <tag>-XXXX). Provide to update.")
 
@@ -88,7 +88,6 @@ class PutTaskRequest(BaseModel):
 
 class ListTasksRequest(BaseModel):
     """Request model for listing tasks."""
-    priority: Optional[int] = Field(None, ge=0, le=9999, description="Filter tasks by priority level (returns all tasks >= this priority)")
     count: int = Field(default=20, ge=1, le=1000, description="Maximum number of tasks to return")
     show_done: bool = Field(default=False, description="Whether to include completed tasks")
 
@@ -105,7 +104,7 @@ class MarkDoneRequest(BaseModel):
 
 class ListIdeasRequest(BaseModel):
     """Request model for listing ideas."""
-    max_results: Optional[int] = Field(None, gt=1, le=1000, description="Maximum number of results to return")
+    count: int = Field(default=20, ge=1, le=1000, description="Maximum number of ideas to return")
 
 
 class PutIdeaRequest(BaseModel):

@@ -144,9 +144,8 @@ class Ideas:
                 return True
         return False
 
-    def list_ideas(self, max_results: Optional[int] = None) -> List[Dict[str, Any]]:
+    def list_ideas(self, count: int = 20) -> List[Dict[str, Any]]:
         """Return ideas as plain dictionaries (sorted by score descending)."""
         ideas_sorted = sorted(self.ideas, key=lambda i: i.score, reverse=True)
-        if max_results is not None:
-            ideas_sorted = ideas_sorted[:max_results]
+        ideas_sorted = ideas_sorted[:count]
         return [idea.to_dict() for idea in ideas_sorted]

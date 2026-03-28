@@ -42,16 +42,16 @@ class TestIdeasTools:
         ]
         mock_ideas_manager.list_ideas.return_value = mock_ideas
 
-        result = await pjpd_list_ideas(max_results=10)
+        result = await pjpd_list_ideas(count=10)
 
         assert result["success"] is True
         assert result["result"]["total_ideas"] == 2
         assert result["result"]["ideas"] == mock_ideas
         assert "Retrieved 2 ideas" in result["result"]["message"]
-        mock_ideas_manager.list_ideas.assert_called_once_with(max_results=10)
+        mock_ideas_manager.list_ideas.assert_called_once_with(count=10)
 
-    async def test_list_ideas_no_max_results(self, mock_ideas_manager):
-        """Test listing ideas without max_results parameter."""
+    async def test_list_ideas_default_count(self, mock_ideas_manager):
+        """Test listing ideas with default count parameter."""
         mock_ideas = [{"id": "idea-1234", "score": 100, "description": "Test idea"}]
         mock_ideas_manager.list_ideas.return_value = mock_ideas
 
@@ -59,7 +59,7 @@ class TestIdeasTools:
 
         assert result["success"] is True
         assert result["result"]["total_ideas"] == 1
-        mock_ideas_manager.list_ideas.assert_called_once_with(max_results=None)
+        mock_ideas_manager.list_ideas.assert_called_once_with(count=20)
 
     async def test_list_ideas_error(self, mock_ideas_manager):
         """Test error handling in list_ideas."""
