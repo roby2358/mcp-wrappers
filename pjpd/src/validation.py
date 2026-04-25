@@ -3,9 +3,9 @@ Pydantic models for MCP tool validation.
 """
 
 import re
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, Field, field_validator, model_validator
 
 # Regex patterns for validation
 TAG_PATTERN = r'^[a-zA-Z0-9\-]+$'
@@ -92,16 +92,28 @@ class ListTasksRequest(BaseModel):
     show_done: bool = Field(default=False, description="Whether to include completed tasks")
 
 
-class MarkDoneRequest(BaseModel):
-    """Request model for marking tasks as done."""
-    task_ids: List[str] = Field(..., min_length=1, description="List of tag-based task IDs (format: <tag>-XXXX)")
+def _make_id_list_validator(label: str):
+    """Return an AfterValidator that checks every entry in an ID list against ID_PATTERN."""
+    def validate(ids: List[str]) -> List[str]:
+        for ident in ids:
+            validate_id_format(ident, label)
+        return ids
+    return validate
 
-    @field_validator('task_ids')
-    @classmethod
-    def validate_task_ids(cls, v):
-        for tid in v:
-            validate_id_format(tid, "Task ID")
-        return v
+
+TaskIdList = Annotated[List[str], AfterValidator(_make_id_list_validator("Task ID"))]
+IdeaIdList = Annotated[List[str], AfterValidator(_make_id_list_validator("Idea ID"))]
+
+
+class MarkTaskDoneRequest(BaseModel):
+    """Request model for marking tasks as done."""
+    task_ids: TaskIdList = Field(..., min_length=1, description="List of tag-based task IDs (format: <tag>-XXXX)")
+
+
+class ReprioritizeTaskRequest(BaseModel):
+    """Request model for changing the priority of one or more tasks."""
+    priority: int = Field(..., ge=0, le=9999, description="New priority to apply to all listed tasks. 0 (negligible) to 100 (urgent); higher allowed for exceptional cases.")
+    task_ids: TaskIdList = Field(..., min_length=1, description="List of tag-based task IDs (format: <tag>-XXXX)")
 
 
 class ListIdeasRequest(BaseModel):
@@ -146,11 +158,4 @@ class PutIdeaRequest(BaseModel):
 
 class MarkIdeaDoneRequest(BaseModel):
     """Request model for marking ideas as done."""
-    idea_ids: List[str] = Field(..., min_length=1, description="List of tag-based idea IDs (format: <tag>-XXXX)")
-
-    @field_validator('idea_ids')
-    @classmethod
-    def validate_idea_ids(cls, v):
-        for iid in v:
-            validate_id_format(iid, "Idea ID")
-        return v
+    idea_ids: IdeaIdList = Field(..., min_length=1, description="List of tag-based idea IDs (format: <tag>-XXXX)")

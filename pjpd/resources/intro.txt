@@ -23,7 +23,8 @@ Available MCP Tools:
 Task Operations:
 • pjpd_put_task - Create or update a task (provide tag to create, id to update)
 • pjpd_list_tasks - List tasks with optional filtering by status or count
-• pjpd_mark_done - Mark one or more tasks as completed
+• pjpd_mark_task_done - Mark one or more tasks as completed
+• pjpd_reprioritize_task - Set the priority of one or more tasks without resending descriptions
 
 Idea Operations:
 • pjpd_put_idea - Create or update an idea (provide tag to create, id to update)

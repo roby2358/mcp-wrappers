@@ -19,10 +19,11 @@ from projects import Projects
 from validation import (
     ListIdeasRequest,
     ListTasksRequest,
-    MarkDoneRequest,
     MarkIdeaDoneRequest,
+    MarkTaskDoneRequest,
     PutIdeaRequest,
     PutTaskRequest,
+    ReprioritizeTaskRequest,
 )
 
 # ---------------------------------------------------------------------------
@@ -74,6 +75,39 @@ def mcp_success(result: Any) -> Dict[str, Any]:
 
 def mcp_failure(error_message: str) -> Dict[str, Any]:
     return {"success": False, "result": "", "error": error_message}
+
+
+def _bulk_update_tasks(
+    task_ids: List[str],
+    description: str | None,
+    priority: int | None,
+    status: str | None,
+    message: str,
+) -> Dict[str, Any]:
+    """All-or-nothing bulk task update. Returns an MCP response dict.
+
+    If any ID is missing, no tasks are modified and a failure response is returned
+    naming the missing IDs.
+    """
+    missing = [tid for tid in task_ids if not projects_manager.get_task(tid)]
+    if missing:
+        return mcp_failure(
+            f"Tasks not found: {missing}. No tasks were modified. "
+            f"Use pjpd_list_tasks(show_done=True) to see all task IDs."
+        )
+
+    updated = [
+        projects_manager.update_task(tid, description, priority, status).to_dict()
+        for tid in task_ids
+    ]
+
+    return mcp_success(
+        _add_legacy_warning({
+            "tasks": updated,
+            "project_file": str(projects_manager.project_file),
+            "message": message,
+        })
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +229,7 @@ async def pjpd_list_tasks(
 
 
 @mcp.tool()
-async def pjpd_mark_done(task_ids: List[str]) -> Dict[str, Any]:
+async def pjpd_mark_task_done(task_ids: List[str]) -> Dict[str, Any]:
     """Mark one or more tasks as completed. All IDs must exist or nothing is changed.
 
     Args:
@@ -205,29 +239,47 @@ async def pjpd_mark_done(task_ids: List[str]) -> Dict[str, Any]:
         Standard MCP response with updated task details or error message.
     """
     try:
-        request = MarkDoneRequest(task_ids=task_ids)
-
-        missing = [tid for tid in request.task_ids if not projects_manager.get_task(tid)]
-        if missing:
-            return mcp_failure(
-                f"Tasks not found: {missing}. No tasks were modified. "
-                f"Use pjpd_list_tasks(show_done=True) to see all task IDs."
-            )
-
-        results = []
-        for tid in request.task_ids:
-            updated_task = projects_manager.update_task(tid, None, None, "Done")
-            results.append(updated_task.to_dict())
-
-        return mcp_success(
-            _add_legacy_warning({
-                "tasks": results,
-                "project_file": str(projects_manager.project_file),
-                "message": f"Marked {len(results)} task(s) as done",
-            })
+        request = MarkTaskDoneRequest(task_ids=task_ids)
+        return _bulk_update_tasks(
+            request.task_ids,
+            None,
+            None,
+            "Done",
+            f"Marked {len(request.task_ids)} task(s) as done",
         )
     except Exception as e:
         return mcp_failure(f"Error marking tasks as done: {str(e)}")
+
+
+@mcp.tool()
+async def pjpd_reprioritize_task(priority: int, task_ids: List[str]) -> Dict[str, Any]:
+    """Set the priority of one or more tasks. All IDs must exist or nothing is changed.
+
+    Use this to shuffle priorities without resending the description text.
+
+    Args:
+        priority: New priority to apply to every listed task. 0 (negligible) to 100 (urgent); values outside this range are allowed for exceptional cases.
+        task_ids: List of tag-based task IDs (format: `<tag>-XXXX`) to reprioritize.
+
+    Returns:
+        Standard MCP response with updated task details or error message.
+    """
+    try:
+        request = ReprioritizeTaskRequest(priority=priority, task_ids=task_ids)
+        return _bulk_update_tasks(
+            request.task_ids,
+            None,
+            request.priority,
+            None,
+            f"Reprioritized {len(request.task_ids)} task(s) to priority {request.priority}",
+        )
+    except Exception as e:
+        return mcp_failure(
+            f"Error reprioritizing tasks: {str(e)}. "
+            f"Possible fixes: 1) Ensure each task_id matches <tag>-XXXX format (e.g. 'task-ab12'), "
+            f"2) Pass priority as an integer (0-100 typical, higher allowed), "
+            f"3) Use pjpd_list_tasks(show_done=True) to confirm the task IDs exist."
+        )
 
 
 @mcp.tool()

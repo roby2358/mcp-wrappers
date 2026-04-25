@@ -57,17 +57,18 @@ The server starts and listens for MCP connections via stdio transport. It operat
 Using an MCP client (like Claude Desktop or Claude Code), you can:
 
 **Task Management:**
-- "Add a task: 'Design homepage mockup' with tag 'design' and priority 3"
-- "Show me all high-priority tasks (priority >= 3)"
+- "Add a task: 'Design homepage mockup' with tag 'design' and priority 70"
 - "List my tasks"
 - "Show me completed tasks too"
-- "Mark task 'dev-a2c4' as completed"
+- "Mark tasks 'dev-a2c4' and 'bug-x3y5' as completed"
+- "Bump 'dev-a2c4' to priority 90"
 - "Show me project statistics"
 
 **Idea Management:**
-- "Add a new idea: 'Implement dark mode' with score 8 and tag 'ui'"
+- "Add a new idea: 'Implement dark mode' with score 80 and tag 'ui'"
 - "List my top 10 ideas"
-- "Update idea 'ui-a2c4' to have score 9"
+- "Update idea 'ui-a2c4' to have score 90"
+- "Mark ideas 'ui-a2c4' and 'ai-bb12' as done"
 
 ## Configuration
 
@@ -150,53 +151,62 @@ For complete API documentation including all MCP tools and prompts, see [README_
 
 ### Basic Workflow
 
-1. **Add tasks:**
+1. **Create tasks** (provide `tag` to create a new task):
    ```
-   add_task("Design new homepage layout", "design", 10)
-   add_task("Update contact form", "form", 5)
-   add_task("Test responsive design", "test", 8)
-   ```
-
-2. **List tasks by priority:**
-   ```
-   list_tasks(priority=5)
+   pjpd_put_task(description="Design new homepage layout", tag="design", priority=80)
+   pjpd_put_task(description="Update contact form", tag="form", priority=50)
+   pjpd_put_task(description="Test responsive design", tag="test", priority=70)
    ```
 
-3. **List including completed tasks:**
+2. **List tasks** (sorted ToDo-first, then by priority descending):
    ```
-   list_tasks(show_done=True)
+   pjpd_list_tasks()
+   pjpd_list_tasks(count=10)
+   pjpd_list_tasks(show_done=True)
    ```
 
-4. **Mark a task complete:**
+3. **Update a task** (provide `id` to update):
    ```
-   mark_done("design-ab12")
+   pjpd_put_task(id="design-ab12", description="Design new homepage layout (v2)", priority=90)
+   ```
+
+4. **Reprioritize without resending the description:**
+   ```
+   pjpd_reprioritize_task(priority=90, task_ids=["design-ab12", "test-cd34"])
+   ```
+
+5. **Mark tasks complete** (all-or-nothing):
+   ```
+   pjpd_mark_task_done(task_ids=["design-ab12", "form-cd34"])
+   ```
+
+6. **Project statistics:**
+   ```
+   pjpd_get_statistics()
    ```
 
 ### Idea Management
 
-1. **Add ideas:**
+1. **Create ideas:**
    ```
-   add_idea(75, "Implement AI-powered code review", "ai-review")
-   add_idea(50, "Add dark mode support", "dark-mode")
-   ```
-
-2. **List high-scoring ideas:**
-   ```
-   list_ideas(max_results=5)
+   pjpd_put_idea(score=75, description="Implement AI-powered code review", tag="ai-review")
+   pjpd_put_idea(score=50, description="Add dark mode support", tag="dark-mode")
    ```
 
-### Advanced Filtering
+2. **Update an idea:**
+   ```
+   pjpd_put_idea(id="ai-review-ab12", score=90, description="AI code review with inline suggestions")
+   ```
 
-```
-# List all high-priority tasks
-list_tasks(priority=8)
+3. **List ideas (highest score first):**
+   ```
+   pjpd_list_ideas(count=5)
+   ```
 
-# Include completed tasks
-list_tasks(show_done=True)
-
-# Limit results
-list_tasks(count=10)
-```
+4. **Mark ideas done** (score → 0, description prefixed with `(Done)`):
+   ```
+   pjpd_mark_idea_done(idea_ids=["ai-review-ab12", "dark-mode-cd34"])
+   ```
 
 ## Development
 

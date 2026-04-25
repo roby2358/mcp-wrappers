@@ -5,7 +5,7 @@ Tests for Pydantic validation models.
 import pytest
 from pydantic import ValidationError
 from src.validation import (
-    PutTaskRequest, ListTasksRequest, MarkDoneRequest,
+    PutTaskRequest, ListTasksRequest, MarkTaskDoneRequest,
     PutIdeaRequest, MarkIdeaDoneRequest,
 )
 
@@ -57,24 +57,24 @@ class TestPutTaskRequest:
             PutTaskRequest(description="X", tag="task", priority=-1)
 
 
-class TestMarkDoneRequest:
-    """Test MarkDoneRequest validation."""
+class TestMarkTaskDoneRequest:
+    """Test MarkTaskDoneRequest validation."""
 
-    def test_valid_mark_done_request(self):
-        request = MarkDoneRequest(task_ids=["task-a2c4"])
+    def test_valid_mark_task_done_request(self):
+        request = MarkTaskDoneRequest(task_ids=["task-a2c4"])
         assert request.task_ids == ["task-a2c4"]
 
-    def test_valid_mark_done_multiple(self):
-        request = MarkDoneRequest(task_ids=["task-a2c4", "bug-x3y5"])
+    def test_valid_mark_task_done_multiple(self):
+        request = MarkTaskDoneRequest(task_ids=["task-a2c4", "bug-x3y5"])
         assert len(request.task_ids) == 2
 
     def test_invalid_task_id_format(self):
         with pytest.raises(ValidationError):
-            MarkDoneRequest(task_ids=["invalid-id"])
+            MarkTaskDoneRequest(task_ids=["invalid-id"])
 
     def test_empty_list_rejected(self):
         with pytest.raises(ValidationError):
-            MarkDoneRequest(task_ids=[])
+            MarkTaskDoneRequest(task_ids=[])
 
 
 class TestPutIdeaRequest:

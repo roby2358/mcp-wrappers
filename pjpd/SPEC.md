@@ -184,7 +184,7 @@ Investigate alternative color palette for dark mode.
 * `list_tasks` – List tasks with optional filtering (only ToDo tasks by default):
     * `count` (integer, optional): Maximum number of tasks to return (default: 20)
     * `show_done` (boolean, optional): Include completed tasks (default: false)
-* `mark_done` – Mark one or more tasks as completed. All IDs must exist or nothing is changed:
+* `mark_task_done` – Mark one or more tasks as completed. All IDs must exist or nothing is changed:
     * `task_ids` (list of strings, required): Tag-based task IDs (format: `<tag>-XXXX`)
 * `get_statistics` – Get comprehensive statistics about the project:
     * No parameters required
