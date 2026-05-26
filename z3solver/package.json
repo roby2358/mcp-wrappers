@@ -1,8 +1,11 @@
 {
   "name": "yuwakisa-z3solver-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server providing Z3 SMT solver capabilities",
   "main": "build/index.js",
+  "files": [
+    "build"
+  ],
   "type": "module",
   "bin": {
     "z3solver-mcp": "build/index.js"
@@ -13,7 +16,8 @@
     "start": "node build/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
-    "test": "node --import tsx --test tests/*.test.ts"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
