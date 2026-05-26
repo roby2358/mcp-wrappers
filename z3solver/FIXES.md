@@ -1,6 +1,6 @@
 # FIXES — yuwakisa-z3solver-mcp
 
-_Last updated: 2026-05-26. Two issues are now documented: (1) the `(get-value …)`/`(get-objectives)` status-parse bug — **fixed** (below); (2) best-so-far model discarded on optimize timeout — **diagnosed, fix proposed** (see "Second issue: best-so-far …"). Both surfaced while using the server from another project (latest: MaxSAT arc-shaping in plotsolver); each made Z3 look broken when Z3 was in fact fine._
+_Last updated: 2026-05-26. Two issues are now documented: (1) the `(get-value …)`/`(get-objectives)` status-parse bug — **fixed** (below); (2) best-so-far model discarded on optimize timeout — **fixed for OMT (`maximize`/`minimize`); MaxSAT (`assert-soft`) is not recoverable** (see "Second issue: best-so-far …"). Both surfaced while using the server from another project (latest: MaxSAT arc-shaping in plotsolver); each made Z3 look broken when Z3 was in fact fine._
 
 ## TL;DR
 
@@ -92,23 +92,33 @@ if (status === 'sat') {
 
 There is no `unknown` branch, so `(get-model)` is never attempted — even though, for an optimize problem that hit its internal timeout, Z3 still holds a feasible incumbent in `ctx`.
 
-### Proposed fix
+### Validation (run 2026-05-26, before implementing)
 
-Add an `unknown` branch that still asks for the model and includes it only when Z3 actually has one:
+Probed the actual Z3 (z3-solver WASM) behaviour rather than assuming. Three findings drove the final design:
+
+1. **OMT (`maximize`/`minimize`) DOES expose an incumbent on `:timeout`.** Two-phase `eval_smtlib2_string('(get-model)')` after an `unknown` returns the best-so-far model (verified on a 40–60 item knapsack: `unknown` + full model block).
+2. **MaxSAT (`assert-soft`) does NOT.** After `:timeout`, `(get-model)` returns `(error "model is not available")` — and the low-level `Optimize` API path is no better (`optimize_get_model` returns an empty model). Z3's core-guided MaxSAT doesn't retain a retrievable feasible model here. **So the plotsolver MaxSAT case cannot be rescued through this wrapper** — it correctly falls through to bare `; unknown`. (Workaround for callers who need "good enough": re-encode soft constraints as an OMT objective, e.g. minimise a sum of penalty vars.)
+3. **Z3 eval runs off the main thread** (a `setInterval` keeps ticking through a 3.7 s eval), so the `Promise.race` wall in `solve()` genuinely pre-empts and rejects mid-solve — the incumbent really is lost if the JS wall fires first. And Z3's `:timeout` is *approximate*: an internal `:timeout 3000` overshot to ~3770 ms (~25%). The clamp must therefore use a proportional margin, not a fixed one.
+
+### Fix (implemented 2026-05-26)
+
+Added an `unknown` branch in `solveImpl()` that asks for the model and attaches it only when Z3 actually has one (excludes the `(error …)` line MaxSAT/plain-timeouts return):
 
 ```ts
 } else if (status === 'unknown') {
-  const model = await this.z3.eval_smtlib2_string(ctx, '(get-model)');
-  const text = String(model || '').trim();
-  // Optimize-timeout → Z3 returns the best-so-far model here.
-  // A genuine "no model yet" returns an (error …) line — exclude that.
-  if (text && !/^\(error/m.test(text)) output = text;
+  const model = String((await this.z3.eval_smtlib2_string(ctx, '(get-model)')) || '').trim();
+  if (model && !/^\(error/m.test(model)) { output = model; incumbent = true; }
 }
 ```
 
-Label the result so callers can tell a *certified* model from a best-effort one — e.g. return `; unknown (incumbent — not proven optimal)` when a model is attached. Downstream can then accept the ordering as "good enough" instead of treating the whole solve as failed.
+When an incumbent is attached the result is labelled so callers can tell it from a certified answer:
 
-(If `eval_smtlib2_string('(get-model)')` turns out **not** to surface the incumbent after an SMT2-frontend optimize timeout, fall back to driving the `Optimize` API directly — `opt.check()` returning `unknown` still lets you call `opt.model()` for the incumbent. The string frontend is preferred if it works because it keeps the two-phase shape.)
+```
+; unknown (incumbent - not proven optimal)
+<model>
+```
+
+And `ensureInternalTimeout()` injects `(set-option :timeout floor(timeoutMs * 0.5))` when the caller didn't set their own timeout, so the JS wall can't pre-empt Z3 (the 0.5 factor leaves margin for Z3's overshoot). A caller-supplied `(set-option :timeout …)` is respected as-is.
 
 ### Critical interaction: there are TWO timeouts, and their order decides everything
 
@@ -119,7 +129,12 @@ So the incumbent is recoverable **only if the internal timeout fires first**. To
 
 ### Verify
 
-Feed a MaxSAT instance too big to certify quickly (e.g. ~25+ integer position vars + `distinct` + many `assert-soft` terms — the plotsolver 27-beat encoding is a ready example) with `(set-option :timeout 2000)` and a larger `timeoutMs`. Expect `; unknown` **with** a model block (previously: bare `; unknown`). A 3-variable `assert-soft` must still return `; sat` with the proven optimum.
+Covered by `tests/z3wrapper.test.ts` ("Z3Solver optimize-timeout incumbent"):
+- A large OMT `maximize` (knapsack) with a short internal `:timeout` returns `; unknown (incumbent - not proven optimal)` **with** a model block (previously: bare `; unknown`).
+- A small optimize still returns `; sat` with the proven optimum.
+- A hard OMT with **no** caller `:timeout` and a short `timeoutMs` still returns an incumbent (proves the clamp keeps the JS wall from pre-empting).
+
+Note: a MaxSAT (`assert-soft`) timeout still returns bare `; unknown` by design — Z3 exposes no incumbent for it (see Validation). Not asserted, since it depends on Z3-internal behaviour.
 
 ## What's left (next steps)
 
@@ -150,7 +165,7 @@ Feed a MaxSAT instance too big to certify quickly (e.g. ~25+ integer position va
    `parseStatus` line scan (which already handles it).
 
 5. **Surface the best-so-far model on optimize timeout** (see "Second issue" above).
-   Add the `unknown` → `(get-model)` branch, label incumbents distinctly, and clamp an
-   internal timeout from `timeoutMs` so the JS wall can't pre-empt Z3. Ship in the same
-   redeploy as item 1. Add a regression test: a MaxSAT instance + short internal timeout
-   returns `; unknown` *with* a model.
+   **Done** — `unknown` → `(get-model)` branch, distinct incumbent label, and an internal
+   timeout clamp (`ensureInternalTimeout`), with regression tests. Ship in the same redeploy
+   as item 1. Caveat carried forward: this helps **OMT only**; MaxSAT (`assert-soft`) has no
+   recoverable incumbent, so the plotsolver use case needs an OMT re-encoding to benefit.

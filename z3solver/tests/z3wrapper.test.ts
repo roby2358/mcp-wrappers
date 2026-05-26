@@ -71,3 +71,57 @@ describe('Z3Solver status parsing', () => {
     assert.match(result, /^; unsat/, `expected '; unsat', got:\n${result}`);
   });
 });
+
+/**
+ * Issue 2 (FIXES.md): best-so-far model on optimize timeout.
+ *
+ * For OMT (maximize/minimize), a solve that times out before proving the optimum
+ * returns `unknown` while Z3 still holds a feasible incumbent. Previously the
+ * wrapper had no `unknown` branch, so it discarded that model. It now surfaces the
+ * incumbent and labels it distinctly.
+ *
+ * Validation finding: MaxSAT (assert-soft) does NOT expose an incumbent this way
+ * (get-model errors), so it is intentionally not asserted here.
+ */
+describe('Z3Solver optimize-timeout incumbent', () => {
+  const solver = new Z3Solver();
+
+  // Knapsack: 0/1 items, value vs weight cap. Feasible (all-0) is instant and Z3
+  // improves the incumbent fast, but proving the optimum for large n is infeasible
+  // in a short budget — a reliable "unknown with incumbent" generator. Builds only
+  // the problem; callers compose any (set-option :timeout) they need.
+  function knapsack(n: number): string {
+    const idx = Array.from({ length: n }, (_, i) => i);
+    const val = idx.map((i) => ((i * 37 + 11) % 100) + 1);
+    const wt = idx.map((i) => ((i * 53 + 7) % 100) + 1);
+    const cap = Math.floor(wt.reduce((a, b) => a + b, 0) * 0.45);
+    return [
+      ...idx.map((i) => `(declare-const b${i} Int)`),
+      ...idx.map((i) => `(assert (or (= b${i} 0) (= b${i} 1)))`),
+      `(assert (<= (+ ${idx.map((i) => `(* ${wt[i]} b${i})`).join(' ')}) ${cap}))`,
+      `(maximize (+ ${idx.map((i) => `(* ${val[i]} b${i})`).join(' ')}))`,
+      `(check-sat)`,
+    ].join('\n');
+  }
+
+  it('surfaces a labelled incumbent on OMT maximize timeout (was: bare unknown)', async () => {
+    // Caller sets their own short internal timeout; large JS wall so the wall can't fire.
+    const result = await solver.solve(`(set-option :timeout 1000)\n${knapsack(60)}`, 20000);
+    assert.match(result, /^; unknown \(incumbent - not proven optimal\)/,
+      `expected a labelled incumbent, got:\n${result.slice(0, 200)}`);
+    assert.match(result, /define-fun b0 /, `expected a model body, got:\n${result.slice(0, 200)}`);
+  });
+
+  it('returns the proven optimum as sat for an easily-solved optimize', async () => {
+    const result = await solver.solve(knapsack(6), 20000);
+    assert.match(result, /^; sat/, `expected '; sat', got:\n${result.slice(0, 200)}`);
+  });
+
+  it('clamps an internal timeout so a no-:timeout hard optimize returns instead of hitting the JS wall', async () => {
+    // No (set-option :timeout) in the input — the wrapper must inject one (~50% of
+    // timeoutMs = 2000ms) so the 4000ms JS wall never fires and the incumbent survives.
+    const result = await solver.solve(knapsack(60), 4000);
+    assert.match(result, /^; unknown \(incumbent - not proven optimal\)/,
+      `expected injected-timeout incumbent, got:\n${result.slice(0, 200)}`);
+  });
+});

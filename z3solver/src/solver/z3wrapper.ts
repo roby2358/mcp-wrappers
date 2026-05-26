@@ -51,6 +51,30 @@ export class Z3Solver {
   }
 
   /**
+   * Ensure an internal Z3 timeout is set so the JS race wall (timeoutMs) can't
+   * pre-empt the solve and discard a recoverable answer.
+   *
+   * Z3's eval runs off the main thread, so the Promise.race in solve() genuinely
+   * rejects mid-solve when timeoutMs fires — throwing away the status AND any
+   * best-so-far optimize incumbent. If Z3's own `(set-option :timeout N)` fires
+   * first, it instead returns `unknown` gracefully with the incumbent intact (for
+   * OMT maximize/minimize; see solveImpl). We only inject when the caller hasn't
+   * set their own timeout — if they have, that's their explicit choice.
+   *
+   * The internal bound is a fraction of timeoutMs, not timeoutMs minus a fixed
+   * margin: Z3's `:timeout` is approximate and overshoots (~25% observed), so the
+   * margin has to scale with the budget to keep the overshoot under the JS wall.
+   */
+  private ensureInternalTimeout(smtlib: string, timeoutMs: number): string {
+    if (/\(\s*set-option\s+:timeout\b/.test(smtlib)) return smtlib;
+    // Half the JS budget: leaves room for Z3's :timeout overshoot (~25%) plus the
+    // phase-2 get-model, so Z3 finishes gracefully before the race wall fires.
+    const safetyFactor = 0.5;
+    const internal = Math.floor(timeoutMs * safetyFactor);
+    return `(set-option :timeout ${internal})\n${smtlib}`;
+  }
+
+  /**
    * Parse the check-sat result.
    *
    * eval_smtlib2_string returns the concatenated output of every command it ran, so the
@@ -89,7 +113,7 @@ export class Z3Solver {
 
     try {
       return await Promise.race([
-        this.solveImpl(smtlib),
+        this.solveImpl(this.ensureInternalTimeout(smtlib, timeoutMs)),
         timeoutPromise
       ]);
     } catch (error) {
@@ -129,16 +153,32 @@ export class Z3Solver {
 
       // Phase 2: get model or core
       let output = '';
+      let incumbent = false;
       if (status === 'sat') {
         const model = await this.z3.eval_smtlib2_string(ctx, '(get-model)');
         output = String(model || '');
       } else if (status === 'unsat') {
         const core = await this.z3.eval_smtlib2_string(ctx, '(get-unsat-core)');
         output = String(core || '');
+      } else if (status === 'unknown') {
+        // Optimize (maximize/minimize) that timed out still holds a best-so-far
+        // model — (get-model) returns it. A genuine "no model yet" (e.g. MaxSAT
+        // assert-soft, or a plain timeout) returns an (error …) line instead, which
+        // we exclude so callers don't get noise framed as a result.
+        const model = String((await this.z3.eval_smtlib2_string(ctx, '(get-model)')) || '').trim();
+        if (model && !/^\(error/m.test(model)) {
+          output = model;
+          incumbent = true;
+        }
       }
 
-      // Format response
-      return output.trim() ? `; ${status}\n${output.trim()}` : `; ${status}`;
+      // Format response. An incumbent is feasible but not proven optimal — label it
+      // so callers can accept it as "good enough" rather than treat the solve as failed.
+      const body = output.trim();
+      if (incumbent) {
+        return `; unknown (incumbent - not proven optimal)\n${body}`;
+      }
+      return body ? `; ${status}\n${body}` : `; ${status}`;
 
     } finally {
       this.z3.del_context(ctx);
