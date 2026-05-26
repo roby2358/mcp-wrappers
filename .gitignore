@@ -12,3 +12,12 @@
 /.claude/
 /pjpd-wsl/
 **/.claude/
+
+# Python bytecode
+**/__pycache__/
+*.py[cod]
+
+# Test / coverage artifacts
+**/.pytest_cache/
+**/htmlcov/
+**/.coverage
