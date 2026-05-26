@@ -30,7 +30,12 @@ export class Z3Solver {
   }
 
   /**
-   * Strip (get-model) and (get-unsat-core) commands
+   * Strip output-producing commands so phase-1 eval yields only the check-sat status.
+   *
+   * We re-issue (get-model)/(get-unsat-core) ourselves in phase 2, and (get-value …)/
+   * (get-objectives)/(get-assignment) would otherwise append text to the phase-1 output
+   * and corrupt status parsing. The full model is returned via phase-2 (get-model), which
+   * supersedes any caller-supplied (get-value …).
    *
    * Note: Uses simple regex replacement. May incorrectly match inside string literals,
    * but this is acceptable as SMT-LIB strings are rare and get-* commands in strings
@@ -39,16 +44,25 @@ export class Z3Solver {
   private stripGetCommands(smtlib: string): string {
     return smtlib
       .replace(/\(\s*get-model\s*\)/g, '')
-      .replace(/\(\s*get-unsat-core\s*\)/g, '');
+      .replace(/\(\s*get-unsat-core\s*\)/g, '')
+      .replace(/\(\s*get-objectives\s*\)/g, '')
+      .replace(/\(\s*get-assignment\s*\)/g, '')
+      .replace(/\(\s*get-value\s*\([^)]*\)\s*\)/g, '');
   }
 
   /**
-   * Parse check-sat result - exact match only
+   * Parse the check-sat result.
+   *
+   * eval_smtlib2_string returns the concatenated output of every command it ran, so the
+   * status can be one line among others (e.g. when the input also carries (get-value …)
+   * or (get-objectives), or when set-option emits "success"). Scan for a bare status line
+   * instead of exact-matching the whole output — exact matching reports `unknown` for any
+   * input that produces output beyond `(check-sat)`.
    */
   private parseStatus(output: string): 'sat' | 'unsat' | 'unknown' {
-    const trimmed = output.trim();
-    if (trimmed === 'sat') return 'sat';
-    if (trimmed === 'unsat') return 'unsat';
+    const lines = output.split(/\r?\n/).map((l) => l.trim());
+    if (lines.includes('sat')) return 'sat';
+    if (lines.includes('unsat')) return 'unsat';
     return 'unknown';
   }
 
